@@ -6,17 +6,17 @@ Confidence: 0.82
 Winning agent: token_context_agent
 
 Summary:
-The telemetry shows a massive increase in input tokens (≈294% growth, z‑score > 1400) and a deep call chain of depth 5 where each call is an agent_reflection invoking itself. No retries or model changes are present, and cost growth aligns with the token increase. These patterns strongly indicate context bloat combined with recursive self‑calling behavior.
+The telemetry shows an extreme input token z-score far above the threshold and a ~294% token growth, indicating severe context bloat. Additionally, the call chain depth of 5 and the presence of the 'agent_reflection' feature suggest recursive self‑calling behavior. Together these signals strongly point to a combined context bloat and self‑calling anomaly.
 
 Supporting evidence:
 - **token_context_agent** — provider: groq, model: openai/gpt-oss-120b, fallback: False
   - Hypothesis: context_bloat_self_calling_agent
   - Confidence: 0.82
-  - Explanation: The telemetry shows a massive increase in input tokens (≈294% growth, z‑score > 1400) and a deep call chain of depth 5 where each call is an agent_reflection invoking itself. No retries or model changes are present, and cost growth aligns with the token increase. These patterns strongly indicate context bloat combined with recursive self‑calling behavior.
+  - Explanation: The telemetry shows an extreme input token z-score far above the threshold and a ~294% token growth, indicating severe context bloat. Additionally, the call chain depth of 5 and the presence of the 'agent_reflection' feature suggest recursive self‑calling behavior. Together these signals strongly point to a combined context bloat and self‑calling anomaly.
   - Supporting metrics:
+    - feature_tag: agent_reflection
     - input_tokens_z_score: 1454.8417278608008
     - input_token_growth_pct: 294.0677966101695
-    - token_growth_pct: 294.0677966101695
     - cost_growth_pct: 313.79310344827593
     - max_call_chain_depth: 5
     - retry_z_score: 0.0

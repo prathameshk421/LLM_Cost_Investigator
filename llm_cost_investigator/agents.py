@@ -254,6 +254,30 @@ RETRY_LOOP_TOOLS = [
     }
 ]
 
+# token_context_agent reuses the same get_call_chain tool — chain inspection is
+# equally useful for detecting context bloat / recursion as for retry loops.
+TOKEN_CONTEXT_TOOLS = RETRY_LOOP_TOOLS
+
+MODEL_ROUTING_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_window_calls",
+            "description": (
+                "Fetch the actual calls within the anomaly window for this "
+                "feature, showing model and cost_usd per call, to verify "
+                "whether a cost increase correlates with a specific model "
+                "rather than trusting the aggregate model_changed flag alone."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {"feature_tag": {"type": "string"}},
+                "required": ["feature_tag"],
+            },
+        },
+    }
+]
+
 MAX_RETRY_LOOP_TOOL_CALLS = 4
 
 # ---------------------------------------------------------------------------
@@ -485,6 +509,229 @@ Telemetry:
 
 
 # ---------------------------------------------------------------------------
+# V2 telemetry/prompt builders for tool-using token_context_agent
+# ---------------------------------------------------------------------------
+
+def _token_context_tool_required(signals: dict) -> tuple[bool, str]:
+    """Gate: decide whether get_call_chain must be called before answering.
+
+    Tool is required when the aggregate z-score is below the high-confidence
+    threshold BUT chain depth suggests possible recursion — chain inspection
+    is needed to break the ambiguity.
+    """
+    input_z = float(signals.get("input_tokens_z_score", 0.0))
+    chain_depth = int(signals.get("max_call_chain_depth", 0))
+    tool_required = input_z < 3.0 and chain_depth >= 2
+    if tool_required:
+        reason = (
+            f"DECISION: MUST CALL get_call_chain — input_tokens_z_score={input_z} "
+            f"(below 3.0) AND max_call_chain_depth={chain_depth} (>= 2). "
+            f"Aggregate token growth alone is inconclusive but chain depth "
+            f"suggests possible recursion — inspect the actual chain before answering."
+        )
+    else:
+        reason = (
+            f"DECISION: DO NOT call get_call_chain — input_tokens_z_score={input_z} "
+            f"(>= 3.0) OR max_call_chain_depth={chain_depth} (< 2). "
+            f"Answer directly from the aggregate signals. Skip the tool entirely."
+        )
+    return tool_required, reason
+
+
+def build_token_context_telemetry_v2(anomaly: AnomalyWindow) -> dict[str, Any]:
+    """Signals-only slice + available_call_ids for the tool-using token_context_agent.
+    The agent uses get_call_chain to inspect the actual chain rather than relying
+    only on aggregate depth metrics."""
+    signals = anomaly.signals
+    return {
+        "feature_tag": anomaly.feature_tag,
+        "start_time": anomaly.start_time.isoformat().replace("+00:00", "Z"),
+        "end_time": anomaly.end_time.isoformat().replace("+00:00", "Z"),
+        "signals": {
+            "input_tokens_z_score": signals.input_tokens_z_score,
+            "input_token_growth_pct": signals.input_token_growth_pct,
+            "token_growth_pct": signals.token_growth_pct,
+            "cost_growth_pct": signals.cost_growth_pct,
+            "max_call_chain_depth": signals.max_call_chain_depth,
+            "retry_z_score": signals.retry_z_score,
+            "model_changed": signals.model_changed,
+        },
+        "available_call_ids": [c.call_id for c in anomaly.sample_calls],
+    }
+
+
+def build_token_context_prompt_v2(telemetry_json: str) -> str:
+    """Token context diagnostic prompt with DECISION-injection tool-use gating.
+    The pre-evaluated DECISION line is injected so the model never has to
+    evaluate the conditional itself (eliminates ambiguity on all providers)."""
+    try:
+        _telem = json.loads(telemetry_json)
+        _signals = _telem.get("signals", {})
+        _, tool_directive = _token_context_tool_required(_signals)
+    except Exception:
+        tool_directive = (
+            "DECISION: DO NOT call get_call_chain — could not parse signals. "
+            "Answer directly from the aggregate signals."
+        )
+
+    return f"""You are the Token Context Diagnostic Agent.
+
+Your only job is to decide whether this anomaly was caused by context bloat, recursive self-calling behavior, or growing prompts.
+
+Look for:
+- input_tokens increasing over time
+- deep parent_call_id chains
+- agent_reflection or similar features calling themselves
+- cost growth explained by larger context, not retries or model changes
+
+You have access to a tool: get_call_chain(call_id).
+
+Tool-use rule:
+- You MUST call get_call_chain before answering if BOTH are true:
+    input_tokens_z_score < 3.0  AND  max_call_chain_depth >= 2
+- If input_tokens_z_score >= 3.0  OR  max_call_chain_depth < 2:
+    do NOT call the tool; answer directly from the aggregate signals.
+
+{tool_directive}
+
+Use only the telemetry and tool results provided.
+Do not invent missing metrics.
+Once you have enough evidence, return only valid JSON. No markdown, no prose.
+If the evidence is weak, return hypothesis "no_strong_signal".
+Confidence must be between 0 and 1.
+Confidence guide:
+- 0.90-1.00: input tokens grow by >= 300% and chain depth >= 5
+- 0.75-0.89: input token z-score >= 3 and chain depth >= 4
+- 0.50-0.74: token growth exists but chain evidence is weak
+- below 0.50: return no_strong_signal
+
+Return only valid JSON matching this shape:
+{{
+  "agent_name": "token_context_agent",
+  "hypothesis": "context_bloat_self_calling_agent" | "no_strong_signal",
+  "confidence": number,
+  "supporting_metrics": object,
+  "explanation": string
+}}
+
+Telemetry:
+{telemetry_json}"""
+
+
+# ---------------------------------------------------------------------------
+# V2 telemetry/prompt builders for tool-using model_routing_agent
+# ---------------------------------------------------------------------------
+
+def _model_routing_tool_required(signals: dict) -> tuple[bool, str]:
+    """Gate: decide whether get_window_calls must be called before answering.
+
+    Tool is required when a model change was detected but the cost z-score is
+    not strong enough on its own — per-call model/cost data is needed to
+    confirm the attribution.
+    """
+    model_changed = bool(signals.get("model_changed", False))
+    cost_z = float(signals.get("cost_z_score", 0.0))
+    tool_required = model_changed and cost_z < 3.0
+    if tool_required:
+        reason = (
+            f"DECISION: MUST CALL get_window_calls — model_changed=True but "
+            f"cost_z_score={cost_z} (below 3.0). A model change was detected "
+            f"but the cost signal alone is not strong enough to confidently "
+            f"attribute the anomaly to it — inspect actual per-call model/cost "
+            f"data before answering."
+        )
+    else:
+        reason = (
+            f"DECISION: DO NOT call get_window_calls — model_changed="
+            f"{model_changed} and cost_z_score={cost_z}. "
+            f"Answer directly from the aggregate signals. Skip the tool entirely."
+        )
+    return tool_required, reason
+
+
+def build_model_routing_telemetry_v2(anomaly: AnomalyWindow) -> dict[str, Any]:
+    """Signals-only slice for the tool-using model_routing_agent.
+    No available_call_ids — get_window_calls takes feature_tag, not call_id."""
+    signals = anomaly.signals
+    return {
+        "feature_tag": anomaly.feature_tag,
+        "start_time": anomaly.start_time.isoformat().replace("+00:00", "Z"),
+        "end_time": anomaly.end_time.isoformat().replace("+00:00", "Z"),
+        "signals": {
+            "model_changed": signals.model_changed,
+            "model_before": signals.model_before,
+            "model_during": signals.model_during,
+            "models_seen": signals.models_seen,
+            "cost_z_score": signals.cost_z_score,
+            "cost_growth_pct": signals.cost_growth_pct,
+            "token_growth_pct": signals.token_growth_pct,
+            "input_token_growth_pct": signals.input_token_growth_pct,
+            "output_token_growth_pct": signals.output_token_growth_pct,
+            "retry_z_score": signals.retry_z_score,
+            "max_retry_count": signals.max_retry_count,
+        },
+    }
+
+
+def build_model_routing_prompt_v2(telemetry_json: str) -> str:
+    """Model routing diagnostic prompt with DECISION-injection tool-use gating.
+    The pre-evaluated DECISION line is injected so the model never has to
+    evaluate the conditional itself (eliminates ambiguity on all providers)."""
+    try:
+        _telem = json.loads(telemetry_json)
+        _signals = _telem.get("signals", {})
+        _, tool_directive = _model_routing_tool_required(_signals)
+    except Exception:
+        tool_directive = (
+            "DECISION: DO NOT call get_window_calls — could not parse signals. "
+            "Answer directly from the aggregate signals."
+        )
+
+    return f"""You are the Model Routing Diagnostic Agent.
+
+Your only job is to decide whether this anomaly was caused by a feature being routed to a more expensive model.
+
+Look for:
+- same feature_tag using a different model during the anomaly
+- cost_usd increasing sharply
+- input/output tokens staying roughly stable
+- no major retry spike
+
+You have access to a tool: get_window_calls(feature_tag).
+
+Tool-use rule:
+- You MUST call get_window_calls before answering if BOTH are true:
+    model_changed == True  AND  cost_z_score < 3.0
+- If model_changed == False  OR  cost_z_score >= 3.0:
+    do NOT call the tool; answer directly from the aggregate signals.
+
+{tool_directive}
+
+Use only the telemetry and tool results provided.
+Do not invent missing metrics.
+Once you have enough evidence, return only valid JSON. No markdown, no prose.
+If the evidence is weak, return hypothesis "no_strong_signal".
+Confidence must be between 0 and 1.
+Confidence guide:
+- 0.90-1.00: model changed, cost grew >= 200%, token growth < 50%
+- 0.75-0.89: model changed and cost z-score >= 3
+- 0.50-0.74: cost grew without token growth, but model evidence is partial
+- below 0.50: return no_strong_signal
+
+Return only valid JSON matching this shape:
+{{
+  "agent_name": "model_routing_agent",
+  "hypothesis": "expensive_model_misroute" | "no_strong_signal",
+  "confidence": number,
+  "supporting_metrics": object,
+  "explanation": string
+}}
+
+Telemetry:
+{telemetry_json}"""
+
+
+# ---------------------------------------------------------------------------
 # Validation wrapper
 # ---------------------------------------------------------------------------
 
@@ -628,6 +875,139 @@ def run_retry_loop_agent_with_tools(
         print(f"Fallback used: retry_loop_agent ({reason})")
         return AgentRunResult(
             evidence=fallback_retry_loop(anomaly),
+            provider="fallback",
+            model=model,
+            fallback_used=True,
+            fallback_reason=reason,
+        )
+
+
+def run_token_context_agent_with_tools(
+    anomaly: AnomalyWindow,
+    store: Any,
+    client: Any,
+    model: str,
+    provider: str,
+) -> AgentRunResult:
+    """Tool-using version of the token_context_agent. Reuses get_call_chain
+    (same tool as retry_loop_agent) since chain inspection is equally useful
+    for detecting context bloat / recursion. Falls back to the deterministic
+    fallback_token_context on ANY failure."""
+
+    def tool_executor(tool_name: str, args: dict) -> Any:
+        if tool_name != "get_call_chain":
+            raise ValueError(f"Unknown tool requested: {tool_name}")
+        call_id = args["call_id"]
+        chain = store.get_call_chain(call_id)
+        return [
+            {
+                "call_id": c.call_id,
+                "parent_call_id": c.parent_call_id,
+                "timestamp": c.timestamp.isoformat().replace("+00:00", "Z"),
+                "input_tokens": c.input_tokens,
+                "output_tokens": c.output_tokens,
+                "cost_usd": c.cost_usd,
+            }
+            for c in chain
+        ]
+
+    telemetry = build_token_context_telemetry_v2(anomaly)
+    telemetry_json = json.dumps(telemetry, indent=2)
+    prompt = build_token_context_prompt_v2(telemetry_json)
+
+    try:
+        evidence = call_agent_with_tools(
+            client=client,
+            model=model,
+            prompt=prompt,
+            tools=TOKEN_CONTEXT_TOOLS,
+            tool_executor=tool_executor,
+            schema=AgentEvidence,
+        )
+        if evidence.agent_name != "token_context_agent":
+            raise ValueError(
+                f"Agent name mismatch: expected token_context_agent, got {evidence.agent_name}"
+            )
+        return AgentRunResult(
+            evidence=evidence,
+            provider=provider,
+            model=model,
+            fallback_used=False,
+            fallback_reason=None,
+        )
+    except Exception as exc:
+        reason = f"Tool-use call failed: {type(exc).__name__}: {exc}"
+        print(f"Fallback used: token_context_agent ({reason})")
+        return AgentRunResult(
+            evidence=fallback_token_context(anomaly),
+            provider="fallback",
+            model=model,
+            fallback_used=True,
+            fallback_reason=reason,
+        )
+
+
+def run_model_routing_agent_with_tools(
+    anomaly: AnomalyWindow,
+    store: Any,
+    client: Any,
+    model: str,
+    provider: str,
+) -> AgentRunResult:
+    """Tool-using version of the model_routing_agent. Uses get_window_calls
+    (wraps TelemetryStore.get_calls_for_feature) to retrieve per-call
+    model/cost evidence. Falls back to fallback_model_routing on ANY failure."""
+
+    def tool_executor(tool_name: str, args: dict) -> Any:
+        if tool_name != "get_window_calls":
+            raise ValueError(f"Unknown tool requested: {tool_name}")
+        feature_tag = args["feature_tag"]
+        calls = store.get_calls_for_feature(
+            feature_tag, anomaly.start_time, anomaly.end_time
+        )
+        # Cap at 15 most-recent entries to avoid an oversized tool result on
+        # a busy anomaly window — the model only needs a representative sample
+        # to confirm whether cost growth tracks a specific model.
+        recent_calls = calls[-15:]
+        return [
+            {
+                "call_id": c.call_id,
+                "model": c.model,
+                "cost_usd": c.cost_usd,
+                "timestamp": c.timestamp.isoformat().replace("+00:00", "Z"),
+            }
+            for c in reversed(recent_calls)  # most-recent first
+        ]
+
+    telemetry = build_model_routing_telemetry_v2(anomaly)
+    telemetry_json = json.dumps(telemetry, indent=2)
+    prompt = build_model_routing_prompt_v2(telemetry_json)
+
+    try:
+        evidence = call_agent_with_tools(
+            client=client,
+            model=model,
+            prompt=prompt,
+            tools=MODEL_ROUTING_TOOLS,
+            tool_executor=tool_executor,
+            schema=AgentEvidence,
+        )
+        if evidence.agent_name != "model_routing_agent":
+            raise ValueError(
+                f"Agent name mismatch: expected model_routing_agent, got {evidence.agent_name}"
+            )
+        return AgentRunResult(
+            evidence=evidence,
+            provider=provider,
+            model=model,
+            fallback_used=False,
+            fallback_reason=None,
+        )
+    except Exception as exc:
+        reason = f"Tool-use call failed: {type(exc).__name__}: {exc}"
+        print(f"Fallback used: model_routing_agent ({reason})")
+        return AgentRunResult(
+            evidence=fallback_model_routing(anomaly),
             provider="fallback",
             model=model,
             fallback_used=True,
@@ -806,20 +1186,39 @@ def run_agents_detailed(
 
     results = []
     for name in agent_names:
-        # Tool-using path for retry_loop_agent when conditions are met
+        # Tool-using path for all three diagnostic agents when conditions are met.
+        # Uses DECISION-injection gating: the prompt contains a pre-evaluated
+        # DECISION line so the model never has to evaluate the conditional itself.
         if (
-            name == "retry_loop_agent"
+            name in ("retry_loop_agent", "token_context_agent", "model_routing_agent")
             and resolved_provider != "fallback"
             and telemetry_store is not None
             and raw_sdk_client is not None
         ):
-            result = run_retry_loop_agent_with_tools(
-                anomaly=anomaly,
-                store=telemetry_store,
-                client=raw_sdk_client,
-                model=resolved_model,
-                provider=resolved_provider,
-            )
+            if name == "retry_loop_agent":
+                result = run_retry_loop_agent_with_tools(
+                    anomaly=anomaly,
+                    store=telemetry_store,
+                    client=raw_sdk_client,
+                    model=resolved_model,
+                    provider=resolved_provider,
+                )
+            elif name == "token_context_agent":
+                result = run_token_context_agent_with_tools(
+                    anomaly=anomaly,
+                    store=telemetry_store,
+                    client=raw_sdk_client,
+                    model=resolved_model,
+                    provider=resolved_provider,
+                )
+            else:  # model_routing_agent
+                result = run_model_routing_agent_with_tools(
+                    anomaly=anomaly,
+                    store=telemetry_store,
+                    client=raw_sdk_client,
+                    model=resolved_model,
+                    provider=resolved_provider,
+                )
             results.append(result)
             continue
 

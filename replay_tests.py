@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from llm_cost_investigator.detector import detect_anomalies, _z_score
 from llm_cost_investigator.router import route_agents
@@ -13,6 +14,8 @@ from llm_cost_investigator.agents import (
     run_agents,
     run_agents_detailed,
     RETRY_LOOP_TOOLS,
+    TOKEN_CONTEXT_TOOLS,
+    MODEL_ROUTING_TOOLS,
 )
 from llm_cost_investigator.aggregator import select_root_cause
 from llm_cost_investigator.llm_client import LLMClientConfig, resolve_llm_client
@@ -406,6 +409,255 @@ def _test_z_score_behavior() -> None:
     assert z > 5.0, f"Expected large z for extreme deviation, got {z}"
 
 
+# ---------------------------------------------------------------------------
+# Shared FakeClient infrastructure (reused across all tool-use tests)
+# ---------------------------------------------------------------------------
+
+class _FakeToolCallFunction:
+    def __init__(self, name: str, arguments: str) -> None:
+        self.name = name
+        self.arguments = arguments
+
+
+class _FakeToolCall:
+    def __init__(self, id_: str, function: _FakeToolCallFunction) -> None:
+        self.id = id_
+        self.function = function
+
+
+class _FakeMessage:
+    def __init__(self, tool_calls=None, content=None) -> None:
+        self.tool_calls = tool_calls
+        self.content = content
+
+    def model_dump(self, exclude_unset: bool = False) -> dict:
+        d: dict = {"role": "assistant", "content": self.content}
+        if self.tool_calls:
+            d["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    },
+                }
+                for tc in self.tool_calls
+            ]
+        return d
+
+
+class _FakeChoice:
+    def __init__(self, message: _FakeMessage) -> None:
+        self.message = message
+
+
+class _FakeResponse:
+    def __init__(self, message: _FakeMessage) -> None:
+        self.choices = [_FakeChoice(message)]
+
+
+# ---------------------------------------------------------------------------
+# token_context_agent tool-use tests
+# ---------------------------------------------------------------------------
+
+def _test_token_context_tool_use_calls_tool() -> None:
+    """Gate fires (input_z < 3.0 AND chain_depth >= 2):
+    agent calls get_call_chain before returning its answer."""
+    call_log: list[tuple[str, dict]] = []
+    calls = [0]
+
+    class FakeClient:
+        def __init__(self) -> None:
+            comp = type("Completions", (), {"create": self._create})()
+            self.chat = type("Chat", (), {"completions": comp})()
+
+        def _create(self, **kwargs: Any) -> _FakeResponse:
+            calls[0] += 1
+            if calls[0] == 1:
+                tc = _FakeToolCall(
+                    "tc_ctx1",
+                    _FakeToolCallFunction(
+                        "get_call_chain",
+                        json.dumps({"call_id": "ctx_c1"}),
+                    ),
+                )
+                return _FakeResponse(_FakeMessage(tool_calls=[tc]))
+            return _FakeResponse(
+                _FakeMessage(
+                    content=json.dumps({
+                        "agent_name": "token_context_agent",
+                        "hypothesis": "context_bloat_self_calling_agent",
+                        "confidence": 0.87,
+                        "supporting_metrics": {"chain_depth_seen": 3},
+                        "explanation": "Chain inspection confirmed recursive calls growing context.",
+                    })
+                )
+            )
+
+    def fake_tool_executor(name: str, args: dict) -> Any:
+        call_log.append((name, args))
+        # Simulate a 3-deep chain showing growing input_tokens
+        return [
+            {"call_id": "ctx_root", "parent_call_id": None, "input_tokens": 800, "output_tokens": 100, "cost_usd": 0.001},
+            {"call_id": "ctx_c1",   "parent_call_id": "ctx_root", "input_tokens": 1600, "output_tokens": 120, "cost_usd": 0.002},
+        ]
+
+    result = call_agent_with_tools(
+        client=FakeClient(),
+        model="test-model",
+        prompt="Test prompt",
+        tools=TOKEN_CONTEXT_TOOLS,
+        tool_executor=fake_tool_executor,
+        schema=AgentEvidence,
+    )
+    assert len(call_log) == 1, f"Expected exactly one tool call, got {len(call_log)}"
+    assert call_log[0] == ("get_call_chain", {"call_id": "ctx_c1"}), (
+        f"Unexpected tool call: {call_log[0]}"
+    )
+    assert result.hypothesis == "context_bloat_self_calling_agent"
+    assert result.confidence == 0.87
+
+
+def _test_token_context_tool_use_skips_tool() -> None:
+    """Gate does NOT fire (input_z >= 3.0 OR chain_depth < 2):
+    agent answers directly without calling any tool."""
+
+    class FakeClient:
+        def __init__(self) -> None:
+            comp = type("Completions", (), {"create": self._create})()
+            self.chat = type("Chat", (), {"completions": comp})()
+
+        def _create(self, **kwargs: Any) -> _FakeResponse:
+            return _FakeResponse(
+                _FakeMessage(
+                    content=json.dumps({
+                        "agent_name": "token_context_agent",
+                        "hypothesis": "context_bloat_self_calling_agent",
+                        "confidence": 0.93,
+                        "supporting_metrics": {"input_token_growth_pct": 420},
+                        "explanation": "Aggregate signals alone were conclusive.",
+                    })
+                )
+            )
+
+    def fake_tool_executor(name: str, args: dict) -> Any:
+        raise AssertionError("Tool should not have been called")
+
+    result = call_agent_with_tools(
+        client=FakeClient(),
+        model="test-model",
+        prompt="Test prompt",
+        tools=TOKEN_CONTEXT_TOOLS,
+        tool_executor=fake_tool_executor,
+        schema=AgentEvidence,
+    )
+    assert result.confidence == 0.93
+    assert result.hypothesis == "context_bloat_self_calling_agent"
+
+
+# ---------------------------------------------------------------------------
+# model_routing_agent tool-use tests
+# ---------------------------------------------------------------------------
+
+def _test_model_routing_tool_use_calls_tool() -> None:
+    """Gate fires (model_changed=True AND cost_z < 3.0):
+    agent calls get_window_calls with feature_tag before returning its answer."""
+    call_log: list[tuple[str, dict]] = []
+    calls = [0]
+
+    class FakeClient:
+        def __init__(self) -> None:
+            comp = type("Completions", (), {"create": self._create})()
+            self.chat = type("Chat", (), {"completions": comp})()
+
+        def _create(self, **kwargs: Any) -> _FakeResponse:
+            calls[0] += 1
+            if calls[0] == 1:
+                tc = _FakeToolCall(
+                    "tc_mr1",
+                    _FakeToolCallFunction(
+                        "get_window_calls",
+                        json.dumps({"feature_tag": "summarizer"}),
+                    ),
+                )
+                return _FakeResponse(_FakeMessage(tool_calls=[tc]))
+            return _FakeResponse(
+                _FakeMessage(
+                    content=json.dumps({
+                        "agent_name": "model_routing_agent",
+                        "hypothesis": "expensive_model_misroute",
+                        "confidence": 0.82,
+                        "supporting_metrics": {"model_switch_confirmed": True},
+                        "explanation": "Per-call data confirms shift to gpt-4.1 with higher cost.",
+                    })
+                )
+            )
+
+    def fake_tool_executor(name: str, args: dict) -> Any:
+        # model_routing_agent passes feature_tag, NOT call_id — assert that here.
+        assert name == "get_window_calls", f"Wrong tool name: {name}"
+        assert "feature_tag" in args, f"Expected feature_tag in args, got: {args}"
+        assert "call_id" not in args, f"Unexpected call_id in args: {args}"
+        call_log.append((name, args))
+        return [
+            {"call_id": "mr1", "model": "gpt-4.1", "cost_usd": 0.05, "timestamp": "2024-01-01T01:00:00Z"},
+            {"call_id": "mr2", "model": "gpt-4.1", "cost_usd": 0.06, "timestamp": "2024-01-01T00:55:00Z"},
+        ]
+
+    result = call_agent_with_tools(
+        client=FakeClient(),
+        model="test-model",
+        prompt="Test prompt",
+        tools=MODEL_ROUTING_TOOLS,
+        tool_executor=fake_tool_executor,
+        schema=AgentEvidence,
+    )
+    assert len(call_log) == 1, f"Expected exactly one tool call, got {len(call_log)}"
+    assert call_log[0] == ("get_window_calls", {"feature_tag": "summarizer"}), (
+        f"Unexpected tool call: {call_log[0]}"
+    )
+    assert result.hypothesis == "expensive_model_misroute"
+    assert result.confidence == 0.82
+
+
+def _test_model_routing_tool_use_skips_tool() -> None:
+    """Gate does NOT fire (model_changed=False OR cost_z >= 3.0):
+    agent answers directly without calling any tool."""
+
+    class FakeClient:
+        def __init__(self) -> None:
+            comp = type("Completions", (), {"create": self._create})()
+            self.chat = type("Chat", (), {"completions": comp})()
+
+        def _create(self, **kwargs: Any) -> _FakeResponse:
+            return _FakeResponse(
+                _FakeMessage(
+                    content=json.dumps({
+                        "agent_name": "model_routing_agent",
+                        "hypothesis": "expensive_model_misroute",
+                        "confidence": 0.95,
+                        "supporting_metrics": {"cost_growth_pct": 350},
+                        "explanation": "Aggregate signals (model change + cost spike) conclusive.",
+                    })
+                )
+            )
+
+    def fake_tool_executor(name: str, args: dict) -> Any:
+        raise AssertionError("Tool should not have been called")
+
+    result = call_agent_with_tools(
+        client=FakeClient(),
+        model="test-model",
+        prompt="Test prompt",
+        tools=MODEL_ROUTING_TOOLS,
+        tool_executor=fake_tool_executor,
+        schema=AgentEvidence,
+    )
+    assert result.confidence == 0.95
+    assert result.hypothesis == "expensive_model_misroute"
+
+
 def main() -> int:
     success = True
 
@@ -436,6 +688,10 @@ def main() -> int:
         ("retry_loop_tool_use_calls_tool", _test_retry_loop_tool_use_calls_tool),
         ("retry_loop_tool_use_skips_tool", _test_retry_loop_tool_use_skips_tool),
         ("z_score_behavior", _test_z_score_behavior),
+        ("token_context_tool_use_calls_tool", _test_token_context_tool_use_calls_tool),
+        ("token_context_tool_use_skips_tool", _test_token_context_tool_use_skips_tool),
+        ("model_routing_tool_use_calls_tool", _test_model_routing_tool_use_calls_tool),
+        ("model_routing_tool_use_skips_tool", _test_model_routing_tool_use_skips_tool),
     ]
     for name, test_fn in unit_tests:
         try:
