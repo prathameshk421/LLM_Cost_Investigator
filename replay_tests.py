@@ -8,9 +8,11 @@ from llm_cost_investigator.detector import detect_anomalies
 from llm_cost_investigator.router import route_agents
 from llm_cost_investigator.simulate_telemetry import generate_scenario_calls
 from llm_cost_investigator.agents import (
+    call_agent_with_tools,
     call_agent_with_validation,
     run_agents,
     run_agents_detailed,
+    RETRY_LOOP_TOOLS,
 )
 from llm_cost_investigator.aggregator import select_root_cause
 from llm_cost_investigator.llm_client import LLMClientConfig, resolve_llm_client
@@ -264,6 +266,118 @@ def _test_llm_provider_selection_and_live_client_path() -> None:
     assert runs[0].evidence.hypothesis == "expensive_model_misroute"
 
 
+def _test_retry_loop_tool_use_calls_tool() -> None:
+    """Agent decides to call get_call_chain before answering."""
+    call_log = []
+
+    class FakeToolCallFunction:
+        def __init__(self, name, arguments):
+            self.name = name
+            self.arguments = arguments
+
+    class FakeToolCall:
+        def __init__(self, id_, function):
+            self.id = id_
+            self.function = function
+
+    class FakeMessage:
+        def __init__(self, tool_calls=None, content=None):
+            self.tool_calls = tool_calls
+            self.content = content
+        def model_dump(self, exclude_unset=False):
+            d = {"role": "assistant", "content": self.content}
+            if self.tool_calls:
+                d["tool_calls"] = [
+                    {"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
+                    for tc in self.tool_calls
+                ]
+            return d
+
+    class FakeChoice:
+        def __init__(self, message):
+            self.message = message
+
+    class FakeResponse:
+        def __init__(self, message):
+            self.choices = [FakeChoice(message)]
+
+    calls = [0]
+
+    class FakeClient:
+        def __init__(self):
+            comp = type("Completions", (), {"create": self._create})()
+            self.chat = type("Chat", (), {"completions": comp})()
+
+        def _create(self, **kwargs):
+            calls[0] += 1
+            if calls[0] == 1:
+                tc = FakeToolCall("tc1", FakeToolCallFunction("get_call_chain", json.dumps({"call_id": "c1"})))
+                return FakeResponse(FakeMessage(tool_calls=[tc]))
+            return FakeResponse(FakeMessage(content=json.dumps({
+                "agent_name": "retry_loop_agent",
+                "hypothesis": "uncapped_retry_loop",
+                "confidence": 0.9,
+                "supporting_metrics": {},
+                "explanation": "Confirmed via call chain inspection.",
+            })))
+
+    def fake_tool_executor(name: str, args: dict) -> Any:
+        call_log.append((name, args))
+        return [{"call_id": "c1", "retry_count": 6}]
+
+    result = call_agent_with_tools(
+        client=FakeClient(), model="test-model", prompt="Test prompt",
+        tools=RETRY_LOOP_TOOLS, tool_executor=fake_tool_executor,
+        schema=AgentEvidence,
+    )
+    assert len(call_log) == 1, f"Expected exactly one tool call, got {len(call_log)}"
+    assert call_log[0] == ("get_call_chain", {"call_id": "c1"}), f"Unexpected tool call: {call_log[0]}"
+    assert result.hypothesis == "uncapped_retry_loop"
+    assert result.confidence == 0.9
+
+
+def _test_retry_loop_tool_use_skips_tool() -> None:
+    """Agent decides signals are clear enough and answers immediately, with
+    no tool call at all."""
+    class FakeMessage:
+        def __init__(self, content):
+            self.tool_calls = None
+            self.content = content
+        def model_dump(self, exclude_unset=False):
+            return {"role": "assistant", "content": self.content, "tool_calls": None}
+
+    class FakeChoice:
+        def __init__(self, message):
+            self.message = message
+
+    class FakeResponse:
+        def __init__(self, message):
+            self.choices = [FakeChoice(message)]
+
+    class FakeClient:
+        def __init__(self):
+            comp = type("Completions", (), {"create": self._create})()
+            self.chat = type("Chat", (), {"completions": comp})()
+        def _create(self, **kwargs):
+            return FakeResponse(FakeMessage(content=json.dumps({
+                "agent_name": "retry_loop_agent",
+                "hypothesis": "uncapped_retry_loop",
+                "confidence": 0.95,
+                "supporting_metrics": {},
+                "explanation": "Aggregate signals alone were conclusive.",
+            })))
+
+    def fake_tool_executor(name: str, args: dict) -> Any:
+        raise AssertionError("Tool should not have been called")
+
+    result = call_agent_with_tools(
+        client=FakeClient(), model="test-model", prompt="Test prompt",
+        tools=RETRY_LOOP_TOOLS, tool_executor=fake_tool_executor,
+        schema=AgentEvidence,
+    )
+    assert result.confidence == 0.95
+
+
 def main() -> int:
     success = True
 
@@ -291,6 +405,8 @@ def main() -> int:
     unit_tests = [
         ("validation_wrapper_and_repair", _test_validation_wrapper_and_repair),
         ("llm_provider_selection_and_live_client_path", _test_llm_provider_selection_and_live_client_path),
+        ("retry_loop_tool_use_calls_tool", _test_retry_loop_tool_use_calls_tool),
+        ("retry_loop_tool_use_skips_tool", _test_retry_loop_tool_use_skips_tool),
     ]
     for name, test_fn in unit_tests:
         try:

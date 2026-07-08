@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 
 from llm_cost_investigator.agents import default_mock_llm_client
 
@@ -66,6 +66,7 @@ class ResolvedLLMClient:
     provider: ProviderName
     model: str | None = None
     fallback_reason: str | None = None
+    raw_client: Any | None = None
 
     @property
     def fallback_used(self) -> bool:
@@ -103,12 +104,14 @@ def resolve_llm_client(config: LLMClientConfig | None = None) -> ResolvedLLMClie
         )
 
     model = _resolve_model(selected_provider, config.model)
+    client_callable, raw_client = _build_openai_compatible_client(
+        api_key=api_key,
+        base_url=PROVIDER_BASE_URLS[selected_provider],
+        model=model,
+    )
     return ResolvedLLMClient(
-        client=_build_openai_compatible_client(
-            api_key=api_key,
-            base_url=PROVIDER_BASE_URLS[selected_provider],
-            model=model,
-        ),
+        client=client_callable,
+        raw_client=raw_client,
         provider=selected_provider,
         model=model,
     )
@@ -158,7 +161,7 @@ def _build_openai_compatible_client(
     api_key: str,
     base_url: str,
     model: str,
-) -> Callable[[str], str]:
+) -> tuple[Callable[[str], str], Any]:
     try:
         from openai import OpenAI
     except Exception as exc:
@@ -178,4 +181,4 @@ def _build_openai_compatible_client(
         content = response.choices[0].message.content
         return content or ""
 
-    return call
+    return call, client

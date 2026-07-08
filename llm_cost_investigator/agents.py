@@ -228,6 +228,35 @@ Telemetry:
 
 
 # ---------------------------------------------------------------------------
+# Tool definitions for tool-using agent upgrades
+# ---------------------------------------------------------------------------
+
+RETRY_LOOP_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_call_chain",
+            "description": (
+                "Fetch the full parent-to-child call chain for a given call_id, "
+                "to inspect retry/loop structure in detail (root-first order)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "call_id": {
+                        "type": "string",
+                        "description": "A call_id from the available_call_ids list.",
+                    }
+                },
+                "required": ["call_id"],
+            },
+        },
+    }
+]
+
+MAX_RETRY_LOOP_TOOL_CALLS = 4
+
+# ---------------------------------------------------------------------------
 # Deterministic fallbacks
 # ---------------------------------------------------------------------------
 
@@ -356,6 +385,78 @@ def fallback_model_routing(anomaly: AnomalyWindow) -> AgentEvidence:
 
 
 # ---------------------------------------------------------------------------
+# V2 telemetry/prompt builders for tool-using retry_loop_agent
+# ---------------------------------------------------------------------------
+
+def build_retry_loop_telemetry_v2(anomaly: AnomalyWindow) -> dict[str, Any]:
+    """Signals + call_id list only. The agent must use get_call_chain to see
+    per-call details — this is what makes tool use meaningful rather than
+    decorative."""
+    signals = anomaly.signals
+    return {
+        "feature_tag": anomaly.feature_tag,
+        "start_time": anomaly.start_time.isoformat().replace("+00:00", "Z"),
+        "end_time": anomaly.end_time.isoformat().replace("+00:00", "Z"),
+        "signals": {
+            "retry_z_score": signals.retry_z_score,
+            "max_retry_count": signals.max_retry_count,
+            "avg_retry_count": signals.avg_retry_count,
+            "repeated_parent_call_count": signals.repeated_parent_call_count,
+            "latency_z_score": signals.latency_z_score,
+            "cost_z_score": signals.cost_z_score,
+            "cost_growth_pct": signals.cost_growth_pct,
+        },
+        "available_call_ids": [c.call_id for c in anomaly.sample_calls],
+    }
+
+
+def build_retry_loop_prompt_v2(telemetry_json: str) -> str:
+    """Same diagnostic instructions as build_retry_loop_prompt, plus tool-use
+    guidance. The agent decides whether to investigate further."""
+    return f"""You are the Retry Loop Diagnostic Agent.
+
+Your only job is to decide whether this anomaly was caused by an uncapped retry loop or repeated failed calls.
+
+Look for:
+- high retry_count
+- repeated child calls from the same parent_call_id
+- latency growth consistent with retries
+- cost growth caused by repeated attempts
+
+You have access to a tool: get_call_chain(call_id).
+Use it to inspect the actual call chain for one or more of the
+available_call_ids ONLY IF the aggregate signals below are ambiguous and
+seeing real call details would change your answer.
+Do not call the tool if the aggregate signals already clearly support a
+confident hypothesis — only investigate when it is actually useful.
+You may call this tool multiple times if needed, but each call should be
+justified by genuine uncertainty, not habit.
+
+Use only the telemetry and tool results provided.
+Do not invent missing metrics.
+Once you have enough evidence, return only valid JSON. No markdown, no prose.
+If the evidence is weak, return hypothesis "no_strong_signal".
+Confidence must be between 0 and 1.
+Confidence guide:
+- 0.90-1.00: retry z-score >= 5 and max retry count >= 5
+- 0.75-0.89: retry z-score >= 3 or repeated parent calls are obvious
+- 0.50-0.74: retry evidence exists but another cause may explain cost
+- below 0.50: return no_strong_signal
+
+Return only valid JSON matching this shape:
+{{
+  "agent_name": "retry_loop_agent",
+  "hypothesis": "uncapped_retry_loop" | "no_strong_signal",
+  "confidence": number,
+  "supporting_metrics": object,
+  "explanation": string
+}}
+
+Telemetry:
+{telemetry_json}"""
+
+
+# ---------------------------------------------------------------------------
 # Validation wrapper
 # ---------------------------------------------------------------------------
 
@@ -379,6 +480,131 @@ Invalid response:
             return schema.model_validate_json(repaired)
         except Exception as e2:
             raise ValueError(f"Failed to parse LLM output after repair: {e2}") from e2
+
+
+# ---------------------------------------------------------------------------
+# Multi-turn tool-calling loop for retry_loop_agent
+# ---------------------------------------------------------------------------
+
+def call_agent_with_tools(
+    client: Any,
+    model: str,
+    prompt: str,
+    tools: list[dict],
+    tool_executor: Callable[[str, dict], Any],
+    schema: type[AgentEvidence],
+    max_tool_calls: int = MAX_RETRY_LOOP_TOOL_CALLS,
+) -> AgentEvidence:
+    """Multi-turn tool-calling loop. tool_executor maps (tool_name, args) -> result.
+    Falls back to a single repair attempt if the final answer isn't valid JSON."""
+    messages: list[dict] = [{"role": "user", "content": prompt}]
+    tool_calls_made = 0
+
+    while True:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            temperature=0,
+        )
+        msg = response.choices[0].message
+
+        if msg.tool_calls and tool_calls_made < max_tool_calls:
+            messages.append(msg.model_dump(exclude_unset=True))
+            for tc in msg.tool_calls:
+                args = json.loads(tc.function.arguments)
+                result = tool_executor(tc.function.name, args)
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "content": json.dumps(result, default=str),
+                })
+            tool_calls_made += 1
+            continue
+
+        raw = msg.content or ""
+        try:
+            return schema.model_validate_json(raw)
+        except Exception as e:
+            repair_prompt = (
+                "Your previous response was not valid JSON for the required "
+                f"schema. Return only corrected JSON. No markdown. No prose.\n\n"
+                f"Invalid response:\n{raw}"
+            )
+            messages.append({"role": "user", "content": repair_prompt})
+            response2 = client.chat.completions.create(
+                model=model, messages=messages, temperature=0,
+            )
+            repaired = response2.choices[0].message.content or ""
+            try:
+                return schema.model_validate_json(repaired)
+            except Exception as e2:
+                raise ValueError(
+                    f"Failed to parse LLM output after repair: {e2}"
+                ) from e2
+
+
+def run_retry_loop_agent_with_tools(
+    anomaly: AnomalyWindow,
+    store: Any,
+    client: Any,
+    model: str,
+    provider: str,
+) -> AgentRunResult:
+    """Tool-using version of the retry_loop_agent. Falls back to the
+    deterministic fallback_retry_loop on ANY failure."""
+
+    def tool_executor(tool_name: str, args: dict) -> Any:
+        if tool_name != "get_call_chain":
+            raise ValueError(f"Unknown tool requested: {tool_name}")
+        call_id = args["call_id"]
+        chain = store.get_call_chain(call_id)
+        return [
+            {
+                "call_id": c.call_id,
+                "parent_call_id": c.parent_call_id,
+                "timestamp": c.timestamp.isoformat().replace("+00:00", "Z"),
+                "retry_count": c.retry_count,
+                "cost_usd": c.cost_usd,
+                "latency_ms": c.latency_ms,
+            }
+            for c in chain
+        ]
+
+    telemetry = build_retry_loop_telemetry_v2(anomaly)
+    telemetry_json = json.dumps(telemetry, indent=2)
+    prompt = build_retry_loop_prompt_v2(telemetry_json)
+
+    try:
+        evidence = call_agent_with_tools(
+            client=client,
+            model=model,
+            prompt=prompt,
+            tools=RETRY_LOOP_TOOLS,
+            tool_executor=tool_executor,
+            schema=AgentEvidence,
+        )
+        if evidence.agent_name != "retry_loop_agent":
+            raise ValueError(
+                f"Agent name mismatch: expected retry_loop_agent, got {evidence.agent_name}"
+            )
+        return AgentRunResult(
+            evidence=evidence,
+            provider=provider,
+            model=model,
+            fallback_used=False,
+            fallback_reason=None,
+        )
+    except Exception as exc:
+        reason = f"Tool-use call failed: {type(exc).__name__}: {exc}"
+        print(f"Fallback used: retry_loop_agent ({reason})")
+        return AgentRunResult(
+            evidence=fallback_retry_loop(anomaly),
+            provider="fallback",
+            model=model,
+            fallback_used=True,
+            fallback_reason=reason,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -519,14 +745,21 @@ def run_agents_detailed(
     llm_client: Callable[[str], str] | None = None,
     provider: str | None = None,
     model: str | None = None,
+    telemetry_store: Any | None = None,
+    raw_sdk_client: Any | None = None,
 ) -> list[AgentRunResult]:
-    """Run diagnostic agents and include provider/fallback provenance."""
+    """Run diagnostic agents and include provider/fallback provenance.
+    
+    When telemetry_store and raw_sdk_client are both provided and the provider
+    is not fallback, the retry_loop_agent uses the tool-using path instead of
+    the single-shot prompt."""
     if llm_client is None:
         from llm_cost_investigator.llm_client import LLMClientConfig, resolve_llm_client
 
         try:
             resolved = resolve_llm_client(LLMClientConfig(provider=provider, model=model))
             llm_client = resolved.client
+            raw_sdk_client = raw_sdk_client or resolved.raw_client
             resolved_provider = resolved.provider
             resolved_model = resolved.model
             selection_fallback_reason = resolved.fallback_reason
@@ -545,6 +778,24 @@ def run_agents_detailed(
 
     results = []
     for name in agent_names:
+        # Tool-using path for retry_loop_agent when conditions are met
+        if (
+            name == "retry_loop_agent"
+            and resolved_provider != "fallback"
+            and telemetry_store is not None
+            and raw_sdk_client is not None
+        ):
+            result = run_retry_loop_agent_with_tools(
+                anomaly=anomaly,
+                store=telemetry_store,
+                client=raw_sdk_client,
+                model=resolved_model,
+                provider=resolved_provider,
+            )
+            results.append(result)
+            continue
+
+        # Single-shot path for all other cases
         if name == "retry_loop_agent":
             telemetry = build_retry_loop_telemetry(anomaly)
             telemetry_json = json.dumps(telemetry, indent=2)

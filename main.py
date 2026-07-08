@@ -205,6 +205,7 @@ def process_scenario(
         top,
         provider=provider,
         model=model,
+        telemetry_store=store,
     )
     evidence = [run.evidence for run in agent_runs]
 
