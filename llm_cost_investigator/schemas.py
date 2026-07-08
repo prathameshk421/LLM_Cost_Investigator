@@ -81,10 +81,10 @@ class AnomalySignals(BaseModel):
     latency_z_score: float = 0.0
 
     # Growth percentages vs baseline mean
-    input_token_growth_pct: float = 0.0
-    output_token_growth_pct: float = 0.0
-    cost_growth_pct: float = 0.0
-    token_growth_pct: float = 0.0
+    input_token_growth_pct: float | None = 0.0
+    output_token_growth_pct: float | None = 0.0
+    cost_growth_pct: float | None = 0.0
+    token_growth_pct: float | None = 0.0
 
     # Absolute maximums within the anomaly window
     max_retry_count: int = 0

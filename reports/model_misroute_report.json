@@ -1,0 +1,143 @@
+{
+  "scenario": "model_misroute",
+  "root_cause": {
+    "hypothesis": "expensive_model_misroute",
+    "confidence": 0.95,
+    "winning_agent": "model_routing_agent",
+    "evidence": [
+      {
+        "agent_name": "model_routing_agent",
+        "hypothesis": "expensive_model_misroute",
+        "confidence": 0.95,
+        "supporting_metrics": {
+          "model_changed": true,
+          "cost_growth_pct": 609.35960591133,
+          "token_growth_pct": 24.559471365638768,
+          "cost_z_score": 1882.0355656496642
+        },
+        "explanation": "Detected expensive model misroute with model change and stable tokens."
+      }
+    ]
+  },
+  "anomaly_window": {
+    "feature_tag": "summarizer",
+    "start_time": "2026-07-08T09:30:00Z",
+    "end_time": "2026-07-08T09:35:00Z",
+    "signals": {
+      "cost_z_score": 1882.0355656496642,
+      "input_tokens_z_score": 155.8259871820166,
+      "output_tokens_z_score": 83.07125455495019,
+      "retry_z_score": 0.0,
+      "calls_z_score": 10.0,
+      "latency_z_score": 82.97369550852524,
+      "input_token_growth_pct": 24.559471365638768,
+      "output_token_growth_pct": 24.93150684931507,
+      "cost_growth_pct": 609.35960591133,
+      "token_growth_pct": 24.559471365638768,
+      "max_retry_count": 0,
+      "avg_retry_count": 0.0,
+      "max_call_chain_depth": 0,
+      "repeated_parent_call_count": 0,
+      "model_changed": true,
+      "models_seen": [
+        "gpt-4.1"
+      ],
+      "model_before": "gpt-4o-mini",
+      "model_during": "gpt-4.1"
+    },
+    "sample_call_ids": [
+      "model_misroute_summarizer_misroute_00",
+      "model_misroute_summarizer_misroute_01",
+      "model_misroute_summarizer_misroute_02",
+      "model_misroute_summarizer_misroute_03",
+      "model_misroute_summarizer_misroute_04",
+      "model_misroute_summarizer_misroute_05"
+    ],
+    "sample_calls": [
+      {
+        "timestamp": "2026-07-08T09:30:00Z",
+        "call_id": "model_misroute_summarizer_misroute_00",
+        "parent_call_id": null,
+        "feature_tag": "summarizer",
+        "model": "gpt-4.1",
+        "input_tokens": 930,
+        "output_tokens": 185,
+        "cost_usd": 0.012,
+        "latency_ms": 950,
+        "retry_count": 0,
+        "scenario_label": "model_misroute"
+      },
+      {
+        "timestamp": "2026-07-08T09:30:30Z",
+        "call_id": "model_misroute_summarizer_misroute_01",
+        "parent_call_id": null,
+        "feature_tag": "summarizer",
+        "model": "gpt-4.1",
+        "input_tokens": 935,
+        "output_tokens": 187,
+        "cost_usd": 0.012,
+        "latency_ms": 975,
+        "retry_count": 0,
+        "scenario_label": "model_misroute"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:00Z",
+        "call_id": "model_misroute_summarizer_misroute_02",
+        "parent_call_id": null,
+        "feature_tag": "summarizer",
+        "model": "gpt-4.1",
+        "input_tokens": 940,
+        "output_tokens": 189,
+        "cost_usd": 0.012,
+        "latency_ms": 1000,
+        "retry_count": 0,
+        "scenario_label": "model_misroute"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:30Z",
+        "call_id": "model_misroute_summarizer_misroute_03",
+        "parent_call_id": null,
+        "feature_tag": "summarizer",
+        "model": "gpt-4.1",
+        "input_tokens": 945,
+        "output_tokens": 191,
+        "cost_usd": 0.012,
+        "latency_ms": 1025,
+        "retry_count": 0,
+        "scenario_label": "model_misroute"
+      },
+      {
+        "timestamp": "2026-07-08T09:32:00Z",
+        "call_id": "model_misroute_summarizer_misroute_04",
+        "parent_call_id": null,
+        "feature_tag": "summarizer",
+        "model": "gpt-4.1",
+        "input_tokens": 950,
+        "output_tokens": 193,
+        "cost_usd": 0.012,
+        "latency_ms": 1050,
+        "retry_count": 0,
+        "scenario_label": "model_misroute"
+      },
+      {
+        "timestamp": "2026-07-08T09:32:30Z",
+        "call_id": "model_misroute_summarizer_misroute_05",
+        "parent_call_id": null,
+        "feature_tag": "summarizer",
+        "model": "gpt-4.1",
+        "input_tokens": 955,
+        "output_tokens": 195,
+        "cost_usd": 0.012,
+        "latency_ms": 1075,
+        "retry_count": 0,
+        "scenario_label": "model_misroute"
+      }
+    ]
+  },
+  "recommendations": [
+    "Revert default model routing configurations to more cost-effective models.",
+    "Add CI/CD checks to prevent unintentional model upgrades.",
+    "Implement rate limiting or budget alerts for premium model endpoints."
+  ],
+  "generated_at": "2026-07-08T15:21:22.616459Z"
+}

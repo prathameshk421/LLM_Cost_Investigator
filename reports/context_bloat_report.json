@@ -1,0 +1,142 @@
+{
+  "scenario": "context_bloat",
+  "root_cause": {
+    "hypothesis": "context_bloat_self_calling_agent",
+    "confidence": 0.84,
+    "winning_agent": "token_context_agent",
+    "evidence": [
+      {
+        "agent_name": "token_context_agent",
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.84,
+        "supporting_metrics": {
+          "input_token_growth_pct": 294.0677966101695,
+          "max_call_chain_depth": 5,
+          "input_tokens_z_score": 1454.8417278608008
+        },
+        "explanation": "Detected significant input token growth and call chain depth."
+      }
+    ]
+  },
+  "anomaly_window": {
+    "feature_tag": "agent_reflection",
+    "start_time": "2026-07-08T09:30:00Z",
+    "end_time": "2026-07-08T09:35:00Z",
+    "signals": {
+      "cost_z_score": 969.1646364744149,
+      "input_tokens_z_score": 1454.8417278608008,
+      "output_tokens_z_score": 125.06331729701293,
+      "retry_z_score": 0.0,
+      "calls_z_score": 10.0,
+      "latency_z_score": 172.07774996355664,
+      "input_token_growth_pct": 294.0677966101695,
+      "output_token_growth_pct": 42.15384615384615,
+      "cost_growth_pct": 313.79310344827593,
+      "token_growth_pct": 294.0677966101695,
+      "max_retry_count": 0,
+      "avg_retry_count": 0.0,
+      "max_call_chain_depth": 5,
+      "repeated_parent_call_count": 0,
+      "model_changed": false,
+      "models_seen": [
+        "gpt-4o-mini"
+      ],
+      "model_before": "gpt-4o-mini",
+      "model_during": "gpt-4o-mini"
+    },
+    "sample_call_ids": [
+      "context_bloat_agent_reflection_chain_00",
+      "context_bloat_agent_reflection_chain_01",
+      "context_bloat_agent_reflection_chain_02",
+      "context_bloat_agent_reflection_chain_03",
+      "context_bloat_agent_reflection_chain_04",
+      "context_bloat_agent_reflection_chain_05"
+    ],
+    "sample_calls": [
+      {
+        "timestamp": "2026-07-08T09:30:00Z",
+        "call_id": "context_bloat_agent_reflection_chain_00",
+        "parent_call_id": null,
+        "feature_tag": "agent_reflection",
+        "model": "gpt-4o-mini",
+        "input_tokens": 700,
+        "output_tokens": 180,
+        "cost_usd": 0.0018,
+        "latency_ms": 650,
+        "retry_count": 0,
+        "scenario_label": "context_bloat"
+      },
+      {
+        "timestamp": "2026-07-08T09:30:20Z",
+        "call_id": "context_bloat_agent_reflection_chain_01",
+        "parent_call_id": "context_bloat_agent_reflection_chain_00",
+        "feature_tag": "agent_reflection",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1350,
+        "output_tokens": 185,
+        "cost_usd": 0.0036,
+        "latency_ms": 900,
+        "retry_count": 0,
+        "scenario_label": "context_bloat"
+      },
+      {
+        "timestamp": "2026-07-08T09:30:40Z",
+        "call_id": "context_bloat_agent_reflection_chain_02",
+        "parent_call_id": "context_bloat_agent_reflection_chain_01",
+        "feature_tag": "agent_reflection",
+        "model": "gpt-4o-mini",
+        "input_tokens": 2000,
+        "output_tokens": 190,
+        "cost_usd": 0.0054,
+        "latency_ms": 1150,
+        "retry_count": 0,
+        "scenario_label": "context_bloat"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:00Z",
+        "call_id": "context_bloat_agent_reflection_chain_03",
+        "parent_call_id": "context_bloat_agent_reflection_chain_02",
+        "feature_tag": "agent_reflection",
+        "model": "gpt-4o-mini",
+        "input_tokens": 2650,
+        "output_tokens": 195,
+        "cost_usd": 0.0072,
+        "latency_ms": 1400,
+        "retry_count": 0,
+        "scenario_label": "context_bloat"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:20Z",
+        "call_id": "context_bloat_agent_reflection_chain_04",
+        "parent_call_id": "context_bloat_agent_reflection_chain_03",
+        "feature_tag": "agent_reflection",
+        "model": "gpt-4o-mini",
+        "input_tokens": 3300,
+        "output_tokens": 200,
+        "cost_usd": 0.009,
+        "latency_ms": 1650,
+        "retry_count": 0,
+        "scenario_label": "context_bloat"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:40Z",
+        "call_id": "context_bloat_agent_reflection_chain_05",
+        "parent_call_id": "context_bloat_agent_reflection_chain_04",
+        "feature_tag": "agent_reflection",
+        "model": "gpt-4o-mini",
+        "input_tokens": 3950,
+        "output_tokens": 205,
+        "cost_usd": 0.0108,
+        "latency_ms": 1900,
+        "retry_count": 0,
+        "scenario_label": "context_bloat"
+      }
+    ]
+  },
+  "recommendations": [
+    "Limit maximum reflection / chain depth to a safe threshold (e.g., 3).",
+    "Implement prompt summarization or token truncation for history.",
+    "Add a fail-safe budget check on the chain to terminate expanding contexts."
+  ],
+  "generated_at": "2026-07-08T15:21:22.615493Z"
+}

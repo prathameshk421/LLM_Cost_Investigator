@@ -1,0 +1,171 @@
+{
+  "scenario": "retry_loop",
+  "root_cause": {
+    "hypothesis": "uncapped_retry_loop",
+    "confidence": 0.94,
+    "winning_agent": "retry_loop_agent",
+    "evidence": [
+      {
+        "agent_name": "retry_loop_agent",
+        "hypothesis": "uncapped_retry_loop",
+        "confidence": 0.94,
+        "supporting_metrics": {
+          "retry_z_score": 10.0,
+          "max_retry_count": 7,
+          "avg_retry_count": 3.5,
+          "repeated_parent_call_count": 1
+        },
+        "explanation": "Detected uncapped retry loop with high retry count and z-score."
+      }
+    ]
+  },
+  "anomaly_window": {
+    "feature_tag": "support_reply",
+    "start_time": "2026-07-08T09:30:00Z",
+    "end_time": "2026-07-08T09:35:00Z",
+    "signals": {
+      "cost_z_score": 1882.0355656496997,
+      "input_tokens_z_score": 481.3136321568297,
+      "output_tokens_z_score": 251.03950552320114,
+      "retry_z_score": 10.0,
+      "calls_z_score": 10.0,
+      "latency_z_score": 457.21072421965715,
+      "input_token_growth_pct": 62.166064981949454,
+      "output_token_growth_pct": 52.38095238095239,
+      "cost_growth_pct": 609.3596059113302,
+      "token_growth_pct": 62.166064981949454,
+      "max_retry_count": 7,
+      "avg_retry_count": 3.5,
+      "max_call_chain_depth": 1,
+      "repeated_parent_call_count": 1,
+      "model_changed": false,
+      "models_seen": [
+        "gpt-4o-mini"
+      ],
+      "model_before": "gpt-4o-mini",
+      "model_during": "gpt-4o-mini"
+    },
+    "sample_call_ids": [
+      "retry_loop_support_reply_retry_00",
+      "retry_loop_support_reply_retry_01",
+      "retry_loop_support_reply_retry_02",
+      "retry_loop_support_reply_retry_03",
+      "retry_loop_support_reply_retry_04",
+      "retry_loop_support_reply_retry_05",
+      "retry_loop_support_reply_retry_06",
+      "retry_loop_support_reply_retry_07"
+    ],
+    "sample_calls": [
+      {
+        "timestamp": "2026-07-08T09:30:00Z",
+        "call_id": "retry_loop_support_reply_retry_00",
+        "parent_call_id": "retry_loop_support_reply_parent_retry",
+        "feature_tag": "support_reply",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1120,
+        "output_tokens": 250,
+        "cost_usd": 0.003,
+        "latency_ms": 900,
+        "retry_count": 0,
+        "scenario_label": "retry_loop"
+      },
+      {
+        "timestamp": "2026-07-08T09:30:15Z",
+        "call_id": "retry_loop_support_reply_retry_01",
+        "parent_call_id": "retry_loop_support_reply_parent_retry",
+        "feature_tag": "support_reply",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1126,
+        "output_tokens": 250,
+        "cost_usd": 0.006,
+        "latency_ms": 1350,
+        "retry_count": 1,
+        "scenario_label": "retry_loop"
+      },
+      {
+        "timestamp": "2026-07-08T09:30:30Z",
+        "call_id": "retry_loop_support_reply_retry_02",
+        "parent_call_id": "retry_loop_support_reply_parent_retry",
+        "feature_tag": "support_reply",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1120,
+        "output_tokens": 250,
+        "cost_usd": 0.009,
+        "latency_ms": 1800,
+        "retry_count": 2,
+        "scenario_label": "retry_loop"
+      },
+      {
+        "timestamp": "2026-07-08T09:30:45Z",
+        "call_id": "retry_loop_support_reply_retry_03",
+        "parent_call_id": "retry_loop_support_reply_parent_retry",
+        "feature_tag": "support_reply",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1126,
+        "output_tokens": 250,
+        "cost_usd": 0.012,
+        "latency_ms": 2250,
+        "retry_count": 3,
+        "scenario_label": "retry_loop"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:00Z",
+        "call_id": "retry_loop_support_reply_retry_04",
+        "parent_call_id": "retry_loop_support_reply_parent_retry",
+        "feature_tag": "support_reply",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1120,
+        "output_tokens": 250,
+        "cost_usd": 0.015,
+        "latency_ms": 2700,
+        "retry_count": 4,
+        "scenario_label": "retry_loop"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:15Z",
+        "call_id": "retry_loop_support_reply_retry_05",
+        "parent_call_id": "retry_loop_support_reply_parent_retry",
+        "feature_tag": "support_reply",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1126,
+        "output_tokens": 250,
+        "cost_usd": 0.018,
+        "latency_ms": 3150,
+        "retry_count": 5,
+        "scenario_label": "retry_loop"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:30Z",
+        "call_id": "retry_loop_support_reply_retry_06",
+        "parent_call_id": "retry_loop_support_reply_parent_retry",
+        "feature_tag": "support_reply",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1120,
+        "output_tokens": 250,
+        "cost_usd": 0.021,
+        "latency_ms": 3600,
+        "retry_count": 6,
+        "scenario_label": "retry_loop"
+      },
+      {
+        "timestamp": "2026-07-08T09:31:45Z",
+        "call_id": "retry_loop_support_reply_retry_07",
+        "parent_call_id": "retry_loop_support_reply_parent_retry",
+        "feature_tag": "support_reply",
+        "model": "gpt-4o-mini",
+        "input_tokens": 1126,
+        "output_tokens": 250,
+        "cost_usd": 0.024,
+        "latency_ms": 4050,
+        "retry_count": 7,
+        "scenario_label": "retry_loop"
+      }
+    ]
+  },
+  "recommendations": [
+    "Implement exponential backoff with jitter.",
+    "Cap the maximum retry count in the client configuration.",
+    "Add a circuit breaker pattern to prevent continuous retries during outages."
+  ],
+  "generated_at": "2026-07-08T15:21:22.613498Z"
+}
