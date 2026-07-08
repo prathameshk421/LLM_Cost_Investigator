@@ -412,7 +412,34 @@ def build_retry_loop_telemetry_v2(anomaly: AnomalyWindow) -> dict[str, Any]:
 
 def build_retry_loop_prompt_v2(telemetry_json: str) -> str:
     """Same diagnostic instructions as build_retry_loop_prompt, plus tool-use
-    guidance. The agent decides whether to investigate further."""
+    guidance with a pre-evaluated DECISION directive computed from the actual
+    telemetry values so the model never has to evaluate the conditional itself."""
+    # Pre-evaluate the tool-call condition from the actual telemetry values.
+    # This makes the directive unambiguous regardless of model instruction-following.
+    try:
+        _telem = json.loads(telemetry_json)
+        _signals = _telem.get("signals", {})
+        _retry_z = float(_signals.get("retry_z_score", 0.0))
+        _rpc = int(_signals.get("repeated_parent_call_count", 0))
+        _tool_required = _retry_z < 2.5 and _rpc >= 1
+    except Exception:
+        _tool_required = False  # safe default: allow direct answer if parsing fails
+
+    if _tool_required:
+        tool_directive = (
+            f"DECISION: MUST CALL get_call_chain — "
+            f"retry_z_score={_retry_z} (below 2.5) AND "
+            f"repeated_parent_call_count={_rpc} (>= 1). "
+            f"Call get_call_chain on at least one available_call_id before answering."
+        )
+    else:
+        tool_directive = (
+            f"DECISION: DO NOT call get_call_chain — "
+            f"retry_z_score={_retry_z} (>= 2.5) OR "
+            f"repeated_parent_call_count={_rpc} (= 0). "
+            f"Answer directly from the aggregate signals. Skip the tool entirely."
+        )
+
     return f"""You are the Retry Loop Diagnostic Agent.
 
 Your only job is to decide whether this anomaly was caused by an uncapped retry loop or repeated failed calls.
@@ -424,13 +451,14 @@ Look for:
 - cost growth caused by repeated attempts
 
 You have access to a tool: get_call_chain(call_id).
-Use it to inspect the actual call chain for one or more of the
-available_call_ids ONLY IF the aggregate signals below are ambiguous and
-seeing real call details would change your answer.
-Do not call the tool if the aggregate signals already clearly support a
-confident hypothesis — only investigate when it is actually useful.
-You may call this tool multiple times if needed, but each call should be
-justified by genuine uncertainty, not habit.
+
+Tool-use rule:
+- You MUST call get_call_chain before answering if BOTH are true:
+    retry_z_score < 2.5  AND  repeated_parent_call_count >= 1
+- If retry_z_score >= 2.5  OR  repeated_parent_call_count == 0:
+    do NOT call the tool; answer directly from the aggregate signals.
+
+{tool_directive}
 
 Use only the telemetry and tool results provided.
 Do not invent missing metrics.
