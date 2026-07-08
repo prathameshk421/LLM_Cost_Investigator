@@ -1,72 +1,77 @@
 # LLM Cost Investigator
 
-Agentic LLM cost anomaly investigator for diagnosing sudden spend spikes in
-LLM-backed features.
+Agentic LLM cost anomaly investigator for diagnosing sudden spend spikes in LLM-backed features.
 
-The control plane is deterministic:
+## Why LLM Cost Anomalies Matter
 
-```text
-simulated telemetry -> z-score detector -> rule router -> diagnostic LLM agents
--> deterministic aggregator -> incident reports
+Uncontrolled cost growth in LLM applications can occur rapidly due to software defects, recursive loops, or misconfigurations. Detecting cost spikes deterministically is easy, but identifying *why* they happened requires deep semantic analysis of the underlying API telemetry (e.g., distinguishing between a model upgrade, an infinite retry storm, or expanding prompts). This investigator automates diagnostics using specialized agent roles.
+
+## Architecture
+
+The control plane uses a deterministic detection and routing pipeline to coordinate diagnostic LLM agents:
+
+```mermaid
+flowchart LR
+  A[Simulated telemetry] --> H[SQLite telemetry store]
+  H --> B[Deterministic z-score detector]
+  B --> C[Deterministic rule router]
+  C --> D[Diagnostic LLM agents]
+  D --> E[Pydantic validation + repair retry]
+  E --> F[Deterministic aggregator]
+  F --> G[Incident reports]
+  G --> I[Replay tests]
 ```
 
-Only the diagnostic layer is agentic. The detector decides that a feature is
-anomalous, the router picks which narrow agent should investigate, and the
-aggregator locks the final root cause from validated JSON evidence.
+## Deterministic Detector/Router
 
-## Diagnostic Agents
+- **Detector**: Computes z-scores on telemetry (cost, tokens, retries, latency) relative to baseline metrics.
+- **Router**: Uses deterministic routing rules based on z-score signals to route the anomaly to the correct diagnostic agent (e.g. routing to the model routing agent when a model change is detected).
 
-The project has three diagnostic agents:
+## Diagnostic Agents and Fallback Mode
 
-- `retry_loop_agent` diagnoses uncapped retries or repeated failed calls.
-- `token_context_agent` diagnoses context bloat and recursive call chains.
-- `model_routing_agent` diagnoses accidental routing to a pricier model.
+Diagnostic agents (`retry_loop_agent`, `token_context_agent`, `model_routing_agent`) are restricted to narrow telemetry slices, keeping prompt tokens small and highly focused. Responses are validated using Pydantic schemas. 
 
-Each agent receives only its own telemetry slice, calls a real LLM when Groq or
-Cerebras is configured, returns JSON, and is validated with Pydantic. Malformed
-JSON gets one repair retry. Deterministic fallback evidence is used only when no
-API key exists, the live call fails, or validation fails twice.
+If validation fails, a repair retry is executed. When API keys are absent, or live calls fail twice, the system falls back to a deterministic fallback module to safely complete execution.
 
-## Provider Setup
+## Setup
 
-Groq and Cerebras are called through their OpenAI-compatible APIs.
+Install dependencies:
 
 ```bash
-export GROQ_API_KEY="..."
-export LLM_PROVIDER="groq"
-export LLM_MODEL="llama-3.3-70b-versatile"
+pip install -e .
 ```
+
+Optional API keys for live LLM diagnostic agents:
 
 ```bash
-export CEREBRAS_API_KEY="..."
-export LLM_PROVIDER="cerebras"
-export LLM_MODEL="llama3.1-8b"
+export GROQ_API_KEY=your_key_here    # Groq provider
+export CEREBRAS_API_KEY=your_key     # Cerebras provider
+export LLM_MODEL=llama-3.3-70b-versatile  # optional model override
 ```
 
-Provider-specific model variables also work:
+Without API keys the system automatically uses deterministic fallback mode.
 
-```bash
-export GROQ_MODEL="llama-3.3-70b-versatile"
-export CEREBRAS_MODEL="llama3.1-8b"
-```
+## Run Commands
 
-If `LLM_PROVIDER` is not set, the CLI auto-selects Groq when `GROQ_API_KEY` is
-present, then Cerebras when `CEREBRAS_API_KEY` is present. Use
-`--force-fallback` for a fully deterministic run with no live API calls.
-
-## Run
+Single scenario (deterministic fallback):
 
 ```bash
 python3 main.py --scenario retry_loop
 python3 main.py --scenario context_bloat
 python3 main.py --scenario model_misroute
-python3 main.py --scenario all
 ```
 
-Force deterministic fallback:
+Run all three scenarios:
 
 ```bash
+python3 main.py --scenario all
 python3 main.py --scenario all --force-fallback
+```
+
+Live LLM diagnosis (when an API key is configured):
+
+```bash
+python3 main.py --scenario model_misroute --provider groq
 ```
 
 Run replay tests:
@@ -75,23 +80,50 @@ Run replay tests:
 python3 replay_tests.py
 ```
 
-Replay tests explicitly use fallback mode so they remain stable and do not spend
-API credits.
+## Sample `--force-fallback` Output
+
+Output from running a model misroute scenario using deterministic fallback:
+
+```text
+Fallback used: model_routing_agent (fallback provider explicitly selected)
+
+Scenario:         model_misroute
+Detected anomaly: summarizer cost spike
+Routed agents:    model_routing_agent
+Root cause:       expensive_model_misroute
+Confidence:       0.95
+Report:           reports/model_misroute_incident.md
+Result:           PASS
+```
+
+## Scenario Matrix
+
+| Scenario | Root Cause | Routed Agent | Signal Pattern |
+|---|---|---|---|
+| `retry_loop` | `uncapped_retry_loop` | `retry_loop_agent` | High retry count, repeated parent calls, latency growth |
+| `context_bloat` | `context_bloat_self_calling_agent` | `token_context_agent` | Expanding input tokens, deep call chain |
+| `model_misroute` | `expensive_model_misroute` | `model_routing_agent` | Model switched to pricier model, stable token count |
 
 ## Reports
 
-Each scenario writes:
+Each run writes structured incidents to the `reports/` folder:
 
-- `reports/<scenario>_report.json`
+- `reports/<scenario>_incident.json`
 - `reports/<scenario>_incident.md`
 
-Reports include the winning root cause, supporting agent evidence,
-recommendations, and execution metadata showing provider/model or fallback
-reason.
+Markdown reports contain flat, human-readable sections summarizing findings, evidence provenance, and recommendations.
+
+## Replay Tests
+
+Replay tests validate detector, router, agent routing, aggregator, and markdown/JSON report generations against mock telemetry recordings. Run using:
+
+```bash
+python3 replay_tests.py
+```
 
 ## Resume Bullet
 
 Built an agentic LLM cost anomaly investigator using deterministic z-score
 detection, cost-aware agent routing, Pydantic-validated diagnostic LLM agents,
-and replay tests against labeled retry-loop, context-bloat, and model-misrouting
-incidents.
+and replay tests against labeled retry-loop, context-bloat, and
+model-misrouting incidents.

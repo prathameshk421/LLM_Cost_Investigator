@@ -130,7 +130,7 @@ def _retry_loop_anomaly(scenario: str) -> list[LLMCall]:
                 cost_usd=0.003 * (attempt + 1),
                 latency_ms=900 + attempt * 450,
                 retry_count=attempt,
-                scenario_label="retry_loop",
+                scenario_label=scenario,
             )
         )
 
@@ -161,7 +161,7 @@ def _context_bloat_anomaly(scenario: str) -> list[LLMCall]:
                 cost_usd=0.0018 * (1 + depth),
                 latency_ms=650 + depth * 250,
                 retry_count=0,
-                scenario_label="context_bloat",
+                scenario_label=scenario,
             )
         )
         previous_call_id = call_id
@@ -188,7 +188,7 @@ def _model_misroute_anomaly(scenario: str) -> list[LLMCall]:
                 cost_usd=0.012,
                 latency_ms=950 + seq * 25,
                 retry_count=0,
-                scenario_label="model_misroute",
+                scenario_label=scenario,
             )
         )
 

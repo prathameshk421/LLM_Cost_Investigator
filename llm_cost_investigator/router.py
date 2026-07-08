@@ -20,79 +20,70 @@ def route_agents(anomaly: AnomalyWindow) -> list[str]:
     agents are worth paying for; it does not decide final root cause.
     """
     signals = anomaly.signals
-    candidates: list[tuple[str, int]] = []
+    candidates: list[str] = []
 
-    model_score = _model_routing_score(anomaly)
-    if model_score >= 5:
-        candidates.append(("model_routing_agent", model_score))
+    if _route_model_routing(signals):
+        candidates.append("model_routing_agent")
 
-    retry_score = _retry_loop_score(anomaly)
-    if retry_score >= 3:
-        candidates.append(("retry_loop_agent", retry_score))
+    if _route_retry_loop(signals):
+        candidates.append("retry_loop_agent")
 
-    context_score = _token_context_score(anomaly)
-    if context_score >= 3:
-        candidates.append(("token_context_agent", context_score))
+    if _route_token_context(signals):
+        candidates.append("token_context_agent")
 
-    if not candidates and signals.cost_z_score >= 3:
+    if not candidates:
+        return _fallback_route(signals)
+
+    candidates.sort(key=lambda name: AGENT_PRIORITY.get(name, 99))
+    return candidates[:MAX_AGENTS]
+
+
+def _route_model_routing(signals) -> bool:
+    """Route to model_routing_agent when:
+    - cost_z_score >= 3 and token_growth_pct < 50, or
+    - model_changed is True
+    """
+    if signals.model_changed:
+        return True
+    if signals.cost_z_score >= 3.0:
+        token_pct = signals.token_growth_pct
+        return token_pct is not None and abs(token_pct) < 50
+    return False
+
+
+def _route_retry_loop(signals) -> bool:
+    """Route to retry_loop_agent when:
+    - retry_z_score >= 3 or max_retry_count >= 3
+    """
+    return signals.retry_z_score >= 3.0 or signals.max_retry_count >= 3
+
+
+def _route_token_context(signals) -> bool:
+    """Route to token_context_agent when:
+    - input_tokens_z_score >= 3, or
+    - input_token_growth_pct >= 100, or
+    - max_call_chain_depth >= 4
+    """
+    if signals.input_tokens_z_score >= 3.0:
+        return True
+    if signals.input_token_growth_pct is not None and signals.input_token_growth_pct >= 100:
+        return True
+    return signals.max_call_chain_depth >= 4
+
+
+def _fallback_route(signals) -> list[str]:
+    """Fallback: route to the agent whose primary signal best matches."""
+    scores: list[tuple[str, float]] = []
+
+    if signals.max_retry_count >= 2 or signals.avg_retry_count >= 1:
+        scores.append(("retry_loop_agent", signals.retry_z_score))
+    if signals.max_call_chain_depth >= 2 or (signals.input_token_growth_pct or 0) >= 50:
+        scores.append(("token_context_agent", signals.input_tokens_z_score))
+    if signals.cost_growth_pct is not None and signals.cost_growth_pct > 50:
+        scores.append(("model_routing_agent", signals.cost_z_score))
+
+    if not scores:
         return ["model_routing_agent"]
 
-    candidates.sort(key=lambda item: (-item[1], AGENT_PRIORITY[item[0]]))
-    return [agent_name for agent_name, _score in candidates[:MAX_AGENTS]]
-
-
-def _model_routing_score(anomaly: AnomalyWindow) -> int:
-    signals = anomaly.signals
-    score = 0
-
-    if signals.model_changed:
-        score += 3
-    if signals.cost_growth_pct is not None and signals.cost_growth_pct >= 200:
-        score += 2
-    if signals.token_growth_pct is not None and abs(signals.token_growth_pct) < 50:
-        score += 2
-    if signals.retry_z_score < 3 and signals.max_retry_count < 3:
-        score += 1
-
-    return score
-
-
-def _retry_loop_score(anomaly: AnomalyWindow) -> int:
-    signals = anomaly.signals
-    score = 0
-
-    if signals.retry_z_score >= 3:
-        score += 3
-    if signals.max_retry_count >= 5:
-        score += 3
-    elif signals.max_retry_count >= 3:
-        score += 2
-    if signals.repeated_parent_call_count > 0:
-        score += 2
-    if signals.avg_retry_count >= 1:
-        score += 1
-
-    return score
-
-
-def _token_context_score(anomaly: AnomalyWindow) -> int:
-    signals = anomaly.signals
-    score = 0
-
-    if signals.input_token_growth_pct is not None and signals.input_token_growth_pct >= 100:
-        score += 3
-    if signals.max_call_chain_depth >= 4:
-        score += 3
-    elif signals.max_call_chain_depth >= 2:
-        score += 1
-    if (
-        signals.input_tokens_z_score >= 3
-        and signals.retry_z_score < 3
-        and signals.max_retry_count < 3
-        and not signals.model_changed
-    ):
-        score += 2
-    if signals.retry_z_score < 3 and not signals.model_changed:
-        score += 1
-
-    return score
+    scores.sort(key=lambda item: (-item[1], AGENT_PRIORITY.get(item[0], 99)))
+    return [scores[0][0]]

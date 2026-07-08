@@ -16,6 +16,17 @@
           "repeated_parent_call_count": 1
         },
         "explanation": "Retry metrics crossed the high-confidence retry-loop thresholds. (Fallback)"
+      },
+      {
+        "agent_name": "token_context_agent",
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.62,
+        "supporting_metrics": {
+          "input_token_growth_pct": 62.166064981949454,
+          "max_call_chain_depth": 1,
+          "input_tokens_z_score": 481.3136321568297
+        },
+        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
       }
     ]
   },
@@ -179,7 +190,24 @@
       "provider": "fallback",
       "model": null,
       "fallback_used": true,
-      "fallback_reason": "fallback provider explicitly selected"
+      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
+    },
+    {
+      "evidence": {
+        "agent_name": "token_context_agent",
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.62,
+        "supporting_metrics": {
+          "input_token_growth_pct": 62.166064981949454,
+          "max_call_chain_depth": 1,
+          "input_tokens_z_score": 481.3136321568297
+        },
+        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+      },
+      "provider": "fallback",
+      "model": null,
+      "fallback_used": true,
+      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
     }
   ],
   "recommendations": [
@@ -187,5 +215,5 @@
     "Cap the maximum retry count in the client configuration.",
     "Add a circuit breaker pattern to prevent continuous retries during outages."
   ],
-  "generated_at": "2026-07-08T16:10:03.713513Z"
+  "generated_at": "2026-07-08T17:31:35.845600Z"
 }

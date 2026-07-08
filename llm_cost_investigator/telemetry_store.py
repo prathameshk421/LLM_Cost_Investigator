@@ -61,6 +61,14 @@ class TelemetryStore:
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
 
+    @classmethod
+    def from_connection(cls, conn: sqlite3.Connection) -> TelemetryStore:
+        """Wrap an existing sqlite3.Connection in a TelemetryStore interface."""
+        store = cls.__new__(cls)
+        store.db_path = getattr(conn, "db_path", ":memory:")
+        store._conn = conn
+        return store
+
     def close(self) -> None:
         """Close the SQLite database connection."""
         self._conn.close()
@@ -249,3 +257,54 @@ class TelemetryStore:
             (scenario_label,),
         )
         return [self._row_to_call(row) for row in cursor]
+
+
+# ---------------------------------------------------------------------------
+# Module-level convenience API matching implementation_plan.md signatures
+# ---------------------------------------------------------------------------
+
+def _store_from_conn(conn: sqlite3.Connection) -> TelemetryStore:
+    """Wrap a raw connection in a TelemetryStore without re-initialising."""
+    return TelemetryStore.from_connection(conn)
+
+def init_db(path: str | Path = "telemetry.db") -> sqlite3.Connection:
+    """Create or open a SQLite database and initialise the schema.
+
+    Returns the raw connection so callers can pass it to the other
+    module-level helpers.
+    """
+    raw_conn = sqlite3.connect(str(path))
+    raw_conn.row_factory = sqlite3.Row
+    store = _store_from_conn(raw_conn)
+    store.init_schema()
+    return raw_conn
+
+def insert_call(conn: sqlite3.Connection, call: LLMCall) -> None:
+    """Insert a single LLMCall record through an existing connection."""
+    _store_from_conn(conn).insert_call(call)
+
+def insert_calls(conn: sqlite3.Connection, calls: Iterable[LLMCall]) -> None:
+    """Insert multiple LLMCall records through an existing connection."""
+    _store_from_conn(conn).insert_calls(calls)
+
+def fetch_calls(
+    conn: sqlite3.Connection,
+    scenario: str | None = None,
+) -> list[LLMCall]:
+    """Fetch all calls, optionally filtered by scenario_label."""
+    store = _store_from_conn(conn)
+    if scenario is not None:
+        return store.get_calls_by_scenario(scenario)
+    cursor = conn.execute(
+        "SELECT * FROM llm_calls ORDER BY timestamp ASC, call_id ASC"
+    )
+    return [store._row_to_call(row) for row in cursor]
+
+def fetch_window(
+    conn: sqlite3.Connection,
+    feature_tag: str,
+    start: datetime,
+    end: datetime,
+) -> list[LLMCall]:
+    """Fetch calls for a feature within a datetime range."""
+    return _store_from_conn(conn).get_calls_for_feature(feature_tag, start, end)

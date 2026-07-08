@@ -1,4 +1,4 @@
-"""Incident report rendering stubs."""
+"""Incident report rendering and terminal summaries."""
 
 from __future__ import annotations
 
@@ -30,33 +30,15 @@ def write_report(
 
 def print_terminal_summary(report: IncidentReport) -> None:
     """Print a clean terminal summary of the incident report."""
-    root = report.root_cause
-    anomaly = report.anomaly_window
-    scenario = report.scenario
-
-    print("─" * 50)
-    print(f" INCIDENT SUMMARY  ·  {scenario}")
-    print("─" * 50)
-    print(f" Root cause   : {root.hypothesis}")
-    print(f" Feature      : {anomaly.feature_tag}")
-    print(f" Confidence   : {root.confidence:.2f}")
-    print(f" Winning agent: {root.winning_agent or 'none'}")
-    print("─" * 50)
-    print(" RECOMMENDATIONS")
-    for rec in report.recommendations:
-        print(f"   • {rec}")
-    print("─" * 50)
-
-    # Check fallbacks
-    fallbacks = [run for run in report.agent_runs if run.fallback_used]
-    if fallbacks:
-        for run in fallbacks:
-            reason_str = f" — {run.fallback_reason}" if run.fallback_reason else ""
-            print(f" ⚠ Fallback used: {run.evidence.agent_name}{reason_str}")
-        print("─" * 50)
-
-    print(f" Reports written → reports/{scenario}_incident.{{md,json}}")
-    print("─" * 50)
+    fallback_used = any(run.fallback_used for run in report.agent_runs)
+    print("─────────────────────────────────────────")
+    print(f"Scenario:       {report.scenario}")
+    print(f"Feature:        {report.anomaly_window.feature_tag}")
+    print(f"Root cause:     {report.root_cause.hypothesis}")
+    print(f"Confidence:     {report.root_cause.confidence:.2f}")
+    print(f"Winning agent:  {report.root_cause.winning_agent or 'none'}")
+    print(f"Fallback used:  {str(fallback_used)}")
+    print("─────────────────────────────────────────")
 
 
 def _render_markdown(report: IncidentReport) -> str:
@@ -68,67 +50,47 @@ def _render_markdown(report: IncidentReport) -> str:
         (ev for ev in root.evidence if ev.agent_name == root.winning_agent),
         None,
     )
-    if winning:
-        summary_text = f"Root cause: {winning.explanation}"
+    if winning and root.hypothesis != "no_strong_signal":
+        summary_text = winning.explanation
     else:
         summary_text = "No strong diagnostic signal was detected."
 
     lines = [
         f"# Incident Report: {report.scenario}",
         "",
-        f"Generated: {report.generated_at.isoformat()}",
+        f"Root cause: {root.hypothesis}",
+        f"Affected feature: {anomaly.feature_tag}",
+        f"Confidence: {root.confidence:.2f}",
+        f"Winning agent: {root.winning_agent or 'none'}",
         "",
-        "## Summary",
-        "",
+        "Summary:",
         summary_text,
         "",
-        "## Root Cause",
-        "",
-        "| Field | Value |",
-        "| :--- | :--- |",
-        f"| Hypothesis | {root.hypothesis} |",
-        f"| Affected feature | {anomaly.feature_tag} |",
-        f"| Confidence | {root.confidence:.2f} |",
-        f"| Winning agent | {root.winning_agent or 'none'} |",
-        "",
-        "## Agent Execution",
+        "Supporting evidence:",
     ]
 
     if not report.agent_runs:
         lines.append("No agent runs recorded.")
     else:
         for run in report.agent_runs:
-            reason_suffix = f", reason: {run.fallback_reason}" if run.fallback_reason else ""
+            reason_suffix = f" ({run.fallback_reason})" if run.fallback_reason else ""
             lines.append(
-                f"- **{run.evidence.agent_name}** — provider: {run.provider}, model: {run.model or 'n/a'}, "
-                f"fallback: {run.fallback_used}{reason_suffix}"
+                f"- **{run.evidence.agent_name}** — provider: {run.provider}, "
+                f"model: {run.model or 'n/a'}, fallback: {run.fallback_used}{reason_suffix}"
             )
+            lines.append(f"  - Hypothesis: {run.evidence.hypothesis}")
+            lines.append(f"  - Confidence: {run.evidence.confidence:.2f}")
+            lines.append(f"  - Explanation: {run.evidence.explanation}")
+            if run.evidence.supporting_metrics:
+                lines.append("  - Supporting metrics:")
+                for k, v in run.evidence.supporting_metrics.items():
+                    lines.append(f"    - {k}: {v}")
+            else:
+                lines.append("  - Supporting metrics: none")
 
     lines.extend([
         "",
-        "## Supporting Evidence",
-    ])
-
-    for item in root.evidence:
-        lines.extend([
-            "",
-            f"### {item.agent_name}",
-            f"- **Hypothesis**: {item.hypothesis}",
-            f"- **Confidence**: {item.confidence:.2f}",
-            f"- **Explanation**: {item.explanation}",
-        ])
-        
-        # Format key metrics
-        if item.supporting_metrics:
-            lines.append("- **Key metrics**:")
-            for k, v in item.supporting_metrics.items():
-                lines.append(f"  - {k}: {v}")
-        else:
-            lines.append("- **Key metrics**: none")
-
-    lines.extend([
-        "",
-        "## Recommendations",
+        "Recommendations:",
     ])
 
     for recommendation in report.recommendations:
@@ -136,3 +98,4 @@ def _render_markdown(report: IncidentReport) -> str:
 
     lines.append("")
     return "\n".join(lines)
+

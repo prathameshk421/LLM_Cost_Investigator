@@ -11,7 +11,7 @@ from typing import Iterable
 from llm_cost_investigator.schemas import AnomalySignals, AnomalyWindow, LLMCall
 
 WINDOW_SIZE = timedelta(minutes=5)
-MIN_BASELINE_WINDOWS = 5
+MIN_BASELINE_WINDOWS = 3
 COST_Z_THRESHOLD = 3.0
 MIN_CURRENT_CALL_COUNT = 3
 MIN_TOTAL_COST_USD = 0.01
@@ -135,12 +135,12 @@ def _compute_window_stats(
 
 
 def _build_signals(stats: WindowStats, baseline_stats: list[WindowStats]) -> AnomalySignals:
+    baseline_models: set[str] = set()
+    for bs in baseline_stats:
+        baseline_models.update(bs.models_seen)
+    current_models = set(stats.models_seen)
+    model_changed = bool(current_models - baseline_models)
     baseline_model = _dominant_model_from_stats(baseline_stats)
-    model_changed = (
-        baseline_model is not None
-        and stats.dominant_model is not None
-        and stats.dominant_model != baseline_model
-    )
 
     cost_mean = _baseline_mean(baseline_stats, "total_cost_usd")
     input_mean = _baseline_mean(baseline_stats, "total_input_tokens")
@@ -182,7 +182,19 @@ def _is_anomalous(stats: WindowStats, signals: AnomalySignals) -> bool:
         stats.call_count >= MIN_CURRENT_CALL_COUNT
         or stats.total_cost_usd >= MIN_TOTAL_COST_USD
     )
-    return enough_activity and signals.cost_z_score >= COST_Z_THRESHOLD
+    if not enough_activity:
+        return False
+    return (
+        signals.cost_z_score >= COST_Z_THRESHOLD
+        or signals.input_tokens_z_score >= 3.0
+        or signals.retry_z_score >= 3.0
+        or signals.calls_z_score >= 3.0
+        or (
+            signals.model_changed is True
+            and signals.cost_growth_pct is not None
+            and signals.cost_growth_pct > 0
+        )
+    )
 
 
 def _values(stats: Iterable[WindowStats], field_name: str) -> list[float]:

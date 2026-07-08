@@ -134,6 +134,11 @@ Return only valid JSON.
 Do not include markdown.
 If the evidence is weak, return hypothesis "no_strong_signal".
 Confidence must be between 0 and 1.
+Confidence guide:
+- 0.90-1.00: retry z-score >= 5 and max retry count >= 5
+- 0.75-0.89: retry z-score >= 3 or repeated parent calls are obvious
+- 0.50-0.74: retry evidence exists but another cause may explain cost
+- below 0.50: return no_strong_signal
 
 Return only valid JSON matching this shape:
 {{
@@ -166,6 +171,11 @@ Return only valid JSON.
 Do not include markdown.
 If the evidence is weak, return hypothesis "no_strong_signal".
 Confidence must be between 0 and 1.
+Confidence guide:
+- 0.90-1.00: input tokens grow by >= 300% and chain depth >= 5
+- 0.75-0.89: input token z-score >= 3 and chain depth >= 4
+- 0.50-0.74: token growth exists but chain evidence is weak
+- below 0.50: return no_strong_signal
 
 Return only valid JSON matching this shape:
 {{
@@ -198,6 +208,11 @@ Return only valid JSON.
 Do not include markdown.
 If the evidence is weak, return hypothesis "no_strong_signal".
 Confidence must be between 0 and 1.
+Confidence guide:
+- 0.90-1.00: model changed, cost grew >= 200%, token growth < 50%
+- 0.75-0.89: model changed and cost z-score >= 3
+- 0.50-0.74: cost grew without token growth, but model evidence is partial
+- below 0.50: return no_strong_signal
 
 Return only valid JSON matching this shape:
 {{
@@ -548,8 +563,10 @@ def run_agents_detailed(
         else:
             continue
 
-        if resolved_provider == "fallback" and selection_fallback_reason is not None:
+        if resolved_provider == "fallback":
             evidence = fallback_fn(anomaly)
+            reason_suffix = f" ({selection_fallback_reason})" if selection_fallback_reason else ""
+            print(f"Fallback used: {name}{reason_suffix}")
             results.append(
                 AgentRunResult(
                     evidence=evidence,
@@ -579,6 +596,8 @@ def run_agents_detailed(
                 "LLM call failed or returned invalid agent evidence: "
                 f"{type(exc).__name__}: {exc}"
             )
+            reason_suffix = f" ({fallback_reason})" if fallback_reason else ""
+            print(f"Fallback used: {name}{reason_suffix}")
             results.append(
                 AgentRunResult(
                     evidence=fallback_fn(anomaly),

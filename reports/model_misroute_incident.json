@@ -16,6 +16,17 @@
           "cost_z_score": 1882.0355656496642
         },
         "explanation": "Model routing metrics crossed the expensive model misroute thresholds. (Fallback)"
+      },
+      {
+        "agent_name": "token_context_agent",
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.62,
+        "supporting_metrics": {
+          "input_token_growth_pct": 24.559471365638768,
+          "max_call_chain_depth": 0,
+          "input_tokens_z_score": 155.8259871820166
+        },
+        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
       }
     ]
   },
@@ -151,7 +162,24 @@
       "provider": "fallback",
       "model": null,
       "fallback_used": true,
-      "fallback_reason": "fallback provider explicitly selected"
+      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
+    },
+    {
+      "evidence": {
+        "agent_name": "token_context_agent",
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.62,
+        "supporting_metrics": {
+          "input_token_growth_pct": 24.559471365638768,
+          "max_call_chain_depth": 0,
+          "input_tokens_z_score": 155.8259871820166
+        },
+        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+      },
+      "provider": "fallback",
+      "model": null,
+      "fallback_used": true,
+      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
     }
   ],
   "recommendations": [
@@ -159,5 +187,5 @@
     "Add CI/CD checks to prevent unintentional model upgrades.",
     "Implement rate limiting or budget alerts for premium model endpoints."
   ],
-  "generated_at": "2026-07-08T16:10:42.136868Z"
+  "generated_at": "2026-07-08T17:31:36.032682Z"
 }

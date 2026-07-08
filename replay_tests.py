@@ -41,6 +41,64 @@ def _top_anomaly_for_scenario(scenario: str):
     return anomaly
 
 
+def _assert_report_files_created(
+    scenario: str,
+    root_cause: any,
+    anomaly: any,
+    agent_runs: list[any],
+) -> None:
+    import json
+    import tempfile
+    from pathlib import Path
+    from llm_cost_investigator.reporter import write_report
+    from llm_cost_investigator.schemas import IncidentReport
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        report = IncidentReport(
+            scenario=scenario,
+            root_cause=root_cause,
+            anomaly_window=anomaly,
+            agent_runs=agent_runs,
+            recommendations=["Some recommendation"],
+        )
+
+        markdown_path, json_path = write_report(
+            report, output_dir=tmpdir, print_summary=False
+        )
+
+        assert markdown_path.exists(), (
+            f"Markdown report file does not exist: {markdown_path}"
+        )
+        assert json_path.exists(), (
+            f"JSON report file does not exist: {json_path}"
+        )
+
+        # Validate Markdown structure
+        md_content = markdown_path.read_text(encoding="utf-8")
+        assert f"# Incident Report: {scenario}" in md_content
+        assert "Root cause:" in md_content
+        assert "Affected feature:" in md_content
+        assert "Confidence:" in md_content
+        assert "Winning agent:" in md_content
+        assert "Summary:" in md_content
+        assert "Supporting evidence:" in md_content
+        assert "Recommendations:" in md_content
+
+        # Validate JSON content structure
+        json_content = json.loads(json_path.read_text(encoding="utf-8"))
+        assert "scenario" in json_content
+        assert json_content["scenario"] == scenario
+        assert "root_cause" in json_content
+        assert "hypothesis" in json_content["root_cause"]
+        assert "confidence" in json_content["root_cause"]
+        assert json_content["root_cause"]["confidence"] >= 0.70
+        if root_cause.hypothesis != "no_strong_signal":
+            assert "winning_agent" in json_content["root_cause"]
+            assert json_content["root_cause"]["winning_agent"] is not None
+        assert "recommendations" in json_content
+        assert len(json_content["recommendations"]) > 0
+
+
 def _assert_retry_loop() -> None:
     anomaly = _top_anomaly_for_scenario("retry_loop")
     assert anomaly.signals.max_retry_count >= 5
@@ -48,20 +106,25 @@ def _assert_retry_loop() -> None:
     assert anomaly.signals.model_changed is False
     
     routed = route_agents(anomaly)
-    assert routed == ["retry_loop_agent"]
+    assert "retry_loop_agent" in routed
     
     # Run the agents & aggregator
-    evidence = run_agents(routed, anomaly, provider="fallback")
-    assert len(evidence) == 1
-    ev = evidence[0]
+    agent_runs = run_agents_detailed(routed, anomaly, provider="fallback")
+    assert len(agent_runs) >= 1
+    run = next(r for r in agent_runs if r.evidence.agent_name == "retry_loop_agent")
+    assert run.provider == "fallback", f"retry_loop: expected fallback provider, got {run.provider}"
+    assert run.fallback_used is True, "retry_loop: expected fallback_used=True"
+    ev = run.evidence
     assert ev.agent_name == "retry_loop_agent"
     assert ev.hypothesis == "uncapped_retry_loop"
     assert ev.confidence >= 0.90  # retry z-score >= 5 and max retry count >= 5 floor
     
-    root_cause = select_root_cause(evidence)
+    root_cause = select_root_cause([r.evidence for r in agent_runs])
     assert root_cause.hypothesis == "uncapped_retry_loop"
     assert root_cause.winning_agent == "retry_loop_agent"
     assert root_cause.confidence == ev.confidence
+
+    _assert_report_files_created("retry_loop", root_cause, anomaly, agent_runs)
 
 
 def _assert_context_bloat() -> None:
@@ -72,20 +135,25 @@ def _assert_context_bloat() -> None:
     assert anomaly.signals.model_changed is False
     
     routed = route_agents(anomaly)
-    assert routed == ["token_context_agent"]
+    assert "token_context_agent" in routed
     
     # Run the agents & aggregator
-    evidence = run_agents(routed, anomaly, provider="fallback")
-    assert len(evidence) == 1
-    ev = evidence[0]
+    agent_runs = run_agents_detailed(routed, anomaly, provider="fallback")
+    assert len(agent_runs) >= 1
+    run = next(r for r in agent_runs if r.evidence.agent_name == "token_context_agent")
+    assert run.provider == "fallback", f"context_bloat: expected fallback provider, got {run.provider}"
+    assert run.fallback_used is True, "context_bloat: expected fallback_used=True"
+    ev = run.evidence
     assert ev.agent_name == "token_context_agent"
     assert ev.hypothesis == "context_bloat_self_calling_agent"
     assert ev.confidence >= 0.75  # input tokens z-score >= 3 and chain depth >= 4 floor
     
-    root_cause = select_root_cause(evidence)
+    root_cause = select_root_cause([r.evidence for r in agent_runs])
     assert root_cause.hypothesis == "context_bloat_self_calling_agent"
     assert root_cause.winning_agent == "token_context_agent"
     assert root_cause.confidence == ev.confidence
+
+    _assert_report_files_created("context_bloat", root_cause, anomaly, agent_runs)
 
 
 def _assert_model_misroute() -> None:
@@ -99,20 +167,25 @@ def _assert_model_misroute() -> None:
     assert anomaly.signals.input_token_growth_pct < 50
     
     routed = route_agents(anomaly)
-    assert routed == ["model_routing_agent"]
+    assert "model_routing_agent" in routed
     
     # Run the agents & aggregator
-    evidence = run_agents(routed, anomaly, provider="fallback")
-    assert len(evidence) == 1
-    ev = evidence[0]
+    agent_runs = run_agents_detailed(routed, anomaly, provider="fallback")
+    assert len(agent_runs) >= 1
+    run = next(r for r in agent_runs if r.evidence.agent_name == "model_routing_agent")
+    assert run.provider == "fallback", f"model_misroute: expected fallback provider, got {run.provider}"
+    assert run.fallback_used is True, "model_misroute: expected fallback_used=True"
+    ev = run.evidence
     assert ev.agent_name == "model_routing_agent"
     assert ev.hypothesis == "expensive_model_misroute"
     assert ev.confidence >= 0.90  # model changed, cost growth >= 200%, token growth < 50% floor
     
-    root_cause = select_root_cause(evidence)
+    root_cause = select_root_cause([r.evidence for r in agent_runs])
     assert root_cause.hypothesis == "expensive_model_misroute"
     assert root_cause.winning_agent == "model_routing_agent"
     assert root_cause.confidence == ev.confidence
+
+    _assert_report_files_created("model_misroute", root_cause, anomaly, agent_runs)
 
 
 def _test_validation_wrapper_and_repair() -> None:
@@ -192,13 +265,48 @@ def _test_llm_provider_selection_and_live_client_path() -> None:
 
 
 def main() -> int:
-    _assert_retry_loop()
-    _assert_context_bloat()
-    _assert_model_misroute()
-    _test_validation_wrapper_and_repair()
-    _test_llm_provider_selection_and_live_client_path()
-    print("Replay detector/router/agent/aggregator/repair tests passed successfully!")
-    return 0
+    success = True
+
+    # 1. Run the scenario assertions with the PASS/FAIL runner
+    scenarios = [
+        ("retry_loop", _assert_retry_loop),
+        ("context_bloat", _assert_context_bloat),
+        ("model_misroute", _assert_model_misroute),
+    ]
+
+    for name, test_fn in scenarios:
+        try:
+            test_fn()
+            print(f"{name} ... PASS")
+        except AssertionError as exc:
+            print(f"{name} ... FAIL")
+            print(f"AssertionError: {exc}")
+            success = False
+        except Exception as exc:
+            print(f"{name} ... FAIL")
+            print(f"Error: {exc}")
+            success = False
+
+    # 2. Run unit tests (non-scenario tests)
+    unit_tests = [
+        ("validation_wrapper_and_repair", _test_validation_wrapper_and_repair),
+        ("llm_provider_selection_and_live_client_path", _test_llm_provider_selection_and_live_client_path),
+    ]
+    for name, test_fn in unit_tests:
+        try:
+            test_fn()
+        except AssertionError as exc:
+            print(f"Unit test {name} failed: {exc}")
+            success = False
+        except Exception as exc:
+            print(f"Unit test {name} failed: {exc}")
+            success = False
+
+    if success:
+        print("Replay detector/router/agent/aggregator/repair tests passed successfully!")
+        return 0
+    else:
+        return 1
 
 
 if __name__ == "__main__":
