@@ -2,19 +2,22 @@
   "scenario": "context_bloat",
   "root_cause": {
     "hypothesis": "context_bloat_self_calling_agent",
-    "confidence": 0.84,
+    "confidence": 0.82,
     "winning_agent": "token_context_agent",
     "evidence": [
       {
         "agent_name": "token_context_agent",
         "hypothesis": "context_bloat_self_calling_agent",
-        "confidence": 0.84,
+        "confidence": 0.82,
         "supporting_metrics": {
           "input_token_growth_pct": 294.0677966101695,
           "max_call_chain_depth": 5,
-          "input_tokens_z_score": 1454.8417278608008
+          "input_tokens_z_score": 1454.8417278608008,
+          "cost_growth_pct": 313.79310344827593,
+          "retry_z_score": 0.0,
+          "model_changed": false
         },
-        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+        "explanation": "The telemetry shows a massive increase in input tokens (≈294% growth) with an extremely high z-score, and a deep call chain of depth 5 where each call references the previous one, indicating the agent is recursively calling itself and accumulating context. Cost growth aligns with the token increase, and there are no retries or model changes. This pattern matches the context bloat self-calling scenario."
       }
     ]
   },
@@ -138,18 +141,21 @@
       "evidence": {
         "agent_name": "token_context_agent",
         "hypothesis": "context_bloat_self_calling_agent",
-        "confidence": 0.84,
+        "confidence": 0.82,
         "supporting_metrics": {
           "input_token_growth_pct": 294.0677966101695,
           "max_call_chain_depth": 5,
-          "input_tokens_z_score": 1454.8417278608008
+          "input_tokens_z_score": 1454.8417278608008,
+          "cost_growth_pct": 313.79310344827593,
+          "retry_z_score": 0.0,
+          "model_changed": false
         },
-        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+        "explanation": "The telemetry shows a massive increase in input tokens (≈294% growth) with an extremely high z-score, and a deep call chain of depth 5 where each call references the previous one, indicating the agent is recursively calling itself and accumulating context. Cost growth aligns with the token increase, and there are no retries or model changes. This pattern matches the context bloat self-calling scenario."
       },
-      "provider": "fallback",
-      "model": null,
-      "fallback_used": true,
-      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
+      "provider": "cerebras",
+      "model": "gpt-oss-120b",
+      "fallback_used": false,
+      "fallback_reason": null
     }
   ],
   "recommendations": [
@@ -157,5 +163,5 @@
     "Implement prompt summarization or token truncation for history.",
     "Add a fail-safe budget check on the chain to terminate expanding contexts."
   ],
-  "generated_at": "2026-07-08T17:31:35.938978Z"
+  "generated_at": "2026-07-08T19:58:29.133279Z"
 }

@@ -2,31 +2,37 @@
   "scenario": "model_misroute",
   "root_cause": {
     "hypothesis": "expensive_model_misroute",
-    "confidence": 0.95,
+    "confidence": 0.96,
     "winning_agent": "model_routing_agent",
     "evidence": [
       {
         "agent_name": "model_routing_agent",
         "hypothesis": "expensive_model_misroute",
-        "confidence": 0.95,
+        "confidence": 0.96,
         "supporting_metrics": {
           "model_changed": true,
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4.1",
           "cost_growth_pct": 609.35960591133,
           "token_growth_pct": 24.559471365638768,
-          "cost_z_score": 1882.0355656496642
+          "cost_z_score": 1882.0355656496642,
+          "retry_z_score": 0.0,
+          "max_retry_count": 0
         },
-        "explanation": "Model routing metrics crossed the expensive model misroute thresholds. (Fallback)"
+        "explanation": "The telemetry shows a model change from the cheaper gpt-4o-mini to the more expensive gpt-4.1 during the anomaly window. Cost grew by over 600% while token usage increased only ~25%, well below the 50% threshold. No retry spikes are present. These patterns strongly indicate the feature was misrouted to a higher‑cost model."
       },
       {
         "agent_name": "token_context_agent",
-        "hypothesis": "context_bloat_self_calling_agent",
-        "confidence": 0.62,
+        "hypothesis": "no_strong_signal",
+        "confidence": 0.32,
         "supporting_metrics": {
+          "input_tokens_z_score": 155.8259871820166,
           "input_token_growth_pct": 24.559471365638768,
+          "cost_growth_pct": 609.35960591133,
           "max_call_chain_depth": 0,
-          "input_tokens_z_score": 155.8259871820166
+          "model_changed": true
         },
-        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+        "explanation": "While the input token z-score is extremely high, the actual input token growth is only ~24.6% and there is no call chain depth (max depth = 0). The cost surge aligns with a model change rather than increased context or recursive calls. Therefore there is no strong signal of context bloat or self‑calling behavior."
       }
     ]
   },
@@ -150,36 +156,42 @@
       "evidence": {
         "agent_name": "model_routing_agent",
         "hypothesis": "expensive_model_misroute",
-        "confidence": 0.95,
+        "confidence": 0.96,
         "supporting_metrics": {
           "model_changed": true,
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4.1",
           "cost_growth_pct": 609.35960591133,
           "token_growth_pct": 24.559471365638768,
-          "cost_z_score": 1882.0355656496642
+          "cost_z_score": 1882.0355656496642,
+          "retry_z_score": 0.0,
+          "max_retry_count": 0
         },
-        "explanation": "Model routing metrics crossed the expensive model misroute thresholds. (Fallback)"
+        "explanation": "The telemetry shows a model change from the cheaper gpt-4o-mini to the more expensive gpt-4.1 during the anomaly window. Cost grew by over 600% while token usage increased only ~25%, well below the 50% threshold. No retry spikes are present. These patterns strongly indicate the feature was misrouted to a higher‑cost model."
       },
-      "provider": "fallback",
-      "model": null,
-      "fallback_used": true,
-      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
+      "provider": "cerebras",
+      "model": "gpt-oss-120b",
+      "fallback_used": false,
+      "fallback_reason": null
     },
     {
       "evidence": {
         "agent_name": "token_context_agent",
-        "hypothesis": "context_bloat_self_calling_agent",
-        "confidence": 0.62,
+        "hypothesis": "no_strong_signal",
+        "confidence": 0.32,
         "supporting_metrics": {
+          "input_tokens_z_score": 155.8259871820166,
           "input_token_growth_pct": 24.559471365638768,
+          "cost_growth_pct": 609.35960591133,
           "max_call_chain_depth": 0,
-          "input_tokens_z_score": 155.8259871820166
+          "model_changed": true
         },
-        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+        "explanation": "While the input token z-score is extremely high, the actual input token growth is only ~24.6% and there is no call chain depth (max depth = 0). The cost surge aligns with a model change rather than increased context or recursive calls. Therefore there is no strong signal of context bloat or self‑calling behavior."
       },
-      "provider": "fallback",
-      "model": null,
-      "fallback_used": true,
-      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
+      "provider": "cerebras",
+      "model": "gpt-oss-120b",
+      "fallback_used": false,
+      "fallback_reason": null
     }
   ],
   "recommendations": [
@@ -187,5 +199,5 @@
     "Add CI/CD checks to prevent unintentional model upgrades.",
     "Implement rate limiting or budget alerts for premium model endpoints."
   ],
-  "generated_at": "2026-07-08T17:31:36.032682Z"
+  "generated_at": "2026-07-08T20:00:34.440305Z"
 }

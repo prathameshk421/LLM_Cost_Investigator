@@ -2,31 +2,37 @@
   "scenario": "retry_loop",
   "root_cause": {
     "hypothesis": "uncapped_retry_loop",
-    "confidence": 0.94,
+    "confidence": 0.96,
     "winning_agent": "retry_loop_agent",
     "evidence": [
       {
         "agent_name": "retry_loop_agent",
         "hypothesis": "uncapped_retry_loop",
-        "confidence": 0.94,
+        "confidence": 0.96,
         "supporting_metrics": {
           "retry_z_score": 10.0,
           "max_retry_count": 7,
           "avg_retry_count": 3.5,
-          "repeated_parent_call_count": 1
+          "repeated_parent_call_count": 1,
+          "latency_z_score": 457.21072421965715,
+          "cost_z_score": 1882.0355656496997,
+          "cost_growth_pct": 609.3596059113302
         },
-        "explanation": "Retry metrics crossed the high-confidence retry-loop thresholds. (Fallback)"
+        "explanation": "The telemetry shows a very high retry_z_score (10) and a max_retry_count of 7, both well above the thresholds for an uncapped retry loop. Latency and cost z-scores are extreme, and cost grew >600%, consistent with repeated attempts. The sample calls demonstrate a monotonic increase in latency and cost with each retry, confirming the loop behavior."
       },
       {
         "agent_name": "token_context_agent",
-        "hypothesis": "context_bloat_self_calling_agent",
-        "confidence": 0.62,
+        "hypothesis": "no_strong_signal",
+        "confidence": 0.45,
         "supporting_metrics": {
+          "input_tokens_z_score": 481.3136321568297,
           "input_token_growth_pct": 62.166064981949454,
+          "cost_growth_pct": 609.3596059113302,
           "max_call_chain_depth": 1,
-          "input_tokens_z_score": 481.3136321568297
+          "retry_z_score": 10.0,
+          "model_changed": false
         },
-        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+        "explanation": "The token growth is moderate (≈62%) while cost growth is very high, but the call chain depth is only 1, indicating no deep recursion. The high retry_z_score shows many retries, which explains the cost increase. There is no evidence of context bloat or self‑calling behavior, so the signal is weak."
       }
     ]
   },
@@ -178,36 +184,42 @@
       "evidence": {
         "agent_name": "retry_loop_agent",
         "hypothesis": "uncapped_retry_loop",
-        "confidence": 0.94,
+        "confidence": 0.96,
         "supporting_metrics": {
           "retry_z_score": 10.0,
           "max_retry_count": 7,
           "avg_retry_count": 3.5,
-          "repeated_parent_call_count": 1
+          "repeated_parent_call_count": 1,
+          "latency_z_score": 457.21072421965715,
+          "cost_z_score": 1882.0355656496997,
+          "cost_growth_pct": 609.3596059113302
         },
-        "explanation": "Retry metrics crossed the high-confidence retry-loop thresholds. (Fallback)"
+        "explanation": "The telemetry shows a very high retry_z_score (10) and a max_retry_count of 7, both well above the thresholds for an uncapped retry loop. Latency and cost z-scores are extreme, and cost grew >600%, consistent with repeated attempts. The sample calls demonstrate a monotonic increase in latency and cost with each retry, confirming the loop behavior."
       },
-      "provider": "fallback",
-      "model": null,
-      "fallback_used": true,
-      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
+      "provider": "cerebras",
+      "model": "gpt-oss-120b",
+      "fallback_used": false,
+      "fallback_reason": null
     },
     {
       "evidence": {
         "agent_name": "token_context_agent",
-        "hypothesis": "context_bloat_self_calling_agent",
-        "confidence": 0.62,
+        "hypothesis": "no_strong_signal",
+        "confidence": 0.45,
         "supporting_metrics": {
+          "input_tokens_z_score": 481.3136321568297,
           "input_token_growth_pct": 62.166064981949454,
+          "cost_growth_pct": 609.3596059113302,
           "max_call_chain_depth": 1,
-          "input_tokens_z_score": 481.3136321568297
+          "retry_z_score": 10.0,
+          "model_changed": false
         },
-        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+        "explanation": "The token growth is moderate (≈62%) while cost growth is very high, but the call chain depth is only 1, indicating no deep recursion. The high retry_z_score shows many retries, which explains the cost increase. There is no evidence of context bloat or self‑calling behavior, so the signal is weak."
       },
-      "provider": "fallback",
-      "model": null,
-      "fallback_used": true,
-      "fallback_reason": "no GROQ_API_KEY or CEREBRAS_API_KEY configured"
+      "provider": "cerebras",
+      "model": "gpt-oss-120b",
+      "fallback_used": false,
+      "fallback_reason": null
     }
   ],
   "recommendations": [
@@ -215,5 +227,5 @@
     "Cap the maximum retry count in the client configuration.",
     "Add a circuit breaker pattern to prevent continuous retries during outages."
   ],
-  "generated_at": "2026-07-08T17:31:35.845600Z"
+  "generated_at": "2026-07-08T20:01:07.322507Z"
 }
