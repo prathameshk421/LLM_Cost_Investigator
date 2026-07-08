@@ -49,6 +49,13 @@ export CEREBRAS_API_KEY=your_key     # Cerebras provider
 export LLM_MODEL=llama-3.3-70b-versatile  # optional model override
 ```
 
+Or create a `.env` file in the project root (keys are loaded automatically):
+
+```text
+GROQ_API_KEY=gsk_your_key_here
+CEREBRAS_API_KEY=your_key_here
+```
+
 Without API keys the system automatically uses deterministic fallback mode.
 
 ## Run Commands

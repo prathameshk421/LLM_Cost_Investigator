@@ -4,9 +4,27 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+from pathlib import Path
 from typing import Callable, Literal
 
 from llm_cost_investigator.agents import default_mock_llm_client
+
+
+def _load_dotenv(path: str | Path = ".env") -> None:
+    """Load a .env file into os.environ (setdefault — won't override existing)."""
+    env_file = Path(path)
+    if not env_file.exists():
+        return
+    for line in env_file.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip("\"'")
+        os.environ.setdefault(key, value)
+
+
+_load_dotenv()
 
 ProviderName = Literal["groq", "cerebras", "fallback"]
 
