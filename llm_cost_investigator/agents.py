@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any, Callable
 
-from llm_cost_investigator.schemas import AgentEvidence, AnomalyWindow
+from llm_cost_investigator.schemas import AgentEvidence, AgentRunResult, AnomalyWindow
 
 
 # ---------------------------------------------------------------------------
@@ -482,10 +482,51 @@ def run_agents(
     agent_names: list[str],
     anomaly: AnomalyWindow,
     llm_client: Callable[[str], str] | None = None,
+    provider: str | None = None,
+    model: str | None = None,
 ) -> list[AgentEvidence]:
     """Run the requested diagnostic agents against an anomaly window."""
+    return [
+        result.evidence
+        for result in run_agents_detailed(
+            agent_names,
+            anomaly,
+            llm_client=llm_client,
+            provider=provider,
+            model=model,
+        )
+    ]
+
+
+def run_agents_detailed(
+    agent_names: list[str],
+    anomaly: AnomalyWindow,
+    llm_client: Callable[[str], str] | None = None,
+    provider: str | None = None,
+    model: str | None = None,
+) -> list[AgentRunResult]:
+    """Run diagnostic agents and include provider/fallback provenance."""
     if llm_client is None:
-        llm_client = default_mock_llm_client
+        from llm_cost_investigator.llm_client import LLMClientConfig, resolve_llm_client
+
+        try:
+            resolved = resolve_llm_client(LLMClientConfig(provider=provider, model=model))
+            llm_client = resolved.client
+            resolved_provider = resolved.provider
+            resolved_model = resolved.model
+            selection_fallback_reason = resolved.fallback_reason
+        except Exception as exc:
+            llm_client = default_mock_llm_client
+            resolved_provider = "fallback"
+            resolved_model = model
+            selection_fallback_reason = (
+                "LLM client setup failed: "
+                f"{type(exc).__name__}: {exc}"
+            )
+    else:
+        resolved_provider = provider or "fallback"
+        resolved_model = model
+        selection_fallback_reason = None
 
     results = []
     for name in agent_names:
@@ -507,12 +548,45 @@ def run_agents(
         else:
             continue
 
+        if resolved_provider == "fallback" and selection_fallback_reason is not None:
+            evidence = fallback_fn(anomaly)
+            results.append(
+                AgentRunResult(
+                    evidence=evidence,
+                    provider="fallback",
+                    model=resolved_model,
+                    fallback_used=True,
+                    fallback_reason=selection_fallback_reason,
+                )
+            )
+            continue
+
         try:
             evidence = call_agent_with_validation(llm_client, prompt, AgentEvidence)
             if evidence.agent_name != name:
                 raise ValueError(f"Agent name mismatch: expected {name}, got {evidence.agent_name}")
-            results.append(evidence)
-        except Exception:
-            results.append(fallback_fn(anomaly))
+            results.append(
+                AgentRunResult(
+                    evidence=evidence,
+                    provider=resolved_provider,
+                    model=resolved_model,
+                    fallback_used=False,
+                    fallback_reason=None,
+                )
+            )
+        except Exception as exc:
+            fallback_reason = (
+                "LLM call failed or returned invalid agent evidence: "
+                f"{type(exc).__name__}: {exc}"
+            )
+            results.append(
+                AgentRunResult(
+                    evidence=fallback_fn(anomaly),
+                    provider="fallback",
+                    model=resolved_model,
+                    fallback_used=True,
+                    fallback_reason=fallback_reason,
+                )
+            )
 
     return results

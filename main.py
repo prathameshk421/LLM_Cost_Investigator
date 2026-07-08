@@ -3,17 +3,13 @@
 from __future__ import annotations
 
 import argparse
-import json
 
 from llm_cost_investigator.detector import detect_anomalies
 from llm_cost_investigator.router import route_agents
-from llm_cost_investigator.simulate_telemetry import (
-    generate_all_scenario_calls,
-    generate_scenario_calls,
-)
+from llm_cost_investigator.simulate_telemetry import generate_scenario_calls
 
 
-from llm_cost_investigator.agents import run_agents
+from llm_cost_investigator.agents import run_agents_detailed
 from llm_cost_investigator.aggregator import select_root_cause
 from llm_cost_investigator.reporter import write_report
 from llm_cost_investigator.schemas import IncidentReport
@@ -49,10 +45,31 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["retry_loop", "context_bloat", "model_misroute", "all"],
         help="Scenario to generate and investigate.",
     )
+    parser.add_argument(
+        "--provider",
+        choices=["groq", "cerebras", "cerebus", "fallback"],
+        default=None,
+        help="LLM provider for diagnostic agents. Defaults to env auto-detect.",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Override the provider model. Also configurable with LLM_MODEL.",
+    )
+    parser.add_argument(
+        "--force-fallback",
+        action="store_true",
+        help="Use deterministic fallback evidence without live LLM calls.",
+    )
     return parser
 
 
-def process_scenario(scenario: str) -> None:
+def process_scenario(
+    scenario: str,
+    *,
+    provider: str | None = None,
+    model: str | None = None,
+) -> None:
     calls = generate_scenario_calls(scenario)
     anomalies = detect_anomalies(calls)
     print(f"\nScenario: {scenario}")
@@ -63,9 +80,20 @@ def process_scenario(scenario: str) -> None:
         print(f"Routed agents: {', '.join(selected_agents)}")
         
         # Run agents
-        evidence = run_agents(selected_agents, top)
+        agent_runs = run_agents_detailed(
+            selected_agents,
+            top,
+            provider=provider,
+            model=model,
+        )
+        evidence = [run.evidence for run in agent_runs]
         for ev in evidence:
             print(f"  Agent {ev.agent_name} hypothesis: {ev.hypothesis} (confidence: {ev.confidence:.2f})")
+        for run in agent_runs:
+            model_label = f" model={run.model}" if run.model else ""
+            print(f"  Execution: provider={run.provider}{model_label}")
+            if run.fallback_used and run.fallback_reason:
+                print(f"  Fallback reason: {run.fallback_reason}")
             
         # Select root cause
         root_cause = select_root_cause(evidence)
@@ -77,10 +105,11 @@ def process_scenario(scenario: str) -> None:
             scenario=scenario,
             root_cause=root_cause,
             anomaly_window=top,
+            agent_runs=agent_runs,
             recommendations=recommendations,
         )
         write_report(report)
-        print(f"Report written to reports/{scenario}_report.json")
+        print(f"Reports written to reports/{scenario}_report.json and reports/{scenario}_incident.md")
 
 
 def main() -> int:
@@ -88,9 +117,10 @@ def main() -> int:
     args = parser.parse_args()
 
     scenarios = ["retry_loop", "context_bloat", "model_misroute"] if args.scenario == "all" else [args.scenario]
+    provider = "fallback" if args.force_fallback else args.provider
     
     for scenario in scenarios:
-        process_scenario(scenario)
+        process_scenario(scenario, provider=provider, model=args.model)
         
     return 0
 

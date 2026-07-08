@@ -132,26 +132,53 @@ cost_z_score >= 3 and token_growth_pct < 50, or model_changed == true
 
 Only call agents whose preconditions are met.
 
-## 6. Agent Execution
+## 6. AI Agent Contracts
 
 Create `agents.py`.
 
-Each agent is a real LLM call when an API key is available.
+The project must include three real LLM diagnostic agents:
 
-Add a deterministic fallback mode for development:
+- `retry_loop_agent`
+- `token_context_agent`
+- `model_routing_agent`
 
-- if no API key exists, return evidence from local rules
-- make this explicit in terminal output
+Each agent gets a narrow anomaly payload, a role-specific prompt, confidence rules,
+and a required JSON response shape validated by `AgentEvidence`.
 
-Agent wrapper requirements:
+Agents must not use `scenario_label` as evidence.
+
+## 7. LLM Agent Wrapper
+
+The agent wrapper is required, not optional.
+
+Wrapper requirements:
 
 - strict prompt
 - JSON-only response
+- real LLM call when an API key is configured
+- OpenAI-compatible Groq support through `GROQ_API_KEY`
+- OpenAI-compatible Cerebras support through `CEREBRAS_API_KEY`
 - Pydantic validation
 - retry once on parse failure
-- fallback to deterministic evidence if the second parse fails
+- fallback to deterministic evidence only if the API key is missing or the second parse fails
+- explicit terminal output when fallback mode is used
 
-## 7. Aggregator
+## 8. Deterministic Fallback Mode
+
+Fallback mode exists to keep demos and replay tests reliable. It should mirror the
+same agent contracts and return valid `AgentEvidence`, but it is not the primary
+diagnostic path.
+
+Fallback triggers:
+
+- no supported LLM API key is configured
+- LLM call fails
+- LLM response is invalid JSON twice
+
+Replay tests should force fallback mode so tests do not depend on live provider
+keys or spend API credits.
+
+## 9. Aggregator
 
 Create `aggregator.py`.
 
@@ -166,7 +193,7 @@ Optional LLM lead investigator:
 - may write summary text
 - must not override root cause selected by deterministic aggregator
 
-## 8. Reporter
+## 10. Reporter
 
 Create `reporter.py`.
 
@@ -185,7 +212,7 @@ Report sections:
 - Supporting evidence
 - Recommendations
 
-## 9. Replay Tests
+## 11. Replay Tests
 
 Create `replay_tests.py`.
 
@@ -203,4 +230,3 @@ Each test should:
 4. route agents
 5. aggregate evidence
 6. compare result to expected root cause
-

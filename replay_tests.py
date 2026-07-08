@@ -3,14 +3,18 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 from llm_cost_investigator.detector import detect_anomalies
 from llm_cost_investigator.router import route_agents
 from llm_cost_investigator.simulate_telemetry import generate_scenario_calls
-from llm_cost_investigator.agents import run_agents, call_agent_with_validation
+from llm_cost_investigator.agents import (
+    call_agent_with_validation,
+    run_agents,
+    run_agents_detailed,
+)
 from llm_cost_investigator.aggregator import select_root_cause
-from llm_cost_investigator.schemas import AgentEvidence, RootCauseResult
+from llm_cost_investigator.llm_client import LLMClientConfig, resolve_llm_client
+from llm_cost_investigator.schemas import AgentEvidence
 
 
 EXPECTED_FEATURES = {
@@ -47,7 +51,7 @@ def _assert_retry_loop() -> None:
     assert routed == ["retry_loop_agent"]
     
     # Run the agents & aggregator
-    evidence = run_agents(routed, anomaly)
+    evidence = run_agents(routed, anomaly, provider="fallback")
     assert len(evidence) == 1
     ev = evidence[0]
     assert ev.agent_name == "retry_loop_agent"
@@ -71,7 +75,7 @@ def _assert_context_bloat() -> None:
     assert routed == ["token_context_agent"]
     
     # Run the agents & aggregator
-    evidence = run_agents(routed, anomaly)
+    evidence = run_agents(routed, anomaly, provider="fallback")
     assert len(evidence) == 1
     ev = evidence[0]
     assert ev.agent_name == "token_context_agent"
@@ -98,7 +102,7 @@ def _assert_model_misroute() -> None:
     assert routed == ["model_routing_agent"]
     
     # Run the agents & aggregator
-    evidence = run_agents(routed, anomaly)
+    evidence = run_agents(routed, anomaly, provider="fallback")
     assert len(evidence) == 1
     ev = evidence[0]
     assert ev.agent_name == "model_routing_agent"
@@ -152,11 +156,47 @@ def _test_validation_wrapper_and_repair() -> None:
     assert ev.confidence == 0.94
 
 
+def _test_llm_provider_selection_and_live_client_path() -> None:
+    anomaly = _top_anomaly_for_scenario("model_misroute")
+
+    fallback = resolve_llm_client(LLMClientConfig(provider="fallback"))
+    assert fallback.provider == "fallback"
+    assert fallback.fallback_used is True
+
+    calls_made = []
+
+    def fake_live_client(prompt: str) -> str:
+        calls_made.append(prompt)
+        return json.dumps({
+            "agent_name": "model_routing_agent",
+            "hypothesis": "expensive_model_misroute",
+            "confidence": 0.91,
+            "supporting_metrics": {"model_changed": True},
+            "explanation": "Fake live client selected the model routing hypothesis."
+        })
+
+    runs = run_agents_detailed(
+        ["model_routing_agent"],
+        anomaly,
+        llm_client=fake_live_client,
+        provider="groq",
+        model="test-model",
+    )
+
+    assert len(runs) == 1
+    assert len(calls_made) == 1
+    assert runs[0].provider == "groq"
+    assert runs[0].model == "test-model"
+    assert runs[0].fallback_used is False
+    assert runs[0].evidence.hypothesis == "expensive_model_misroute"
+
+
 def main() -> int:
     _assert_retry_loop()
     _assert_context_bloat()
     _assert_model_misroute()
     _test_validation_wrapper_and_repair()
+    _test_llm_provider_selection_and_live_client_path()
     print("Replay detector/router/agent/aggregator/repair tests passed successfully!")
     return 0
 

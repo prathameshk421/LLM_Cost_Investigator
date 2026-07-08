@@ -15,7 +15,7 @@
           "avg_retry_count": 3.5,
           "repeated_parent_call_count": 1
         },
-        "explanation": "Detected uncapped retry loop with high retry count and z-score."
+        "explanation": "Retry metrics crossed the high-confidence retry-loop thresholds. (Fallback)"
       }
     ]
   },
@@ -162,10 +162,30 @@
       }
     ]
   },
+  "agent_runs": [
+    {
+      "evidence": {
+        "agent_name": "retry_loop_agent",
+        "hypothesis": "uncapped_retry_loop",
+        "confidence": 0.94,
+        "supporting_metrics": {
+          "retry_z_score": 10.0,
+          "max_retry_count": 7,
+          "avg_retry_count": 3.5,
+          "repeated_parent_call_count": 1
+        },
+        "explanation": "Retry metrics crossed the high-confidence retry-loop thresholds. (Fallback)"
+      },
+      "provider": "fallback",
+      "model": null,
+      "fallback_used": true,
+      "fallback_reason": "fallback provider explicitly selected"
+    }
+  ],
   "recommendations": [
     "Implement exponential backoff with jitter.",
     "Cap the maximum retry count in the client configuration.",
     "Add a circuit breaker pattern to prevent continuous retries during outages."
   ],
-  "generated_at": "2026-07-08T15:21:22.613498Z"
+  "generated_at": "2026-07-08T15:52:47.143349Z"
 }

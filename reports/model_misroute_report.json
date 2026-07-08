@@ -15,7 +15,7 @@
           "token_growth_pct": 24.559471365638768,
           "cost_z_score": 1882.0355656496642
         },
-        "explanation": "Detected expensive model misroute with model change and stable tokens."
+        "explanation": "Model routing metrics crossed the expensive model misroute thresholds. (Fallback)"
       }
     ]
   },
@@ -134,10 +134,30 @@
       }
     ]
   },
+  "agent_runs": [
+    {
+      "evidence": {
+        "agent_name": "model_routing_agent",
+        "hypothesis": "expensive_model_misroute",
+        "confidence": 0.95,
+        "supporting_metrics": {
+          "model_changed": true,
+          "cost_growth_pct": 609.35960591133,
+          "token_growth_pct": 24.559471365638768,
+          "cost_z_score": 1882.0355656496642
+        },
+        "explanation": "Model routing metrics crossed the expensive model misroute thresholds. (Fallback)"
+      },
+      "provider": "fallback",
+      "model": null,
+      "fallback_used": true,
+      "fallback_reason": "fallback provider explicitly selected"
+    }
+  ],
   "recommendations": [
     "Revert default model routing configurations to more cost-effective models.",
     "Add CI/CD checks to prevent unintentional model upgrades.",
     "Implement rate limiting or budget alerts for premium model endpoints."
   ],
-  "generated_at": "2026-07-08T15:21:22.616459Z"
+  "generated_at": "2026-07-08T15:52:47.146087Z"
 }

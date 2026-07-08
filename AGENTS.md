@@ -4,10 +4,12 @@ The agents are visibly agentic but constrained:
 
 - Each agent has one diagnostic role.
 - Each receives a narrow telemetry slice.
+- Each is implemented as a real LLM call when an API key is configured.
 - Each must return structured JSON.
 - Pydantic validates every response.
 - The pipeline retries once on malformed JSON.
-- Deterministic fallback evidence keeps the demo from failing.
+- Deterministic fallback evidence is only a reliability guardrail for missing API keys,
+  LLM call failures, or repeated malformed JSON.
 
 ## Shared Evidence Schema
 
@@ -225,4 +227,3 @@ Tie-break order:
 1. `expensive_model_misroute`
 2. `uncapped_retry_loop`
 3. `context_bloat_self_calling_agent`
-

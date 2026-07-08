@@ -18,21 +18,26 @@ Each replay test must verify:
 - confidence >= 0.70
 - report file was created
 
+When an LLM API key is configured, the routed diagnostic agent should run as a real
+LLM call. If fallback mode is used, terminal output and the report metadata should
+make that explicit.
+
 ## CLI Demo
 
 Required commands:
 
 ```bash
-python main.py --scenario retry_loop
-python main.py --scenario context_bloat
-python main.py --scenario model_misroute
-python replay_tests.py
+python3 main.py --scenario retry_loop
+python3 main.py --scenario context_bloat
+python3 main.py --scenario model_misroute
+python3 replay_tests.py
 ```
 
 Nice-to-have command:
 
 ```bash
-python main.py --scenario all
+python3 main.py --scenario all
+python3 main.py --scenario all --force-fallback
 ```
 
 ## Expected Terminal Output
@@ -75,8 +80,9 @@ README should include:
 - what the project does
 - why LLM cost anomalies matter
 - architecture diagram
-- how agents work
+- how real LLM diagnostic agents work
 - why detector/router are deterministic
+- when deterministic fallback mode is used
 - how to run the demo
 - sample output
 - resume bullet
@@ -88,4 +94,3 @@ Use this draft:
 ```text
 Built an agentic LLM cost anomaly investigator using deterministic z-score detection, cost-aware agent routing, Pydantic-validated diagnostic LLM agents, and replay tests against labeled retry-loop, context-bloat, and model-misrouting incidents.
 ```
-

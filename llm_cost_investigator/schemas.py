@@ -25,6 +25,7 @@ __all__ = [
     "AnomalySignals",
     "AnomalyWindow",
     "AgentEvidence",
+    "AgentRunResult",
     "LLMCall",
     "RootCauseResult",
     "IncidentReport",
@@ -152,6 +153,18 @@ class AgentEvidence(BaseModel):
     explanation: str
 
 
+class AgentRunResult(BaseModel):
+    """Evidence plus execution metadata for one diagnostic agent call."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    evidence: AgentEvidence
+    provider: Literal["groq", "cerebras", "fallback"]
+    model: str | None = None
+    fallback_used: bool = False
+    fallback_reason: str | None = None
+
+
 # ---------------------------------------------------------------------------
 # Aggregation and reporting
 # ---------------------------------------------------------------------------
@@ -177,6 +190,7 @@ class IncidentReport(BaseModel):
     scenario: str
     root_cause: RootCauseResult
     anomaly_window: AnomalyWindow
+    agent_runs: list[AgentRunResult] = Field(default_factory=list)
     recommendations: list[str] = Field(default_factory=list)
     generated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)

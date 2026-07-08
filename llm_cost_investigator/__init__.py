@@ -4,6 +4,7 @@ __all__ = [
     "aggregator",
     "agents",
     "detector",
+    "llm_client",
     "reporter",
     "router",
     "schemas",

@@ -14,7 +14,7 @@
           "max_call_chain_depth": 5,
           "input_tokens_z_score": 1454.8417278608008
         },
-        "explanation": "Detected significant input token growth and call chain depth."
+        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
       }
     ]
   },
@@ -133,10 +133,29 @@
       }
     ]
   },
+  "agent_runs": [
+    {
+      "evidence": {
+        "agent_name": "token_context_agent",
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.84,
+        "supporting_metrics": {
+          "input_token_growth_pct": 294.0677966101695,
+          "max_call_chain_depth": 5,
+          "input_tokens_z_score": 1454.8417278608008
+        },
+        "explanation": "Token metrics crossed the context-bloat thresholds. (Fallback)"
+      },
+      "provider": "fallback",
+      "model": null,
+      "fallback_used": true,
+      "fallback_reason": "fallback provider explicitly selected"
+    }
+  ],
   "recommendations": [
     "Limit maximum reflection / chain depth to a safe threshold (e.g., 3).",
     "Implement prompt summarization or token truncation for history.",
     "Add a fail-safe budget check on the chain to terminate expanding contexts."
   ],
-  "generated_at": "2026-07-08T15:21:22.615493Z"
+  "generated_at": "2026-07-08T15:52:47.144949Z"
 }
