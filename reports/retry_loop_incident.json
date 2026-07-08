@@ -2,13 +2,13 @@
   "scenario": "retry_loop",
   "root_cause": {
     "hypothesis": "uncapped_retry_loop",
-    "confidence": 0.85,
+    "confidence": 0.81,
     "winning_agent": "retry_loop_agent",
     "evidence": [
       {
         "agent_name": "retry_loop_agent",
         "hypothesis": "uncapped_retry_loop",
-        "confidence": 0.85,
+        "confidence": 0.81,
         "supporting_metrics": {
           "retry_z_score": 3.5,
           "max_retry_count": 7,
@@ -18,18 +18,21 @@
           "cost_z_score": 1882.0355656496997,
           "cost_growth_pct": 609.3596059113302
         },
-        "explanation": "The high retry count, repeated child calls from the same parent call ID, and significant latency and cost growth are all indicative of an uncapped retry loop."
+        "explanation": "The retry Z-score of 3.5 exceeds the threshold for concern, and the maximum retry count of 7 indicates multiple attempts per request. Latency and cost Z-scores are extremely high, with cost growth over 600%, consistent with repeated retries inflating both latency and expense. These combined signals strongly point to an uncapped retry loop."
       },
       {
         "agent_name": "token_context_agent",
         "hypothesis": "no_strong_signal",
-        "confidence": 0.0,
+        "confidence": 0.42,
         "supporting_metrics": {
           "input_tokens_z_score": 481.3136321568297,
           "input_token_growth_pct": 62.166064981949454,
-          "max_call_chain_depth": 1
+          "cost_growth_pct": 609.3596059113302,
+          "max_call_chain_depth": 1,
+          "retry_z_score": 3.5,
+          "model_changed": false
         },
-        "explanation": "The input token z-score is high, but the chain depth is only 1 and the input token growth percentage is not sufficient to indicate context bloat or recursive self-calling behavior."
+        "explanation": "While input token z-score and cost growth are extremely high, the call chain depth never exceeds 1 and all calls share the same parent, indicating no recursive self‑calling or deep context accumulation. The dominant factor appears to be a series of retries, not context bloat. Therefore there is no strong signal of context bloat or self‑calling behavior."
       }
     ]
   },
@@ -181,7 +184,7 @@
       "evidence": {
         "agent_name": "retry_loop_agent",
         "hypothesis": "uncapped_retry_loop",
-        "confidence": 0.85,
+        "confidence": 0.81,
         "supporting_metrics": {
           "retry_z_score": 3.5,
           "max_retry_count": 7,
@@ -191,10 +194,10 @@
           "cost_z_score": 1882.0355656496997,
           "cost_growth_pct": 609.3596059113302
         },
-        "explanation": "The high retry count, repeated child calls from the same parent call ID, and significant latency and cost growth are all indicative of an uncapped retry loop."
+        "explanation": "The retry Z-score of 3.5 exceeds the threshold for concern, and the maximum retry count of 7 indicates multiple attempts per request. Latency and cost Z-scores are extremely high, with cost growth over 600%, consistent with repeated retries inflating both latency and expense. These combined signals strongly point to an uncapped retry loop."
       },
       "provider": "groq",
-      "model": "llama-3.3-70b-versatile",
+      "model": "openai/gpt-oss-120b",
       "fallback_used": false,
       "fallback_reason": null
     },
@@ -202,16 +205,19 @@
       "evidence": {
         "agent_name": "token_context_agent",
         "hypothesis": "no_strong_signal",
-        "confidence": 0.0,
+        "confidence": 0.42,
         "supporting_metrics": {
           "input_tokens_z_score": 481.3136321568297,
           "input_token_growth_pct": 62.166064981949454,
-          "max_call_chain_depth": 1
+          "cost_growth_pct": 609.3596059113302,
+          "max_call_chain_depth": 1,
+          "retry_z_score": 3.5,
+          "model_changed": false
         },
-        "explanation": "The input token z-score is high, but the chain depth is only 1 and the input token growth percentage is not sufficient to indicate context bloat or recursive self-calling behavior."
+        "explanation": "While input token z-score and cost growth are extremely high, the call chain depth never exceeds 1 and all calls share the same parent, indicating no recursive self‑calling or deep context accumulation. The dominant factor appears to be a series of retries, not context bloat. Therefore there is no strong signal of context bloat or self‑calling behavior."
       },
       "provider": "groq",
-      "model": "llama-3.3-70b-versatile",
+      "model": "openai/gpt-oss-120b",
       "fallback_used": false,
       "fallback_reason": null
     }
@@ -221,5 +227,5 @@
     "Cap the maximum retry count in the client configuration.",
     "Add a circuit breaker pattern to prevent continuous retries during outages."
   ],
-  "generated_at": "2026-07-08T20:29:37.623705Z"
+  "generated_at": "2026-07-08T21:04:25.300820Z"
 }

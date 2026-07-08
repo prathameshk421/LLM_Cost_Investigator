@@ -46,7 +46,7 @@ Optional API keys for live LLM diagnostic agents:
 ```bash
 export GROQ_API_KEY=your_key_here    # Groq provider
 export CEREBRAS_API_KEY=your_key     # Cerebras provider
-export LLM_MODEL=llama-3.3-70b-versatile  # optional model override
+export LLM_MODEL=openai/gpt-oss-120b  # optional model override
 ```
 
 Or create a `.env` file in the project root (keys are loaded automatically):

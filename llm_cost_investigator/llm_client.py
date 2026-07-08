@@ -45,7 +45,7 @@ PROVIDER_MODEL_ENV: dict[str, str] = {
 }
 
 DEFAULT_MODELS: dict[str, str] = {
-    "groq": "llama-3.3-70b-versatile",
+    "groq": "openai/gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
 }
 

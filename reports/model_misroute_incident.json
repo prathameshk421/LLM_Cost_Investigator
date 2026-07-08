@@ -2,33 +2,36 @@
   "scenario": "model_misroute",
   "root_cause": {
     "hypothesis": "expensive_model_misroute",
-    "confidence": 0.95,
+    "confidence": 0.96,
     "winning_agent": "model_routing_agent",
     "evidence": [
       {
         "agent_name": "model_routing_agent",
         "hypothesis": "expensive_model_misroute",
-        "confidence": 0.95,
+        "confidence": 0.96,
         "supporting_metrics": {
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4.1",
           "cost_growth_pct": 609.35960591133,
           "token_growth_pct": 24.559471365638768,
           "cost_z_score": 1882.0355656496642,
-          "model_changed": true,
-          "model_before": "gpt-4o-mini",
-          "model_during": "gpt-4.1"
+          "retry_z_score": 0.0,
+          "max_retry_count": 0
         },
-        "explanation": "The cost grew by 609% while the token growth was only 24%, and the model was changed from gpt-4o-mini to gpt-4.1, indicating a likely misroute to a more expensive model."
+        "explanation": "The summarizer feature was routed from the low‑cost gpt-4o-mini to the much more expensive gpt-4.1. Cost increased by >600% while input/output token counts grew only ~25%, well under the 50% threshold. No retry spikes are observed. This pattern strongly indicates a misrouting to a pricier model."
       },
       {
         "agent_name": "token_context_agent",
         "hypothesis": "no_strong_signal",
-        "confidence": 0.0,
+        "confidence": 0.42,
         "supporting_metrics": {
+          "input_tokens_z_score": 155.8259871820166,
           "input_token_growth_pct": 24.559471365638768,
           "max_call_chain_depth": 0,
-          "input_tokens_z_score": 155.8259871820166
+          "model_changed": true,
+          "cost_growth_pct": 609.35960591133
         },
-        "explanation": "The input token growth percentage is 24.56%, which is not sufficient to indicate context bloat. The maximum call chain depth is 0, indicating no recursive self-calling behavior. The input tokens z-score is high, but without a significant increase in input tokens or chain depth, it does not provide strong evidence for context bloat or recursive self-calling behavior."
+        "explanation": "Input token count shows a modest 24.6% increase and a very high z-score, but there is no call chain depth (max depth 0), indicating no recursive self-calling behavior. The massive cost growth aligns with a model change flag, suggesting the cost increase is due to the new model rather than context bloat. Therefore, there is no strong signal pointing to context bloat or self-calling anomalies."
       }
     ]
   },
@@ -152,19 +155,20 @@
       "evidence": {
         "agent_name": "model_routing_agent",
         "hypothesis": "expensive_model_misroute",
-        "confidence": 0.95,
+        "confidence": 0.96,
         "supporting_metrics": {
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4.1",
           "cost_growth_pct": 609.35960591133,
           "token_growth_pct": 24.559471365638768,
           "cost_z_score": 1882.0355656496642,
-          "model_changed": true,
-          "model_before": "gpt-4o-mini",
-          "model_during": "gpt-4.1"
+          "retry_z_score": 0.0,
+          "max_retry_count": 0
         },
-        "explanation": "The cost grew by 609% while the token growth was only 24%, and the model was changed from gpt-4o-mini to gpt-4.1, indicating a likely misroute to a more expensive model."
+        "explanation": "The summarizer feature was routed from the low‑cost gpt-4o-mini to the much more expensive gpt-4.1. Cost increased by >600% while input/output token counts grew only ~25%, well under the 50% threshold. No retry spikes are observed. This pattern strongly indicates a misrouting to a pricier model."
       },
       "provider": "groq",
-      "model": "llama-3.3-70b-versatile",
+      "model": "openai/gpt-oss-120b",
       "fallback_used": false,
       "fallback_reason": null
     },
@@ -172,16 +176,18 @@
       "evidence": {
         "agent_name": "token_context_agent",
         "hypothesis": "no_strong_signal",
-        "confidence": 0.0,
+        "confidence": 0.42,
         "supporting_metrics": {
+          "input_tokens_z_score": 155.8259871820166,
           "input_token_growth_pct": 24.559471365638768,
           "max_call_chain_depth": 0,
-          "input_tokens_z_score": 155.8259871820166
+          "model_changed": true,
+          "cost_growth_pct": 609.35960591133
         },
-        "explanation": "The input token growth percentage is 24.56%, which is not sufficient to indicate context bloat. The maximum call chain depth is 0, indicating no recursive self-calling behavior. The input tokens z-score is high, but without a significant increase in input tokens or chain depth, it does not provide strong evidence for context bloat or recursive self-calling behavior."
+        "explanation": "Input token count shows a modest 24.6% increase and a very high z-score, but there is no call chain depth (max depth 0), indicating no recursive self-calling behavior. The massive cost growth aligns with a model change flag, suggesting the cost increase is due to the new model rather than context bloat. Therefore, there is no strong signal pointing to context bloat or self-calling anomalies."
       },
       "provider": "groq",
-      "model": "llama-3.3-70b-versatile",
+      "model": "openai/gpt-oss-120b",
       "fallback_used": false,
       "fallback_reason": null
     }
@@ -191,5 +197,5 @@
     "Add CI/CD checks to prevent unintentional model upgrades.",
     "Implement rate limiting or budget alerts for premium model endpoints."
   ],
-  "generated_at": "2026-07-08T20:29:40.413790Z"
+  "generated_at": "2026-07-08T21:04:30.033363Z"
 }
