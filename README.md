@@ -128,9 +128,3 @@ Replay tests validate detector, router, agent routing, aggregator, and markdown/
 python3 replay_tests.py
 ```
 
-## Resume Bullet
-
-Built an agentic LLM cost anomaly investigator using deterministic z-score
-detection, cost-aware agent routing, Pydantic-validated diagnostic LLM agents,
-and replay tests against labeled retry-loop, context-bloat, and
-model-misrouting incidents.
