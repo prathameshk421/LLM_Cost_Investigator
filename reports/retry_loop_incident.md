@@ -1,25 +1,34 @@
 # Incident Report: retry_loop
 
-Root cause: uncapped_retry_loop
-Affected feature: support_reply
-Confidence: 0.94
-Winning agent: retry_loop_agent
+Generated: 2026-07-08T16:10:03.713513+00:00
+
+## Summary
+
+Root cause: Retry metrics crossed the high-confidence retry-loop thresholds. (Fallback)
+
+## Root Cause
+
+| Field | Value |
+| :--- | :--- |
+| Hypothesis | uncapped_retry_loop |
+| Affected feature | support_reply |
+| Confidence | 0.94 |
+| Winning agent | retry_loop_agent |
 
 ## Agent Execution
-
-- Agent: retry_loop_agent
-- Provider: fallback
-- Model: n/a
-- Fallback used: True
-- Fallback reason: fallback provider explicitly selected
+- **retry_loop_agent** — provider: fallback, model: n/a, fallback: True, reason: fallback provider explicitly selected
 
 ## Supporting Evidence
 
-- Agent: retry_loop_agent
-- Hypothesis: uncapped_retry_loop
-- Confidence: 0.94
-- Explanation: Retry metrics crossed the high-confidence retry-loop thresholds. (Fallback)
-- Metrics: {'retry_z_score': 10.0, 'max_retry_count': 7, 'avg_retry_count': 3.5, 'repeated_parent_call_count': 1}
+### retry_loop_agent
+- **Hypothesis**: uncapped_retry_loop
+- **Confidence**: 0.94
+- **Explanation**: Retry metrics crossed the high-confidence retry-loop thresholds. (Fallback)
+- **Key metrics**:
+  - retry_z_score: 10.0
+  - max_retry_count: 7
+  - avg_retry_count: 3.5
+  - repeated_parent_call_count: 1
 
 ## Recommendations
 - Implement exponential backoff with jitter.

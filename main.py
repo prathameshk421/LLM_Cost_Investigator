@@ -87,17 +87,9 @@ def process_scenario(
             model=model,
         )
         evidence = [run.evidence for run in agent_runs]
-        for ev in evidence:
-            print(f"  Agent {ev.agent_name} hypothesis: {ev.hypothesis} (confidence: {ev.confidence:.2f})")
-        for run in agent_runs:
-            model_label = f" model={run.model}" if run.model else ""
-            print(f"  Execution: provider={run.provider}{model_label}")
-            if run.fallback_used and run.fallback_reason:
-                print(f"  Fallback reason: {run.fallback_reason}")
             
         # Select root cause
         root_cause = select_root_cause(evidence)
-        print(f"Aggregated root cause: {root_cause.hypothesis} (confidence: {root_cause.confidence:.2f})")
         
         # Write report
         recommendations = RECOMMENDATIONS.get(root_cause.hypothesis, ["Monitor baseline metrics."])
@@ -109,7 +101,6 @@ def process_scenario(
             recommendations=recommendations,
         )
         write_report(report)
-        print(f"Reports written to reports/{scenario}_report.json and reports/{scenario}_incident.md")
 
 
 def main() -> int:
