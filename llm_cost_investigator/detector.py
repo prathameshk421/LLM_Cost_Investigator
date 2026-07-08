@@ -229,9 +229,12 @@ def _z_score(current: float, baseline_values: list[float]) -> float:
     if baseline_std == 0:
         if current == baseline_mean:
             return 0.0
-        if current > baseline_mean:
-            return 10.0
-        return -10.0
+        # When there is zero variance in the baseline, estimate a minimum
+        # standard deviation proportional to the data scale so that mild
+        # deviations (e.g. 1 retry vs 7) produce meaningfully different
+        # z-scores instead of both being clamped to 10.0.
+        min_std = max(abs(baseline_mean) * 0.1, 1.0)
+        return (current - baseline_mean) / min_std
 
     return (current - baseline_mean) / baseline_std
 

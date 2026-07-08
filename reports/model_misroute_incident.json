@@ -2,37 +2,33 @@
   "scenario": "model_misroute",
   "root_cause": {
     "hypothesis": "expensive_model_misroute",
-    "confidence": 0.96,
+    "confidence": 0.95,
     "winning_agent": "model_routing_agent",
     "evidence": [
       {
         "agent_name": "model_routing_agent",
         "hypothesis": "expensive_model_misroute",
-        "confidence": 0.96,
+        "confidence": 0.95,
         "supporting_metrics": {
-          "model_changed": true,
-          "model_before": "gpt-4o-mini",
-          "model_during": "gpt-4.1",
           "cost_growth_pct": 609.35960591133,
           "token_growth_pct": 24.559471365638768,
           "cost_z_score": 1882.0355656496642,
-          "retry_z_score": 0.0,
-          "max_retry_count": 0
+          "model_changed": true,
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4.1"
         },
-        "explanation": "The telemetry shows a model change from the cheaper gpt-4o-mini to the more expensive gpt-4.1 during the anomaly window. Cost grew by over 600% while token usage increased only ~25%, well below the 50% threshold. No retry spikes are present. These patterns strongly indicate the feature was misrouted to a higher‑cost model."
+        "explanation": "The cost grew by 609% while the token growth was only 24%, and the model was changed from gpt-4o-mini to gpt-4.1, indicating a likely misroute to a more expensive model."
       },
       {
         "agent_name": "token_context_agent",
         "hypothesis": "no_strong_signal",
-        "confidence": 0.32,
+        "confidence": 0.0,
         "supporting_metrics": {
-          "input_tokens_z_score": 155.8259871820166,
           "input_token_growth_pct": 24.559471365638768,
-          "cost_growth_pct": 609.35960591133,
           "max_call_chain_depth": 0,
-          "model_changed": true
+          "input_tokens_z_score": 155.8259871820166
         },
-        "explanation": "While the input token z-score is extremely high, the actual input token growth is only ~24.6% and there is no call chain depth (max depth = 0). The cost surge aligns with a model change rather than increased context or recursive calls. Therefore there is no strong signal of context bloat or self‑calling behavior."
+        "explanation": "The input token growth percentage is 24.56%, which is not sufficient to indicate context bloat. The maximum call chain depth is 0, indicating no recursive self-calling behavior. The input tokens z-score is high, but without a significant increase in input tokens or chain depth, it does not provide strong evidence for context bloat or recursive self-calling behavior."
       }
     ]
   },
@@ -45,7 +41,7 @@
       "input_tokens_z_score": 155.8259871820166,
       "output_tokens_z_score": 83.07125455495019,
       "retry_z_score": 0.0,
-      "calls_z_score": 10.0,
+      "calls_z_score": 1.0,
       "latency_z_score": 82.97369550852524,
       "input_token_growth_pct": 24.559471365638768,
       "output_token_growth_pct": 24.93150684931507,
@@ -156,21 +152,19 @@
       "evidence": {
         "agent_name": "model_routing_agent",
         "hypothesis": "expensive_model_misroute",
-        "confidence": 0.96,
+        "confidence": 0.95,
         "supporting_metrics": {
-          "model_changed": true,
-          "model_before": "gpt-4o-mini",
-          "model_during": "gpt-4.1",
           "cost_growth_pct": 609.35960591133,
           "token_growth_pct": 24.559471365638768,
           "cost_z_score": 1882.0355656496642,
-          "retry_z_score": 0.0,
-          "max_retry_count": 0
+          "model_changed": true,
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4.1"
         },
-        "explanation": "The telemetry shows a model change from the cheaper gpt-4o-mini to the more expensive gpt-4.1 during the anomaly window. Cost grew by over 600% while token usage increased only ~25%, well below the 50% threshold. No retry spikes are present. These patterns strongly indicate the feature was misrouted to a higher‑cost model."
+        "explanation": "The cost grew by 609% while the token growth was only 24%, and the model was changed from gpt-4o-mini to gpt-4.1, indicating a likely misroute to a more expensive model."
       },
-      "provider": "cerebras",
-      "model": "gpt-oss-120b",
+      "provider": "groq",
+      "model": "llama-3.3-70b-versatile",
       "fallback_used": false,
       "fallback_reason": null
     },
@@ -178,18 +172,16 @@
       "evidence": {
         "agent_name": "token_context_agent",
         "hypothesis": "no_strong_signal",
-        "confidence": 0.32,
+        "confidence": 0.0,
         "supporting_metrics": {
-          "input_tokens_z_score": 155.8259871820166,
           "input_token_growth_pct": 24.559471365638768,
-          "cost_growth_pct": 609.35960591133,
           "max_call_chain_depth": 0,
-          "model_changed": true
+          "input_tokens_z_score": 155.8259871820166
         },
-        "explanation": "While the input token z-score is extremely high, the actual input token growth is only ~24.6% and there is no call chain depth (max depth = 0). The cost surge aligns with a model change rather than increased context or recursive calls. Therefore there is no strong signal of context bloat or self‑calling behavior."
+        "explanation": "The input token growth percentage is 24.56%, which is not sufficient to indicate context bloat. The maximum call chain depth is 0, indicating no recursive self-calling behavior. The input tokens z-score is high, but without a significant increase in input tokens or chain depth, it does not provide strong evidence for context bloat or recursive self-calling behavior."
       },
-      "provider": "cerebras",
-      "model": "gpt-oss-120b",
+      "provider": "groq",
+      "model": "llama-3.3-70b-versatile",
       "fallback_used": false,
       "fallback_reason": null
     }
@@ -199,5 +191,5 @@
     "Add CI/CD checks to prevent unintentional model upgrades.",
     "Implement rate limiting or budget alerts for premium model endpoints."
   ],
-  "generated_at": "2026-07-08T20:00:34.440305Z"
+  "generated_at": "2026-07-08T20:29:40.413790Z"
 }

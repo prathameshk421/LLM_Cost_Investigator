@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from llm_cost_investigator.detector import detect_anomalies
+from llm_cost_investigator.detector import detect_anomalies, _z_score
 from llm_cost_investigator.router import route_agents
 from llm_cost_investigator.simulate_telemetry import generate_scenario_calls
 from llm_cost_investigator.agents import (
@@ -119,7 +119,7 @@ def _assert_retry_loop() -> None:
     ev = run.evidence
     assert ev.agent_name == "retry_loop_agent"
     assert ev.hypothesis == "uncapped_retry_loop"
-    assert ev.confidence >= 0.90  # retry z-score >= 5 and max retry count >= 5 floor
+    assert ev.confidence >= 0.82  # retry z-score >= 3 floor (zero-variance baseline now yields z=3.5, not 10.0)
     
     root_cause = select_root_cause([r.evidence for r in agent_runs])
     assert root_cause.hypothesis == "uncapped_retry_loop"
@@ -228,7 +228,7 @@ def _test_validation_wrapper_and_repair() -> None:
     assert ev.agent_name == "retry_loop_agent"
     assert ev.hypothesis == "uncapped_retry_loop"
     assert "Fallback" in ev.explanation
-    assert ev.confidence == 0.94
+    assert ev.confidence == 0.82  # zero-variance baseline fix: retry_z_score is now 3.5, not 10.0
 
 
 def _test_llm_provider_selection_and_live_client_path() -> None:
@@ -378,6 +378,34 @@ def _test_retry_loop_tool_use_skips_tool() -> None:
     assert result.confidence == 0.95
 
 
+def _test_z_score_behavior() -> None:
+    """Verify z-score clamp fix: zero-variance baseline should NOT clamp
+    all deviations to 10.0; small deviations should produce small z-scores."""
+    # Case 1: baseline_std == 0, current == baseline_mean → z = 0.0
+    z = _z_score(0.0, [0.0, 0.0, 0.0])
+    assert z == 0.0, f"Expected 0.0, got {z}"
+
+    # Case 2: baseline_std == 0, mild deviation → small z (not clamped to 10.0)
+    z = _z_score(1.5, [0.0, 0.0, 0.0])
+    assert 1.0 <= z < 5.0, f"Expected z in ~1-3 range for mild deviation, got {z}"
+
+    # Case 3: baseline_std == 0, larger deviation → proportionally larger z
+    z_mild = _z_score(1.5, [0.0, 0.0, 0.0])
+    z_severe = _z_score(7.0, [0.0, 0.0, 0.0])
+    assert z_severe > z_mild, (
+        f"Severe deviation should produce larger z than mild: "
+        f"mild={z_mild}, severe={z_severe}"
+    )
+
+    # Case 4: non-zero baseline_std, mild deviation → z in 1-3 range
+    z = _z_score(108.0, [100.0, 95.0, 105.0, 100.0, 98.0, 102.0])
+    assert 1.0 <= z <= 3.0, f"Expected z ~1.5 for mild deviation, got {z}"
+
+    # Case 5: non-zero baseline_std, extreme deviation → large z
+    z = _z_score(200.0, [100.0, 95.0, 105.0, 100.0, 98.0, 102.0])
+    assert z > 5.0, f"Expected large z for extreme deviation, got {z}"
+
+
 def main() -> int:
     success = True
 
@@ -407,6 +435,7 @@ def main() -> int:
         ("llm_provider_selection_and_live_client_path", _test_llm_provider_selection_and_live_client_path),
         ("retry_loop_tool_use_calls_tool", _test_retry_loop_tool_use_calls_tool),
         ("retry_loop_tool_use_skips_tool", _test_retry_loop_tool_use_skips_tool),
+        ("z_score_behavior", _test_z_score_behavior),
     ]
     for name, test_fn in unit_tests:
         try:
