@@ -143,6 +143,17 @@ data/runtime/
 # Local env (secrets)
 .env
 .env.local
+
+# Temporary resume build artifacts
+resume.aux
+resume.log
+resume.out
+resume.fdb_latexmk
+resume.fls
+resume.synctex.gz
+# keep resume.tex; ignore generated PDF unless you want it tracked
+# resume.pdf
+
 .env.*.local
 
 # Modern Python/Node Caches
