@@ -1,0 +1,330 @@
+{
+  "id": "token_context_thin",
+  "title": "Token Context Thin — MUST CALL Tool",
+  "kind": "thin_must_call",
+  "scenario_label": "token_context_thin",
+  "feature_tag": "agent_reflection",
+  "window": {
+    "start_time": "2026-07-09T00:00:00Z",
+    "end_time": "2026-07-09T00:00:00Z"
+  },
+  "stages": [
+    {
+      "id": "signals",
+      "title": "Raw signals",
+      "kind": "deterministic",
+      "agent_name": null,
+      "payload": {
+        "signals": {
+          "input_tokens_z_score": 1.5,
+          "input_token_growth_pct": 45.0,
+          "token_growth_pct": 45.0,
+          "cost_growth_pct": 55.0,
+          "max_call_chain_depth": 3,
+          "retry_z_score": 0.0,
+          "model_changed": false
+        },
+        "highlights": [
+          {
+            "key": "retry_z_score",
+            "value": 0.0,
+            "threshold": ">= 3 route retry agent",
+            "status": "neutral"
+          },
+          {
+            "key": "input_tokens_z_score",
+            "value": 1.5,
+            "threshold": ">= 3 route token agent / < 3 may force tool",
+            "status": "ambiguous"
+          },
+          {
+            "key": "cost_growth_pct",
+            "value": 55.0,
+            "threshold": null,
+            "status": "neutral"
+          },
+          {
+            "key": "input_token_growth_pct",
+            "value": 45.0,
+            "threshold": null,
+            "status": "neutral"
+          },
+          {
+            "key": "token_growth_pct",
+            "value": 45.0,
+            "threshold": "< 50 with cost spike → model route",
+            "status": "neutral"
+          },
+          {
+            "key": "max_call_chain_depth",
+            "value": 3,
+            "threshold": ">= 4 route / >= 2 tool gate",
+            "status": "ambiguous"
+          },
+          {
+            "key": "model_changed",
+            "value": false,
+            "threshold": "True → route model agent",
+            "status": "neutral"
+          }
+        ],
+        "sample_calls": [
+          {
+            "call_id": "token_context_thin_call_00"
+          },
+          {
+            "call_id": "token_context_thin_call_01"
+          },
+          {
+            "call_id": "token_context_thin_call_02"
+          },
+          {
+            "call_id": "token_context_thin_call_03"
+          }
+        ]
+      }
+    },
+    {
+      "id": "router",
+      "title": "Router decision",
+      "kind": "deterministic",
+      "agent_name": null,
+      "payload": {
+        "candidates": [
+          {
+            "agent_name": "model_routing_agent",
+            "selected": false,
+            "reasons": [
+              "no model-routing trigger"
+            ]
+          },
+          {
+            "agent_name": "retry_loop_agent",
+            "selected": false,
+            "reasons": [
+              "no retry-loop trigger"
+            ]
+          },
+          {
+            "agent_name": "token_context_agent",
+            "selected": true,
+            "reasons": [
+              "no token-context trigger",
+              "thin demo: forced diagnostic path"
+            ]
+          }
+        ],
+        "selected": [
+          "token_context_agent"
+        ],
+        "max_agents": 2
+      }
+    },
+    {
+      "id": "decision",
+      "title": "DECISION — token_context_agent",
+      "kind": "deterministic",
+      "agent_name": "token_context_agent",
+      "payload": {
+        "agent_name": "token_context_agent",
+        "tool_name": "get_call_chain",
+        "tool_required": true,
+        "decision": "MUST_CALL",
+        "decision_line": "DECISION: MUST CALL get_call_chain — input_tokens_z_score=1.5 (below 3.0) AND max_call_chain_depth=3 (>= 2). Aggregate token growth alone is inconclusive but chain depth suggests possible recursion — inspect the actual chain before answering.",
+        "comparisons": [
+          {
+            "metric": "input_tokens_z_score",
+            "value": 1.5,
+            "operator": "<",
+            "threshold": 3.0,
+            "passed": true
+          },
+          {
+            "metric": "max_call_chain_depth",
+            "value": 3,
+            "operator": ">=",
+            "threshold": 2,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "tool_trace",
+      "title": "Tool trace — token_context_agent",
+      "kind": "deterministic",
+      "agent_name": "token_context_agent",
+      "payload": {
+        "agent_name": "token_context_agent",
+        "tool_name": "get_call_chain",
+        "tool_required": true,
+        "calls": [
+          {
+            "name": "get_call_chain",
+            "args": {
+              "call_id": "token_context_thin_call_00"
+            }
+          }
+        ],
+        "result": [
+          {
+            "call_id": "ctx_chain_00",
+            "parent_call_id": null,
+            "timestamp": "2026-07-09T00:00:00Z",
+            "input_tokens": 800,
+            "output_tokens": 100,
+            "cost_usd": 0.001
+          },
+          {
+            "call_id": "ctx_chain_01",
+            "parent_call_id": "ctx_chain_00",
+            "timestamp": "2026-07-09T00:00:00Z",
+            "input_tokens": 1600,
+            "output_tokens": 120,
+            "cost_usd": 0.002
+          },
+          {
+            "call_id": "ctx_chain_02",
+            "parent_call_id": "ctx_chain_01",
+            "timestamp": "2026-07-09T00:00:00Z",
+            "input_tokens": 3200,
+            "output_tokens": 140,
+            "cost_usd": 0.004
+          },
+          {
+            "call_id": "ctx_chain_03",
+            "parent_call_id": "ctx_chain_02",
+            "timestamp": "2026-07-09T00:00:00Z",
+            "input_tokens": 6400,
+            "output_tokens": 160,
+            "cost_usd": 0.008
+          }
+        ],
+        "result_summary": "4 row(s) from get_call_chain"
+      }
+    },
+    {
+      "id": "explanation",
+      "title": "Agent explanation — token_context_agent",
+      "kind": "agentic",
+      "agent_name": "token_context_agent",
+      "payload": {
+        "agent_name": "token_context_agent",
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.68,
+        "explanation": "The call chain shows a deepening recursion where each successive call doubles the input tokens (800 → 1600 → 3200 → 6400), indicating self‑calling behavior that inflates the context. Although the overall input token z‑score is modest, the exponential growth across the chain points to context bloat caused by recursive calls.",
+        "supporting_metrics": {
+          "input_tokens_z_score": 1.5,
+          "input_token_growth_pct": 45.0,
+          "max_call_chain_depth": 3,
+          "observed_chain_depth": 4,
+          "observed_input_token_multiplier": 8.0
+        },
+        "citations": [
+          {
+            "value": 800,
+            "display": "800",
+            "explanation_span": {
+              "start": 96,
+              "end": 99
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[0].input_tokens",
+              "field": "input_tokens",
+              "raw": 800
+            },
+            "match_kind": "exact_number"
+          },
+          {
+            "value": 1600,
+            "display": "1600",
+            "explanation_span": {
+              "start": 102,
+              "end": 106
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[1].input_tokens",
+              "field": "input_tokens",
+              "raw": 1600
+            },
+            "match_kind": "exact_number"
+          },
+          {
+            "value": 3200,
+            "display": "3200",
+            "explanation_span": {
+              "start": 109,
+              "end": 113
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[2].input_tokens",
+              "field": "input_tokens",
+              "raw": 3200
+            },
+            "match_kind": "exact_number"
+          },
+          {
+            "value": 6400,
+            "display": "6400",
+            "explanation_span": {
+              "start": 116,
+              "end": 120
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[3].input_tokens",
+              "field": "input_tokens",
+              "raw": 6400
+            },
+            "match_kind": "exact_number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "root_cause",
+      "title": "Root cause & recommendations",
+      "kind": "agentic",
+      "agent_name": null,
+      "payload": {
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.68,
+        "winning_agent": "token_context_agent",
+        "all_evidence": [
+          {
+            "agent_name": "token_context_agent",
+            "hypothesis": "context_bloat_self_calling_agent",
+            "confidence": 0.68
+          }
+        ],
+        "recommendations": [
+          "Cap recursive self-calls with a max reflection depth.",
+          "Summarize prior context before re-invoking the agent.",
+          "Alert when call-chain depth grows with doubling input tokens."
+        ],
+        "tie_break_note": "Thin synthetic scenario — single agent path."
+      }
+    }
+  ],
+  "root_cause": {
+    "hypothesis": "context_bloat_self_calling_agent",
+    "confidence": 0.68,
+    "winning_agent": "token_context_agent"
+  },
+  "recommendations": [
+    "Cap recursive self-calls with a max reflection depth.",
+    "Summarize prior context before re-invoking the agent.",
+    "Alert when call-chain depth grows with doubling input tokens."
+  ],
+  "meta": {
+    "provider": "cerebras",
+    "model": "gpt-oss-120b",
+    "generated_at": "2026-07-09T08:42:52.367406Z",
+    "source_files": [
+      "data/reports/transcripts/live_token_context_tool_use.txt"
+    ]
+  }
+}

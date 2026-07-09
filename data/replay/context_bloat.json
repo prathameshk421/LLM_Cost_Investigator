@@ -1,0 +1,323 @@
+{
+  "id": "context_bloat",
+  "title": "Context Bloat — Self-Calling Chain",
+  "kind": "main",
+  "scenario_label": "context_bloat",
+  "feature_tag": "agent_reflection",
+  "window": {
+    "start_time": "2026-07-08T09:30:00Z",
+    "end_time": "2026-07-08T09:35:00Z"
+  },
+  "stages": [
+    {
+      "id": "signals",
+      "title": "Raw signals",
+      "kind": "deterministic",
+      "agent_name": null,
+      "payload": {
+        "signals": {
+          "cost_z_score": 969.1646364744149,
+          "input_tokens_z_score": 1454.8417278608008,
+          "output_tokens_z_score": 125.06331729701293,
+          "retry_z_score": 0.0,
+          "calls_z_score": 1.0,
+          "latency_z_score": 172.07774996355664,
+          "input_token_growth_pct": 294.0677966101695,
+          "output_token_growth_pct": 42.15384615384615,
+          "cost_growth_pct": 313.79310344827593,
+          "token_growth_pct": 294.0677966101695,
+          "max_retry_count": 0,
+          "avg_retry_count": 0.0,
+          "max_call_chain_depth": 5,
+          "repeated_parent_call_count": 0,
+          "model_changed": false,
+          "models_seen": [
+            "gpt-4o-mini"
+          ],
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4o-mini"
+        },
+        "highlights": [
+          {
+            "key": "cost_z_score",
+            "value": 969.1646364744149,
+            "threshold": ">= 3 anomaly",
+            "status": "fail"
+          },
+          {
+            "key": "retry_z_score",
+            "value": 0.0,
+            "threshold": ">= 3 route retry agent",
+            "status": "neutral"
+          },
+          {
+            "key": "input_tokens_z_score",
+            "value": 1454.8417278608008,
+            "threshold": ">= 3 route token agent / < 3 may force tool",
+            "status": "fail"
+          },
+          {
+            "key": "cost_growth_pct",
+            "value": 313.79310344827593,
+            "threshold": null,
+            "status": "fail"
+          },
+          {
+            "key": "input_token_growth_pct",
+            "value": 294.0677966101695,
+            "threshold": null,
+            "status": "neutral"
+          },
+          {
+            "key": "token_growth_pct",
+            "value": 294.0677966101695,
+            "threshold": "< 50 with cost spike → model route",
+            "status": "neutral"
+          },
+          {
+            "key": "max_retry_count",
+            "value": 0,
+            "threshold": ">= 3 route retry agent",
+            "status": "neutral"
+          },
+          {
+            "key": "max_call_chain_depth",
+            "value": 5,
+            "threshold": ">= 4 route / >= 2 tool gate",
+            "status": "fail"
+          },
+          {
+            "key": "repeated_parent_call_count",
+            "value": 0,
+            "threshold": ">= 1 with low retry_z → tool",
+            "status": "neutral"
+          },
+          {
+            "key": "model_changed",
+            "value": false,
+            "threshold": "True → route model agent",
+            "status": "neutral"
+          },
+          {
+            "key": "model_before",
+            "value": "gpt-4o-mini",
+            "threshold": null,
+            "status": "neutral"
+          },
+          {
+            "key": "model_during",
+            "value": "gpt-4o-mini",
+            "threshold": null,
+            "status": "neutral"
+          }
+        ],
+        "sample_calls": [
+          {
+            "call_id": "context_bloat_agent_reflection_chain_00",
+            "parent_call_id": null,
+            "model": "gpt-4o-mini",
+            "input_tokens": 700,
+            "output_tokens": 180,
+            "cost_usd": 0.0018,
+            "latency_ms": 650,
+            "retry_count": 0
+          },
+          {
+            "call_id": "context_bloat_agent_reflection_chain_01",
+            "parent_call_id": "context_bloat_agent_reflection_chain_00",
+            "model": "gpt-4o-mini",
+            "input_tokens": 1350,
+            "output_tokens": 185,
+            "cost_usd": 0.0036,
+            "latency_ms": 900,
+            "retry_count": 0
+          },
+          {
+            "call_id": "context_bloat_agent_reflection_chain_02",
+            "parent_call_id": "context_bloat_agent_reflection_chain_01",
+            "model": "gpt-4o-mini",
+            "input_tokens": 2000,
+            "output_tokens": 190,
+            "cost_usd": 0.0054,
+            "latency_ms": 1150,
+            "retry_count": 0
+          },
+          {
+            "call_id": "context_bloat_agent_reflection_chain_03",
+            "parent_call_id": "context_bloat_agent_reflection_chain_02",
+            "model": "gpt-4o-mini",
+            "input_tokens": 2650,
+            "output_tokens": 195,
+            "cost_usd": 0.0072,
+            "latency_ms": 1400,
+            "retry_count": 0
+          },
+          {
+            "call_id": "context_bloat_agent_reflection_chain_04",
+            "parent_call_id": "context_bloat_agent_reflection_chain_03",
+            "model": "gpt-4o-mini",
+            "input_tokens": 3300,
+            "output_tokens": 200,
+            "cost_usd": 0.009,
+            "latency_ms": 1650,
+            "retry_count": 0
+          },
+          {
+            "call_id": "context_bloat_agent_reflection_chain_05",
+            "parent_call_id": "context_bloat_agent_reflection_chain_04",
+            "model": "gpt-4o-mini",
+            "input_tokens": 3950,
+            "output_tokens": 205,
+            "cost_usd": 0.0108,
+            "latency_ms": 1900,
+            "retry_count": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "router",
+      "title": "Router decision",
+      "kind": "deterministic",
+      "agent_name": null,
+      "payload": {
+        "candidates": [
+          {
+            "agent_name": "model_routing_agent",
+            "selected": false,
+            "reasons": [
+              "no model-routing trigger"
+            ]
+          },
+          {
+            "agent_name": "retry_loop_agent",
+            "selected": false,
+            "reasons": [
+              "no retry-loop trigger"
+            ]
+          },
+          {
+            "agent_name": "token_context_agent",
+            "selected": true,
+            "reasons": [
+              "input_tokens_z_score=1454.84 >= 3",
+              "input_token_growth_pct=294.1 >= 100",
+              "max_call_chain_depth=5 >= 4"
+            ]
+          }
+        ],
+        "selected": [
+          "token_context_agent"
+        ],
+        "max_agents": 2
+      }
+    },
+    {
+      "id": "decision",
+      "title": "DECISION — token_context_agent",
+      "kind": "deterministic",
+      "agent_name": "token_context_agent",
+      "payload": {
+        "agent_name": "token_context_agent",
+        "tool_name": "get_call_chain",
+        "tool_required": false,
+        "decision": "DO_NOT_CALL",
+        "decision_line": "DECISION: DO NOT call get_call_chain — input_tokens_z_score=1454.8417278608008 (>= 3.0) OR max_call_chain_depth=5 (< 2). Answer directly from the aggregate signals. Skip the tool entirely.",
+        "comparisons": [
+          {
+            "metric": "input_tokens_z_score",
+            "value": 1454.8417278608008,
+            "operator": "<",
+            "threshold": 3.0,
+            "passed": false
+          },
+          {
+            "metric": "max_call_chain_depth",
+            "value": 5,
+            "operator": ">=",
+            "threshold": 2,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "tool_trace",
+      "title": "Tool trace — token_context_agent",
+      "kind": "deterministic",
+      "agent_name": "token_context_agent",
+      "payload": {
+        "agent_name": "token_context_agent",
+        "tool_name": "get_call_chain",
+        "tool_required": false,
+        "calls": [],
+        "result": null,
+        "result_summary": "Tool skipped — aggregate signals sufficient"
+      }
+    },
+    {
+      "id": "explanation",
+      "title": "Agent explanation — token_context_agent",
+      "kind": "agentic",
+      "agent_name": "token_context_agent",
+      "payload": {
+        "agent_name": "token_context_agent",
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.82,
+        "explanation": "The telemetry shows an extreme input token z-score far above the threshold and a ~294% token growth, indicating severe context bloat. Additionally, the call chain depth of 5 and the presence of the 'agent_reflection' feature suggest recursive self‑calling behavior. Together these signals strongly point to a combined context bloat and self‑calling anomaly.",
+        "supporting_metrics": {
+          "feature_tag": "agent_reflection",
+          "input_tokens_z_score": 1454.8417278608008,
+          "input_token_growth_pct": 294.0677966101695,
+          "cost_growth_pct": 313.79310344827593,
+          "max_call_chain_depth": 5,
+          "retry_z_score": 0.0,
+          "model_changed": false
+        },
+        "citations": []
+      }
+    },
+    {
+      "id": "root_cause",
+      "title": "Root cause & recommendations",
+      "kind": "agentic",
+      "agent_name": null,
+      "payload": {
+        "hypothesis": "context_bloat_self_calling_agent",
+        "confidence": 0.82,
+        "winning_agent": "token_context_agent",
+        "all_evidence": [
+          {
+            "agent_name": "token_context_agent",
+            "hypothesis": "context_bloat_self_calling_agent",
+            "confidence": 0.82
+          }
+        ],
+        "recommendations": [
+          "Limit maximum reflection / chain depth to a safe threshold (e.g., 3).",
+          "Implement prompt summarization or token truncation for history.",
+          "Add a fail-safe budget check on the chain to terminate expanding contexts."
+        ],
+        "tie_break_note": null
+      }
+    }
+  ],
+  "root_cause": {
+    "hypothesis": "context_bloat_self_calling_agent",
+    "confidence": 0.82,
+    "winning_agent": "token_context_agent"
+  },
+  "recommendations": [
+    "Limit maximum reflection / chain depth to a safe threshold (e.g., 3).",
+    "Implement prompt summarization or token truncation for history.",
+    "Add a fail-safe budget check on the chain to terminate expanding contexts."
+  ],
+  "meta": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "generated_at": "2026-07-08T21:24:22.377931Z",
+    "source_files": [
+      "data/reports/incidents/context_bloat_incident.json"
+    ]
+  }
+}

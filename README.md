@@ -22,6 +22,31 @@ flowchart LR
   G --> I[Replay tests]
 ```
 
+Presentation layer (optional):
+
+```text
+data/reports + data/replay  -->  web/api (FastAPI)  -->  web/frontend (React replay UI)
+```
+
+## Repository layout
+
+```text
+llm_cost_investigator/   # core pipeline package + CLI
+tests/                   # automated tests
+web/
+  api/                   # FastAPI read-only replay API
+  frontend/              # React investigation replay UI
+data/
+  reports/incidents/     # generated incident JSON/MD
+  reports/transcripts/   # live tool-use captures
+  replay/                # normalized UI fixtures
+scripts/
+  live/                  # live provider harnesses
+  export_replay_catalog.py
+  dev_replay.sh
+docs/plans/              # design / build plans
+```
+
 ## Deterministic Detector/Router
 
 - **Detector**: Computes z-scores on telemetry (cost, tokens, retries, latency) relative to baseline metrics.
@@ -29,16 +54,22 @@ flowchart LR
 
 ## Diagnostic Agents and Fallback Mode
 
-Diagnostic agents (`retry_loop_agent`, `token_context_agent`, `model_routing_agent`) are restricted to narrow telemetry slices, keeping prompt tokens small and highly focused. Responses are validated using Pydantic schemas. 
+Diagnostic agents (`retry_loop_agent`, `token_context_agent`, `model_routing_agent`) are restricted to narrow telemetry slices, keeping prompt tokens small and highly focused. Responses are validated using Pydantic schemas.
 
 If validation fails, a repair retry is executed. When API keys are absent, or live calls fail twice, the system falls back to a deterministic fallback module to safely complete execution.
 
 ## Setup
 
-Install dependencies:
+Install core package:
 
 ```bash
 pip install -e .
+```
+
+Install core + web (replay API):
+
+```bash
+pip install -e ".[web]"
 ```
 
 Optional API keys for live LLM diagnostic agents:
@@ -49,7 +80,7 @@ export CEREBRAS_API_KEY=your_key     # Cerebras provider
 export LLM_MODEL=openai/gpt-oss-120b  # optional model override
 ```
 
-Or create a `.env` file in the project root (keys are loaded automatically):
+Or copy `.env.example` to `.env` in the project root (keys are loaded automatically):
 
 ```text
 GROQ_API_KEY=gsk_your_key_here
@@ -60,36 +91,58 @@ Without API keys the system automatically uses deterministic fallback mode.
 
 ## Run Commands
 
-Single scenario (deterministic fallback):
+Preferred CLI:
 
 ```bash
-python3 main.py --scenario retry_loop
-python3 main.py --scenario context_bloat
-python3 main.py --scenario model_misroute
+python -m llm_cost_investigator.cli --scenario retry_loop
+python -m llm_cost_investigator.cli --scenario context_bloat
+python -m llm_cost_investigator.cli --scenario model_misroute
+# or after install:
+llm-cost-investigator --scenario all --force-fallback
 ```
 
-Run all three scenarios:
+Compatibility shim (same as above):
 
 ```bash
 python3 main.py --scenario all
-python3 main.py --scenario all --force-fallback
 ```
 
 Live LLM diagnosis (when an API key is configured):
 
 ```bash
-python3 main.py --scenario model_misroute --provider groq
+python -m llm_cost_investigator.cli --scenario model_misroute --provider groq
 ```
 
-Run replay tests:
+Run tests:
 
 ```bash
-python3 replay_tests.py
+python3 tests/test_replay.py
 ```
 
-## Sample `--force-fallback` Output
+## Investigation replay UI
 
-Output from running a model misroute scenario using deterministic fallback:
+Build fixtures from reports/transcripts, then start API + UI:
+
+```bash
+python3 scripts/export_replay_catalog.py
+
+# terminal 1
+PYTHONPATH=web:. uvicorn api.app:app --reload --port 8000
+
+# terminal 2
+cd web/frontend && npm install && npm run dev
+```
+
+Or one script:
+
+```bash
+./scripts/dev_replay.sh
+```
+
+- API: http://127.0.0.1:8000  
+- UI: http://127.0.0.1:5173  
+
+## Sample `--force-fallback` Output
 
 ```text
 Fallback used: model_routing_agent (fallback provider explicitly selected)
@@ -99,7 +152,7 @@ Detected anomaly: summarizer cost spike
 Routed agents:    model_routing_agent
 Root cause:       expensive_model_misroute
 Confidence:       0.95
-Report:           reports/model_misroute_incident.md
+Report:           data/reports/incidents/model_misroute_incident.md
 Result:           PASS
 ```
 
@@ -113,18 +166,23 @@ Result:           PASS
 
 ## Reports
 
-Each run writes structured incidents to the `reports/` folder:
+Each run writes structured incidents under:
 
-- `reports/<scenario>_incident.json`
-- `reports/<scenario>_incident.md`
+- `data/reports/incidents/<scenario>_incident.json`
+- `data/reports/incidents/<scenario>_incident.md`
 
-Markdown reports contain flat, human-readable sections summarizing findings, evidence provenance, and recommendations.
+Live tool-use transcripts (from harness scripts) live under:
+
+- `data/reports/transcripts/live_*.txt`
+
+Normalized UI catalog fixtures:
+
+- `data/replay/<scenario>.json`
 
 ## Replay Tests
 
-Replay tests validate detector, router, agent routing, aggregator, and markdown/JSON report generations against mock telemetry recordings. Run using:
+Replay tests validate detector, router, agent routing, aggregator, and markdown/JSON report generation against mock telemetry. Run:
 
 ```bash
-python3 replay_tests.py
+python3 tests/test_replay.py
 ```
-

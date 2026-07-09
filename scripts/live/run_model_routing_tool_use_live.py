@@ -7,7 +7,7 @@ model_routing_thin
     Rule says: model_changed AND cost_z < 3.0  -> MUST call get_window_calls
 
 Runs through run_model_routing_agent_with_tools against groq + cerebras.
-Transcript is printed and also written under reports/ for durable evidence.
+Transcript is printed and also written under data/reports/transcripts/ for durable evidence.
 """
 
 from __future__ import annotations
@@ -292,7 +292,7 @@ def run_one(
 
 
 def main() -> int:
-    report_path = Path("reports/live_model_routing_tool_use.txt")
+    report_path = Path("data/reports/transcripts/live_model_routing_tool_use.txt")
     report_path.parent.mkdir(parents=True, exist_ok=True)
     buf = report_path.open("w", encoding="utf-8")
     old_stdout = sys.stdout

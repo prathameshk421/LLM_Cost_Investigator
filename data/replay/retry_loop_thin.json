@@ -1,0 +1,389 @@
+{
+  "id": "retry_loop_thin",
+  "title": "Retry Loop Thin — MUST CALL Tool",
+  "kind": "thin_must_call",
+  "scenario_label": "retry_loop_thin",
+  "feature_tag": "support_reply",
+  "window": {
+    "start_time": "2026-07-09T00:00:00Z",
+    "end_time": "2026-07-09T00:00:00Z"
+  },
+  "stages": [
+    {
+      "id": "signals",
+      "title": "Raw signals",
+      "kind": "deterministic",
+      "agent_name": null,
+      "payload": {
+        "signals": {
+          "retry_z_score": 1.2,
+          "max_retry_count": 3,
+          "avg_retry_count": 1.5,
+          "repeated_parent_call_count": 3,
+          "latency_z_score": 2.0,
+          "cost_z_score": 3.5,
+          "cost_growth_pct": 180.0,
+          "input_tokens_z_score": 0.3,
+          "input_token_growth_pct": 5.0,
+          "token_growth_pct": 5.0,
+          "max_call_chain_depth": 1,
+          "model_changed": false
+        },
+        "highlights": [
+          {
+            "key": "cost_z_score",
+            "value": 3.5,
+            "threshold": ">= 3 anomaly",
+            "status": "fail"
+          },
+          {
+            "key": "retry_z_score",
+            "value": 1.2,
+            "threshold": ">= 3 route retry agent",
+            "status": "neutral"
+          },
+          {
+            "key": "input_tokens_z_score",
+            "value": 0.3,
+            "threshold": ">= 3 route token agent / < 3 may force tool",
+            "status": "ambiguous"
+          },
+          {
+            "key": "cost_growth_pct",
+            "value": 180.0,
+            "threshold": null,
+            "status": "fail"
+          },
+          {
+            "key": "input_token_growth_pct",
+            "value": 5.0,
+            "threshold": null,
+            "status": "neutral"
+          },
+          {
+            "key": "token_growth_pct",
+            "value": 5.0,
+            "threshold": "< 50 with cost spike → model route",
+            "status": "neutral"
+          },
+          {
+            "key": "max_retry_count",
+            "value": 3,
+            "threshold": ">= 3 route retry agent",
+            "status": "neutral"
+          },
+          {
+            "key": "max_call_chain_depth",
+            "value": 1,
+            "threshold": ">= 4 route / >= 2 tool gate",
+            "status": "neutral"
+          },
+          {
+            "key": "repeated_parent_call_count",
+            "value": 3,
+            "threshold": ">= 1 with low retry_z → tool",
+            "status": "neutral"
+          },
+          {
+            "key": "model_changed",
+            "value": false,
+            "threshold": "True → route model agent",
+            "status": "neutral"
+          }
+        ],
+        "sample_calls": [
+          {
+            "call_id": "retry_loop_thin_call_00"
+          },
+          {
+            "call_id": "retry_loop_thin_call_01"
+          },
+          {
+            "call_id": "retry_loop_thin_call_02"
+          },
+          {
+            "call_id": "retry_loop_thin_call_03"
+          }
+        ]
+      }
+    },
+    {
+      "id": "router",
+      "title": "Router decision",
+      "kind": "deterministic",
+      "agent_name": null,
+      "payload": {
+        "candidates": [
+          {
+            "agent_name": "model_routing_agent",
+            "selected": true,
+            "reasons": [
+              "cost_z_score=3.50 >= 3 and |token_growth| < 50"
+            ]
+          },
+          {
+            "agent_name": "retry_loop_agent",
+            "selected": true,
+            "reasons": [
+              "max_retry_count=3 >= 3",
+              "thin demo: forced diagnostic path"
+            ]
+          },
+          {
+            "agent_name": "token_context_agent",
+            "selected": false,
+            "reasons": [
+              "no token-context trigger"
+            ]
+          }
+        ],
+        "selected": [
+          "model_routing_agent",
+          "retry_loop_agent"
+        ],
+        "max_agents": 2
+      }
+    },
+    {
+      "id": "decision",
+      "title": "DECISION — retry_loop_agent",
+      "kind": "deterministic",
+      "agent_name": "retry_loop_agent",
+      "payload": {
+        "agent_name": "retry_loop_agent",
+        "tool_name": "get_call_chain",
+        "tool_required": true,
+        "decision": "MUST_CALL",
+        "decision_line": "DECISION: MUST CALL get_call_chain — retry_z_score=1.2 (below 2.5) AND repeated_parent_call_count=3 (>= 1). Call get_call_chain on at least one available_call_id before answering.",
+        "comparisons": [
+          {
+            "metric": "retry_z_score",
+            "value": 1.2,
+            "operator": "<",
+            "threshold": 2.5,
+            "passed": true
+          },
+          {
+            "metric": "repeated_parent_call_count",
+            "value": 3,
+            "operator": ">=",
+            "threshold": 1,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "tool_trace",
+      "title": "Tool trace — retry_loop_agent",
+      "kind": "deterministic",
+      "agent_name": "retry_loop_agent",
+      "payload": {
+        "agent_name": "retry_loop_agent",
+        "tool_name": "get_call_chain",
+        "tool_required": true,
+        "calls": [
+          {
+            "name": "get_call_chain",
+            "args": {
+              "call_id": "retry_loop_thin_call_00"
+            }
+          }
+        ],
+        "result": [
+          {
+            "call_id": "chain_00",
+            "parent_call_id": null,
+            "timestamp": "2026-07-09T00:00:00Z",
+            "retry_count": 0,
+            "cost_usd": 0.003,
+            "latency_ms": 900
+          },
+          {
+            "call_id": "chain_01",
+            "parent_call_id": "synthetic_parent_01",
+            "timestamp": "2026-07-09T00:00:00Z",
+            "retry_count": 1,
+            "cost_usd": 0.006,
+            "latency_ms": 1350
+          },
+          {
+            "call_id": "chain_02",
+            "parent_call_id": "synthetic_parent_01",
+            "timestamp": "2026-07-09T00:00:00Z",
+            "retry_count": 2,
+            "cost_usd": 0.009000000000000001,
+            "latency_ms": 1800
+          },
+          {
+            "call_id": "chain_03",
+            "parent_call_id": "synthetic_parent_01",
+            "timestamp": "2026-07-09T00:00:00Z",
+            "retry_count": 3,
+            "cost_usd": 0.012,
+            "latency_ms": 2250
+          }
+        ],
+        "result_summary": "4 row(s) from get_call_chain"
+      }
+    },
+    {
+      "id": "explanation",
+      "title": "Agent explanation — retry_loop_agent",
+      "kind": "agentic",
+      "agent_name": "retry_loop_agent",
+      "payload": {
+        "agent_name": "retry_loop_agent",
+        "hypothesis": "uncapped_retry_loop",
+        "confidence": 0.72,
+        "explanation": "The call chain shows the same parent spawning repeated child attempts with retry_count rising 0 → 3 and per-call cost climbing from 0.003 to 0.012 USD. Although retry_z_score is only 1.2, the repeated parent pattern and latency growth (900 → 2250 ms) indicate an uncapped retry loop.",
+        "supporting_metrics": {
+          "retry_z_score": 1.2,
+          "max_retry_count": 3,
+          "repeated_parent_call_count": 3,
+          "observed_max_retry_in_chain": 3,
+          "observed_cost_usd": [
+            0.003,
+            0.006,
+            0.009,
+            0.012
+          ]
+        },
+        "citations": [
+          {
+            "value": 0,
+            "display": "0",
+            "explanation_span": {
+              "start": 94,
+              "end": 95
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[0].retry_count",
+              "field": "retry_count",
+              "raw": 0
+            },
+            "match_kind": "exact_number"
+          },
+          {
+            "value": 3,
+            "display": "3",
+            "explanation_span": {
+              "start": 98,
+              "end": 99
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[3].retry_count",
+              "field": "retry_count",
+              "raw": 3
+            },
+            "match_kind": "exact_number"
+          },
+          {
+            "value": 0.003,
+            "display": "0.003",
+            "explanation_span": {
+              "start": 131,
+              "end": 137
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[0].cost_usd",
+              "field": "cost_usd",
+              "raw": 0.003
+            },
+            "match_kind": "exact_number"
+          },
+          {
+            "value": 0.012,
+            "display": "0.012",
+            "explanation_span": {
+              "start": 140,
+              "end": 146
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[3].cost_usd",
+              "field": "cost_usd",
+              "raw": 0.012
+            },
+            "match_kind": "exact_number"
+          },
+          {
+            "value": 900,
+            "display": "900",
+            "explanation_span": {
+              "start": 236,
+              "end": 239
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[0].latency_ms",
+              "field": "latency_ms",
+              "raw": 900
+            },
+            "match_kind": "exact_number"
+          },
+          {
+            "value": 2250,
+            "display": "2250",
+            "explanation_span": {
+              "start": 242,
+              "end": 246
+            },
+            "source": {
+              "tool_name": "get_call_chain",
+              "path": "[3].latency_ms",
+              "field": "latency_ms",
+              "raw": 2250
+            },
+            "match_kind": "exact_number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "root_cause",
+      "title": "Root cause & recommendations",
+      "kind": "agentic",
+      "agent_name": null,
+      "payload": {
+        "hypothesis": "uncapped_retry_loop",
+        "confidence": 0.72,
+        "winning_agent": "retry_loop_agent",
+        "all_evidence": [
+          {
+            "agent_name": "retry_loop_agent",
+            "hypothesis": "uncapped_retry_loop",
+            "confidence": 0.72
+          }
+        ],
+        "recommendations": [
+          "Implement exponential backoff with jitter.",
+          "Cap the maximum retry count in the client configuration.",
+          "Add a circuit breaker for repeated parent failures."
+        ],
+        "tie_break_note": "Thin synthetic scenario — single agent path."
+      }
+    }
+  ],
+  "root_cause": {
+    "hypothesis": "uncapped_retry_loop",
+    "confidence": 0.72,
+    "winning_agent": "retry_loop_agent"
+  },
+  "recommendations": [
+    "Implement exponential backoff with jitter.",
+    "Cap the maximum retry count in the client configuration.",
+    "Add a circuit breaker for repeated parent failures."
+  ],
+  "meta": {
+    "provider": "synthetic",
+    "model": null,
+    "generated_at": "2026-07-09T08:42:52.370013Z",
+    "source_files": [
+      "scripts/run_tool_use_live.py"
+    ]
+  }
+}

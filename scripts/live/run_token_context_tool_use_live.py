@@ -7,7 +7,7 @@ token_context_thin
     Rule says: z < 3.0 AND depth >= 2  -> MUST call get_call_chain
 
 Runs through run_token_context_agent_with_tools against groq + cerebras.
-Transcript is printed and also written under reports/ for durable evidence.
+Transcript is printed and also written under data/reports/transcripts/ for durable evidence.
 """
 
 from __future__ import annotations
@@ -327,7 +327,7 @@ def run_one(
 
 
 def main() -> int:
-    report_path = Path("reports/live_token_context_tool_use.txt")
+    report_path = Path("data/reports/transcripts/live_token_context_tool_use.txt")
     report_path.parent.mkdir(parents=True, exist_ok=True)
     buf = report_path.open("w", encoding="utf-8")
     old_stdout = sys.stdout

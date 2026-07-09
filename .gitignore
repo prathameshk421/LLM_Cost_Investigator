@@ -129,3 +129,24 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Node / frontend
+node_modules/
+web/frontend/dist/
+web/frontend/node_modules/
+
+# Local runtime artifacts
+data/runtime/
+*.db
+*.sqlite3
+
+# Local env (secrets)
+.env
+.env.local
+.env.*.local
+
+# Modern Python/Node Caches
+.ruff_cache/
+*.tsbuildinfo
+.eslintcache
+web/frontend/dist-ssr/

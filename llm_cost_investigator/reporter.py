@@ -9,7 +9,7 @@ from llm_cost_investigator.schemas import IncidentReport
 
 def write_report(
     report: IncidentReport,
-    output_dir: str | Path = "reports",
+    output_dir: str | Path = "data/reports/incidents",
     print_summary: bool = True,
 ) -> tuple[Path, Path]:
     """Write report artifacts to disk and print terminal summary."""

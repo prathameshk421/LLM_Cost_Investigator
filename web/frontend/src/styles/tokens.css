@@ -1,0 +1,72 @@
+:root {
+  --bg-0: #07090c;
+  --bg-1: #0c1016;
+  --glass: rgba(18, 24, 34, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --text-0: #e8edf5;
+  --text-1: #9aa6b8;
+  --text-2: #5c6b80;
+
+  --accent-cool: #3ddcff;
+  --accent-cool-dim: rgba(61, 220, 255, 0.12);
+  --accent-warm: #ff8a4c;
+  --accent-warm-dim: rgba(255, 138, 76, 0.12);
+
+  --status-pass: #34d399;
+  --status-must: #fbbf24;
+  --status-skip: #64748b;
+  --status-fail: #f87171;
+  --status-ambiguous: #a78bfa;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-serif: "Newsreader", Georgia, serif;
+
+  --radius: 14px;
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-0);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(61, 220, 255, 0.08), transparent 50%),
+    radial-gradient(900px 500px at 90% 0%, rgba(255, 138, 76, 0.06), transparent 45%),
+    var(--bg-0);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+code,
+.mono {
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,336 @@
+{
+  "id": "model_routing_thin",
+  "title": "Model Routing Thin — MUST CALL Tool",
+  "kind": "thin_must_call",
+  "scenario_label": "model_routing_thin",
+  "feature_tag": "summarizer",
+  "window": {
+    "start_time": "2026-07-09T00:00:00Z",
+    "end_time": "2026-07-09T00:05:00Z"
+  },
+  "stages": [
+    {
+      "id": "signals",
+      "title": "Raw signals",
+      "kind": "deterministic",
+      "agent_name": null,
+      "payload": {
+        "signals": {
+          "model_changed": true,
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4.1",
+          "models_seen": [
+            "gpt-4o-mini",
+            "gpt-4.1"
+          ],
+          "cost_z_score": 1.5,
+          "cost_growth_pct": 95.0,
+          "token_growth_pct": 12.0,
+          "input_token_growth_pct": 12.0,
+          "output_token_growth_pct": 8.0,
+          "retry_z_score": 0.0,
+          "max_retry_count": 0
+        },
+        "highlights": [
+          {
+            "key": "cost_z_score",
+            "value": 1.5,
+            "threshold": ">= 3 anomaly",
+            "status": "neutral"
+          },
+          {
+            "key": "retry_z_score",
+            "value": 0.0,
+            "threshold": ">= 3 route retry agent",
+            "status": "neutral"
+          },
+          {
+            "key": "cost_growth_pct",
+            "value": 95.0,
+            "threshold": null,
+            "status": "neutral"
+          },
+          {
+            "key": "input_token_growth_pct",
+            "value": 12.0,
+            "threshold": null,
+            "status": "neutral"
+          },
+          {
+            "key": "token_growth_pct",
+            "value": 12.0,
+            "threshold": "< 50 with cost spike → model route",
+            "status": "neutral"
+          },
+          {
+            "key": "max_retry_count",
+            "value": 0,
+            "threshold": ">= 3 route retry agent",
+            "status": "neutral"
+          },
+          {
+            "key": "model_changed",
+            "value": true,
+            "threshold": "True → route model agent",
+            "status": "fail"
+          },
+          {
+            "key": "model_before",
+            "value": "gpt-4o-mini",
+            "threshold": null,
+            "status": "neutral"
+          },
+          {
+            "key": "model_during",
+            "value": "gpt-4.1",
+            "threshold": null,
+            "status": "neutral"
+          }
+        ],
+        "sample_calls": []
+      }
+    },
+    {
+      "id": "router",
+      "title": "Router decision",
+      "kind": "deterministic",
+      "agent_name": null,
+      "payload": {
+        "candidates": [
+          {
+            "agent_name": "model_routing_agent",
+            "selected": true,
+            "reasons": [
+              "model_changed == True",
+              "thin demo: forced diagnostic path"
+            ]
+          },
+          {
+            "agent_name": "retry_loop_agent",
+            "selected": false,
+            "reasons": [
+              "no retry-loop trigger"
+            ]
+          },
+          {
+            "agent_name": "token_context_agent",
+            "selected": false,
+            "reasons": [
+              "no token-context trigger"
+            ]
+          }
+        ],
+        "selected": [
+          "model_routing_agent"
+        ],
+        "max_agents": 2
+      }
+    },
+    {
+      "id": "decision",
+      "title": "DECISION — model_routing_agent",
+      "kind": "deterministic",
+      "agent_name": "model_routing_agent",
+      "payload": {
+        "agent_name": "model_routing_agent",
+        "tool_name": "get_window_calls",
+        "tool_required": true,
+        "decision": "MUST_CALL",
+        "decision_line": "DECISION: MUST CALL get_window_calls — model_changed=True but cost_z_score=1.5 (below 3.0). A model change was detected but the cost signal alone is not strong enough to confidently attribute the anomaly to it — inspect actual per-call model/cost data before answering.",
+        "comparisons": [
+          {
+            "metric": "model_changed",
+            "value": true,
+            "operator": "==",
+            "threshold": true,
+            "passed": true
+          },
+          {
+            "metric": "cost_z_score",
+            "value": 1.5,
+            "operator": "<",
+            "threshold": 3.0,
+            "passed": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "tool_trace",
+      "title": "Tool trace — model_routing_agent",
+      "kind": "deterministic",
+      "agent_name": "model_routing_agent",
+      "payload": {
+        "agent_name": "model_routing_agent",
+        "tool_name": "get_window_calls",
+        "tool_required": true,
+        "calls": [
+          {
+            "name": "get_window_calls",
+            "args": {
+              "feature_tag": "summarizer"
+            }
+          }
+        ],
+        "result": [
+          {
+            "call_id": "model_routing_thin_call_05",
+            "model": "gpt-4.1",
+            "cost_usd": 0.022,
+            "timestamp": "2026-07-09T00:05:00Z"
+          },
+          {
+            "call_id": "model_routing_thin_call_04",
+            "model": "gpt-4.1",
+            "cost_usd": 0.019,
+            "timestamp": "2026-07-09T00:04:00Z"
+          },
+          {
+            "call_id": "model_routing_thin_call_03",
+            "model": "gpt-4.1",
+            "cost_usd": 0.021,
+            "timestamp": "2026-07-09T00:03:00Z"
+          },
+          {
+            "call_id": "model_routing_thin_call_02",
+            "model": "gpt-4.1",
+            "cost_usd": 0.018,
+            "timestamp": "2026-07-09T00:02:00Z"
+          },
+          {
+            "call_id": "model_routing_thin_call_01",
+            "model": "gpt-4o-mini",
+            "cost_usd": 0.0025,
+            "timestamp": "2026-07-09T00:01:00Z"
+          },
+          {
+            "call_id": "model_routing_thin_call_00",
+            "model": "gpt-4o-mini",
+            "cost_usd": 0.002,
+            "timestamp": "2026-07-09T00:00:00Z"
+          }
+        ],
+        "result_summary": "6 row(s) from get_window_calls"
+      }
+    },
+    {
+      "id": "explanation",
+      "title": "Agent explanation — model_routing_agent",
+      "kind": "agentic",
+      "agent_name": "model_routing_agent",
+      "payload": {
+        "agent_name": "model_routing_agent",
+        "hypothesis": "expensive_model_misroute",
+        "confidence": 0.68,
+        "explanation": "During the anomaly window the feature switched from gpt-4o-mini to gpt-4.1. Per‑call costs rose from ~0.002 USD to ~0.02 USD (≈9× increase), while token usage grew only ~12%. No retry spike is observed. This pattern matches a misrouting to a more expensive model, though the overall cost growth (95%) is below the 200% threshold for the highest confidence tier.",
+        "supporting_metrics": {
+          "model_before": "gpt-4o-mini",
+          "model_during": "gpt-4.1",
+          "cost_growth_pct": 95.0,
+          "token_growth_pct": 12.0,
+          "average_cost_before_usd": 0.00225,
+          "average_cost_during_usd": 0.02,
+          "per_call_costs_usd": [
+            0.002,
+            0.0025,
+            0.018,
+            0.021,
+            0.019,
+            0.022
+          ],
+          "retry_z_score": 0.0,
+          "max_retry_count": 0
+        },
+        "citations": [
+          {
+            "value": "gpt-4o-mini",
+            "display": "gpt-4o-mini",
+            "explanation_span": {
+              "start": 52,
+              "end": 63
+            },
+            "source": {
+              "tool_name": "get_window_calls",
+              "path": "[4].model",
+              "field": "model",
+              "raw": "gpt-4o-mini"
+            },
+            "match_kind": "exact_string"
+          },
+          {
+            "value": "gpt-4.1",
+            "display": "gpt-4.1",
+            "explanation_span": {
+              "start": 67,
+              "end": 74
+            },
+            "source": {
+              "tool_name": "get_window_calls",
+              "path": "[0].model",
+              "field": "model",
+              "raw": "gpt-4.1"
+            },
+            "match_kind": "exact_string"
+          },
+          {
+            "value": 0.002,
+            "display": "~0.002",
+            "explanation_span": {
+              "start": 101,
+              "end": 107
+            },
+            "source": {
+              "tool_name": "get_window_calls",
+              "path": "[5].cost_usd",
+              "field": "cost_usd",
+              "raw": 0.002
+            },
+            "match_kind": "exact_number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "root_cause",
+      "title": "Root cause & recommendations",
+      "kind": "agentic",
+      "agent_name": null,
+      "payload": {
+        "hypothesis": "expensive_model_misroute",
+        "confidence": 0.68,
+        "winning_agent": "model_routing_agent",
+        "all_evidence": [
+          {
+            "agent_name": "model_routing_agent",
+            "hypothesis": "expensive_model_misroute",
+            "confidence": 0.68
+          }
+        ],
+        "recommendations": [
+          "Pin production features to an approved model allow-list.",
+          "Add a cost-delta gate before accepting model upgrades.",
+          "Alert when model_changed is true and per-call cost jumps >5x."
+        ],
+        "tie_break_note": "Thin synthetic scenario — single agent path."
+      }
+    }
+  ],
+  "root_cause": {
+    "hypothesis": "expensive_model_misroute",
+    "confidence": 0.68,
+    "winning_agent": "model_routing_agent"
+  },
+  "recommendations": [
+    "Pin production features to an approved model allow-list.",
+    "Add a cost-delta gate before accepting model upgrades.",
+    "Alert when model_changed is true and per-call cost jumps >5x."
+  ],
+  "meta": {
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "generated_at": "2026-07-09T08:42:52.369121Z",
+    "source_files": [
+      "data/reports/transcripts/live_model_routing_tool_use.txt"
+    ]
+  }
+}
