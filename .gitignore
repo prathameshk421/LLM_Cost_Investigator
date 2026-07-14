@@ -156,6 +156,10 @@ resume.synctex.gz
 
 .env.*.local
 
+# Local connection profiles (non-secret metadata; still keep out of git by default)
+.llmci/
+*.connections.yaml
+
 # Modern Python/Node Caches
 .ruff_cache/
 *.tsbuildinfo

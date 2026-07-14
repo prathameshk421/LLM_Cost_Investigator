@@ -1,0 +1,48 @@
+{
+  "data": [
+    {
+      "id": "gen-001",
+      "traceId": "trace-a",
+      "type": "GENERATION",
+      "name": "summarizer",
+      "startTime": "2026-07-01T12:00:00.000Z",
+      "endTime": "2026-07-01T12:00:00.500Z",
+      "parentObservationId": null,
+      "providedModelName": "gpt-4o-mini",
+      "model": "gpt-4o-mini",
+      "inputUsage": 100,
+      "outputUsage": 20,
+      "totalCost": 0.001,
+      "latency": 0.5,
+      "metadata": {"feature_tag": "summarizer", "retry_count": 0},
+      "input": "SECRET_PROMPT_SHOULD_NOT_APPEAR",
+      "output": "SECRET_OUTPUT"
+    },
+    {
+      "id": "gen-002",
+      "traceId": "trace-a",
+      "type": "GENERATION",
+      "name": "summarizer",
+      "startTime": "2026-07-01T12:01:00.000Z",
+      "endTime": "2026-07-01T12:01:01.000Z",
+      "parentObservationId": "gen-001",
+      "providedModelName": "gpt-4o",
+      "usageDetails": {"input": 200, "output": 40, "total": 240},
+      "costDetails": {"input": 0.001, "output": 0.002},
+      "latency": 1.0,
+      "metadata": {}
+    },
+    {
+      "id": "span-ignore",
+      "type": "SPAN",
+      "name": "agent",
+      "startTime": "2026-07-01T12:00:00.000Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "limit": 100,
+    "totalPages": 2,
+    "totalItems": 3
+  }
+}

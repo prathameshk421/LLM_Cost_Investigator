@@ -119,6 +119,70 @@ Run tests:
 python3 tests/test_replay.py
 ```
 
+## Investigate real / external telemetry
+
+Ingest adapters normalize external logs into `LLMCall`, then run the same detector → agents → report pipeline.
+
+| Adapter | Input |
+| --- | --- |
+| `jsonl` | Canonical one-object-per-line (or JSON array). See `docs/ingest/CANONICAL_JSONL.md` |
+| `openai` | Chat Completions-style dumps (`usage.prompt_tokens`, `id`, `created`, …) |
+| `csv` | Header row + `--map logical=column` pairs |
+| `auto` | Sniff format from extension/content |
+
+Missing `cost_usd` is estimated from a small pricing table. Missing `parent_call_id` / `retry_count` / `latency_ms` default safely.
+
+```bash
+# Generate samples from the simulator
+python3 scripts/export_sample_telemetry.py
+
+python -m llm_cost_investigator.cli investigate \
+  --input data/samples/canonical_sample.jsonl \
+  --adapter jsonl \
+  --force-fallback
+
+python -m llm_cost_investigator.cli investigate \
+  --input data/samples/openai_style_sample.json \
+  --adapter openai \
+  --force-fallback
+
+python -m llm_cost_investigator.cli investigate \
+  --input data/samples/csv_sample.csv \
+  --adapter csv \
+  --map timestamp=ts,call_id=id,feature_tag=feature,model=model,input_tokens=prompt_tokens,output_tokens=completion_tokens,cost_usd=cost,latency_ms=latency,retry_count=retries,parent_call_id=parent_id \
+  --force-fallback
+```
+
+### Frontend (Investigate mode)
+
+Same dev stack as replay. Open the UI and switch **Replay demo → Investigate**, then:
+
+- **File upload** — sample JSONL/CSV/OpenAI-style file (use **Fallback** for offline)
+- **Remote (Langfuse)** — pull last N hours using env keys (no keys in the browser)
+
+API endpoints:
+
+- `POST /api/investigate/preview` — ingest only  
+- `POST /api/investigate` — ingest + diagnose  
+- `GET /api/investigate/pricing` — known model rates  
+- `GET /api/connectors` — registered remote connectors  
+- `GET /api/connectors/profiles` — named connection profiles  
+- `POST /api/connectors/test|preview|investigate` — Langfuse pull path  
+
+### Pull from Langfuse
+
+Set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` in `.env` (optional `LANGFUSE_HOST`). See `docs/connectors/LANGFUSE.md`.
+
+```bash
+python -m llm_cost_investigator.cli investigate \
+  --connector langfuse \
+  --since-hours 24 \
+  --force-fallback
+
+# optional named profile: copy docs/connectors/connections.example.yaml → .llmci/connections.yaml
+python -m llm_cost_investigator.cli investigate --connection prod-langfuse --force-fallback
+```
+
 ## Investigation replay UI
 
 Build fixtures from reports/transcripts, then start API + UI:
