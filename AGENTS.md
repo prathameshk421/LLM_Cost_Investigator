@@ -11,6 +11,26 @@ The agents are visibly agentic but constrained:
 - Deterministic fallback evidence is only a reliability guardrail for missing API keys,
   LLM call failures, or repeated malformed JSON.
 
+## Hard skills + knowledge base (upgrade)
+
+**Principle:** every numeric threshold is resolved in **Python** before the LLM sees it.
+The LLM does differential diagnosis and narrative only; the aggregator **caps** confidence.
+
+Implementation:
+
+| Module | Role |
+| --- | --- |
+| `llm_cost_investigator/agent_skills.py` | Hard skills → `pass` / `soft_pass` / `fail` + band ceiling |
+| `llm_cost_investigator/knowledge_base.py` | Pattern IDs (RL-*/TC-*/MR-*/X-*) |
+| `llm_cost_investigator/evidence_graph.py` | Compact explains/contradicts summary for prompts |
+| `llm_cost_investigator/aggregator.py` | `min(confidence, skill_band_ceiling)`; tie-break within ε=0.05 |
+
+Falsifier skills that **fail** force `no_strong_signal` (often without calling the LLM).
+`supporting_metrics` may include `hard_skills`, `kb_matches`, `skill_band_ceiling`.
+
+Full design: `docs/agents/agent_system_upgrade.md`  
+Execution notes: `docs/agents/EXECUTION_STEPS.md`
+
 ## Shared Evidence Schema
 
 ```python

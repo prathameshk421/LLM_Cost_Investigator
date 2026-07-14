@@ -113,118 +113,188 @@ def build_model_routing_telemetry(anomaly: AnomalyWindow) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Prompt builders
+# Prompt builders (hard skills / KB / graph injected; thresholds resolved in Python)
 # ---------------------------------------------------------------------------
 
-def build_retry_loop_prompt(telemetry_json: str) -> str:
+_SHARED_PREAMBLE = """You are a principal SRE performing differential diagnosis on an LLM cost anomaly.
+You receive telemetry for one anomaly window, plus HARD_SKILL_RESULTS that have
+already been computed deterministically — you must NOT recompute or override them,
+only reason from them.
+
+Rules:
+- Use only the telemetry and HARD_SKILL_RESULTS provided. Never invent metrics.
+- If HARD_SKILL_RESULTS marks a falsifier as "fail" for your hypothesis, you MUST
+  return "no_strong_signal" — no exceptions.
+- Your confidence may not exceed the band implied by HARD_SKILL_RESULTS (see rubric).
+  Prefer under-confident over wrong.
+- Output ONLY valid JSON. No markdown, no prose outside the JSON object.
+- Weak or contradicted evidence -> hypothesis "no_strong_signal"."""
+
+
+def build_retry_loop_prompt(
+    telemetry_json: str,
+    *,
+    hard_skill_results_json: str = "{}",
+    kb_matches_json: str = "[]",
+    evidence_graph_summary: str = "(none)",
+) -> str:
     """Build the prompt for the Retry Loop Agent."""
-    return f"""You are the Retry Loop Diagnostic Agent.
+    return f"""{_SHARED_PREAMBLE}
 
-Your only job is to decide whether this anomaly was caused by an uncapped retry loop or repeated failed calls.
+ROLE: Retry Loop Agent. You test whether an uncapped/silent retry loop explains the cost spike.
 
-Look for:
-- high retry_count
-- repeated child calls from the same parent_call_id
-- latency growth consistent with retries
-- cost growth caused by repeated attempts
+HARD SKILL CHECKLIST (already resolved in HARD_SKILL_RESULTS — do not recompute):
+1. retry_zscore_threshold
+2. max_retry_floor
+3. repeated_parent_call_check
+4. latency_growth_confirmation
+5. sample_call_consistency (FALSIFIER)
+6. cost_attribution_check (FALSIFIER)
+7. non_retry_alternative_scan
 
-Use only the telemetry provided.
-Do not invent missing metrics.
-Return only valid JSON.
-Do not include markdown.
-If the evidence is weak, return hypothesis "no_strong_signal".
-Confidence must be between 0 and 1.
-Confidence guide:
-- 0.90-1.00: retry z-score >= 5 and max retry count >= 5
-- 0.75-0.89: retry z-score >= 3 or repeated parent calls are obvious
-- 0.50-0.74: retry evidence exists but another cause may explain cost
-- below 0.50: return no_strong_signal
+If skill 5 or 6 = "fail" -> hypothesis MUST be "no_strong_signal".
 
-Return only valid JSON matching this shape:
+KNOWLEDGE BASE PATTERNS TO MATCH: RL-01, RL-02, RL-03 (see KB_MATCHES input).
+Use the matched pattern's confidence band as your ceiling, not a target you must hit.
+
+CONFIDENCE RUBRIC:
+- 0.90-1.00: skills 1 AND 2 pass, skill 6 pass (>=50%)
+- 0.75-0.89: skill 1 or 2 soft_pass/pass, skill 3 supports, skill 6 >=20%
+- 0.50-0.74: some retry evidence but skill 7 flags a stronger competing signal
+- below 0.50 / falsifier fail: "no_strong_signal"
+
+EVIDENCE GRAPH SUMMARY:
+{evidence_graph_summary}
+
+HARD_SKILL_RESULTS:
+{hard_skill_results_json}
+
+KB_MATCHES:
+{kb_matches_json}
+
+Telemetry:
+{telemetry_json}
+
+OUTPUT SCHEMA (JSON only):
 {{
   "agent_name": "retry_loop_agent",
   "hypothesis": "uncapped_retry_loop" | "no_strong_signal",
-  "confidence": number,
-  "supporting_metrics": object,
-  "explanation": string
-}}
+  "confidence": 0.0-1.0,
+  "supporting_metrics": {{}},
+  "explanation": "..."
+}}"""
+
+
+def build_token_context_prompt(
+    telemetry_json: str,
+    *,
+    hard_skill_results_json: str = "{}",
+    kb_matches_json: str = "[]",
+    evidence_graph_summary: str = "(none)",
+) -> str:
+    """Build the prompt for the Token Context Agent."""
+    return f"""{_SHARED_PREAMBLE}
+
+ROLE: Token Context Agent. You test whether context bloat / a recursive self-calling
+agent explains the cost spike.
+
+HARD SKILL CHECKLIST (already resolved in HARD_SKILL_RESULTS):
+1. token_growth_threshold
+2. chain_depth_floor
+3. chain_depth_recency (FALSIFIER)
+4. token_zscore_check
+5. prompt_content_growth_correlation (FALSIFIER)
+6. self_call_pattern_check
+7. sample_consistency_check
+
+If skill 3 or 5 = "fail" -> hypothesis MUST be "no_strong_signal".
+If skill 5 fails because cost growth exceeds token growth, note that this looks more
+like model routing — do not claim it yourself.
+
+KNOWLEDGE BASE PATTERNS TO MATCH: TC-01, TC-02, TC-03.
+
+CONFIDENCE RUBRIC:
+- 0.90-1.00: skill 1 pass (>=300%) AND skill 2 pass (>=5)
+- 0.75-0.89: skill 4 pass (z>=3) AND chain depth >= 4
+- 0.50-0.74: token growth exists but skill 2/6 evidence is weak
+- below 0.50 / falsifier fail: "no_strong_signal"
+
+EVIDENCE GRAPH SUMMARY:
+{evidence_graph_summary}
+
+HARD_SKILL_RESULTS:
+{hard_skill_results_json}
+
+KB_MATCHES:
+{kb_matches_json}
 
 Telemetry:
-{telemetry_json}"""
+{telemetry_json}
 
-
-def build_token_context_prompt(telemetry_json: str) -> str:
-    """Build the prompt for the Token Context Agent."""
-    return f"""You are the Token Context Diagnostic Agent.
-
-Your only job is to decide whether this anomaly was caused by context bloat, recursive self-calling behavior, or growing prompts.
-
-Look for:
-- input_tokens increasing over time
-- deep parent_call_id chains
-- agent_reflection or similar features calling themselves
-- cost growth explained by larger context, not retries or model changes
-
-Use only the telemetry provided.
-Do not invent missing metrics.
-Return only valid JSON.
-Do not include markdown.
-If the evidence is weak, return hypothesis "no_strong_signal".
-Confidence must be between 0 and 1.
-Confidence guide:
-- 0.90-1.00: input tokens grow by >= 300% and chain depth >= 5
-- 0.75-0.89: input token z-score >= 3 and chain depth >= 4
-- 0.50-0.74: token growth exists but chain evidence is weak
-- below 0.50: return no_strong_signal
-
-Return only valid JSON matching this shape:
+OUTPUT SCHEMA (JSON only):
 {{
   "agent_name": "token_context_agent",
   "hypothesis": "context_bloat_self_calling_agent" | "no_strong_signal",
-  "confidence": number,
-  "supporting_metrics": object,
-  "explanation": string
-}}
+  "confidence": 0.0-1.0,
+  "supporting_metrics": {{}},
+  "explanation": "..."
+}}"""
+
+
+def build_model_routing_prompt(
+    telemetry_json: str,
+    *,
+    hard_skill_results_json: str = "{}",
+    kb_matches_json: str = "[]",
+    evidence_graph_summary: str = "(none)",
+) -> str:
+    """Build the prompt for the Model Routing Agent."""
+    return f"""{_SHARED_PREAMBLE}
+
+ROLE: Model Routing Agent. You test whether accidental routing to a pricier model
+(with roughly stable tokens) explains the cost spike.
+
+HARD SKILL CHECKLIST (already resolved in HARD_SKILL_RESULTS):
+1. model_changed_flag (FALSIFIER)
+2. cost_growth_threshold
+3. token_stability_check (caps confidence if failed)
+4. cost_zscore_check
+5. price_tier_consistency (FALSIFIER)
+6. sample_call_confirmation
+7. routing_scope_check
+
+If skill 1 or 5 = "fail" -> hypothesis MUST be "no_strong_signal".
+If skill 3 = "fail" (tokens also grew a lot), cap confidence at 0.50-0.74 and say
+plainly that token growth confounds attribution to routing alone.
+
+KNOWLEDGE BASE PATTERNS TO MATCH: MR-01, MR-02, MR-03.
+
+CONFIDENCE RUBRIC:
+- 0.90-1.00: skill 1 pass, skill 2 pass (>=200%), skill 3 pass (tokens stable)
+- 0.75-0.89: skill 1 pass, skill 4 pass (z>=3)
+- 0.50-0.74: cost grew but skill 3 failed (token growth confounds) or evidence partial
+- below 0.50 / falsifier fail: "no_strong_signal"
+
+EVIDENCE GRAPH SUMMARY:
+{evidence_graph_summary}
+
+HARD_SKILL_RESULTS:
+{hard_skill_results_json}
+
+KB_MATCHES:
+{kb_matches_json}
 
 Telemetry:
-{telemetry_json}"""
+{telemetry_json}
 
-
-def build_model_routing_prompt(telemetry_json: str) -> str:
-    """Build the prompt for the Model Routing Agent."""
-    return f"""You are the Model Routing Diagnostic Agent.
-
-Your only job is to decide whether this anomaly was caused by a feature being routed to a more expensive model.
-
-Look for:
-- same feature_tag using a different model during the anomaly
-- cost_usd increasing sharply
-- input/output tokens staying roughly stable
-- no major retry spike
-
-Use only the telemetry provided.
-Do not invent missing metrics.
-Return only valid JSON.
-Do not include markdown.
-If the evidence is weak, return hypothesis "no_strong_signal".
-Confidence must be between 0 and 1.
-Confidence guide:
-- 0.90-1.00: model changed, cost grew >= 200%, token growth < 50%
-- 0.75-0.89: model changed and cost z-score >= 3
-- 0.50-0.74: cost grew without token growth, but model evidence is partial
-- below 0.50: return no_strong_signal
-
-Return only valid JSON matching this shape:
+OUTPUT SCHEMA (JSON only):
 {{
   "agent_name": "model_routing_agent",
   "hypothesis": "expensive_model_misroute" | "no_strong_signal",
-  "confidence": number,
-  "supporting_metrics": object,
-  "explanation": string
-}}
-
-Telemetry:
-{telemetry_json}"""
+  "confidence": 0.0-1.0,
+  "supporting_metrics": {{}},
+  "explanation": "..."
+}}"""
 
 
 # ---------------------------------------------------------------------------
@@ -281,129 +351,131 @@ MODEL_ROUTING_TOOLS = [
 MAX_RETRY_LOOP_TOOL_CALLS = 4
 
 # ---------------------------------------------------------------------------
-# Deterministic fallbacks
+# Deterministic fallbacks (driven by hard skills)
 # ---------------------------------------------------------------------------
+
+def _enrich_supporting_metrics(
+    base: dict[str, Any],
+    skill_pack: dict[str, Any],
+    kb_matches: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    out = dict(base)
+    out.update(skill_pack.get("metrics") or {})
+    out["hard_skills"] = skill_pack.get("skills") or {}
+    out["skill_band_ceiling"] = skill_pack.get("band_ceiling", 1.0)
+    out["forced_no_strong_signal"] = bool(skill_pack.get("forced_no_strong_signal"))
+    if kb_matches is not None:
+        out["kb_matches"] = [
+            {"pattern_id": m.get("pattern_id"), "story": m.get("story")}
+            for m in kb_matches
+        ]
+    return out
+
+
+def _apply_skill_pack_to_evidence(
+    evidence: AgentEvidence,
+    skill_pack: dict[str, Any],
+    kb_matches: list[dict[str, Any]] | None = None,
+) -> AgentEvidence:
+    """Cap confidence / force no_strong_signal from hard skills; attach metrics."""
+    from llm_cost_investigator.knowledge_base import pattern_band_ceiling
+
+    ceiling = float(skill_pack.get("band_ceiling", 1.0))
+    if kb_matches:
+        ceiling = pattern_band_ceiling(kb_matches, ceiling)
+    hyp = evidence.hypothesis
+    conf = min(float(evidence.confidence), ceiling)
+    if skill_pack.get("forced_no_strong_signal"):
+        hyp = "no_strong_signal"
+        conf = min(conf, 0.49)
+    metrics = _enrich_supporting_metrics(
+        dict(evidence.supporting_metrics),
+        {**skill_pack, "band_ceiling": ceiling},
+        kb_matches,
+    )
+    return evidence.model_copy(
+        update={
+            "hypothesis": hyp,
+            "confidence": conf,
+            "supporting_metrics": metrics,
+        }
+    )
+
 
 def fallback_retry_loop(anomaly: AnomalyWindow) -> AgentEvidence:
     """Fallback logic for the Retry Loop Agent when LLM calls fail."""
-    signals = anomaly.signals
-    retry_z_score = signals.retry_z_score
-    max_retry_count = signals.max_retry_count
-    avg_retry_count = signals.avg_retry_count
-    repeated_parent_call_count = signals.repeated_parent_call_count
+    from llm_cost_investigator.agent_skills import score_retry_loop
+    from llm_cost_investigator.knowledge_base import match_patterns
 
-    if retry_z_score >= 5 and max_retry_count >= 5:
-        confidence = 0.94
-    elif retry_z_score >= 3 or repeated_parent_call_count >= 3:
-        confidence = 0.82
-    elif max_retry_count >= 2 or avg_retry_count >= 1:
-        confidence = 0.60
-    else:
-        confidence = 0.30
-
-    hypothesis = "uncapped_retry_loop" if confidence >= 0.50 else "no_strong_signal"
-    
-    supporting_metrics = {
-        "retry_z_score": retry_z_score,
-        "max_retry_count": max_retry_count,
-        "avg_retry_count": avg_retry_count,
-        "repeated_parent_call_count": repeated_parent_call_count,
-    }
-    
+    pack = score_retry_loop(anomaly)
+    kb = match_patterns("retry_loop_agent", anomaly, pack)
+    hyp = pack["suggested_hypothesis"]
+    conf = float(pack["suggested_confidence"])
     explanation = (
-        "Retry metrics crossed the high-confidence retry-loop thresholds."
-        if hypothesis == "uncapped_retry_loop"
-        else "Weak retry evidence."
+        "Hard skills indicate uncapped retry loop / repeated failed calls."
+        if hyp == "uncapped_retry_loop"
+        else "Hard skills: weak or falsified retry evidence."
     )
+    if kb:
+        explanation += f" Pattern: {kb[0].get('pattern_id')}."
     explanation += " (Fallback)"
-
     return AgentEvidence(
         agent_name="retry_loop_agent",
-        hypothesis=hypothesis,
-        confidence=confidence,
-        supporting_metrics=supporting_metrics,
+        hypothesis=hyp,
+        confidence=conf,
+        supporting_metrics=_enrich_supporting_metrics({}, pack, kb),
         explanation=explanation,
     )
 
 
 def fallback_token_context(anomaly: AnomalyWindow) -> AgentEvidence:
     """Fallback logic for the Token Context Agent when LLM calls fail."""
-    signals = anomaly.signals
-    input_token_growth_pct = signals.input_token_growth_pct or 0.0
-    max_call_chain_depth = signals.max_call_chain_depth
-    input_tokens_z_score = signals.input_tokens_z_score
+    from llm_cost_investigator.agent_skills import score_token_context
+    from llm_cost_investigator.knowledge_base import match_patterns
 
-    if input_token_growth_pct >= 300 and max_call_chain_depth >= 5:
-        confidence = 0.93
-    elif input_tokens_z_score >= 3 and max_call_chain_depth >= 4:
-        confidence = 0.84
-    elif input_token_growth_pct >= 100 or input_tokens_z_score >= 3:
-        confidence = 0.62
-    else:
-        confidence = 0.28
-
-    hypothesis = "context_bloat_self_calling_agent" if confidence >= 0.50 else "no_strong_signal"
-    
-    supporting_metrics = {
-        "input_token_growth_pct": input_token_growth_pct,
-        "max_call_chain_depth": max_call_chain_depth,
-        "input_tokens_z_score": input_tokens_z_score,
-    }
-    
+    pack = score_token_context(anomaly)
+    kb = match_patterns("token_context_agent", anomaly, pack)
+    hyp = pack["suggested_hypothesis"]
+    conf = float(pack["suggested_confidence"])
     explanation = (
-        "Token metrics crossed the context-bloat thresholds."
-        if hypothesis == "context_bloat_self_calling_agent"
-        else "Weak token-growth evidence."
+        "Hard skills indicate context bloat / recursive self-calling growth."
+        if hyp == "context_bloat_self_calling_agent"
+        else "Hard skills: weak or falsified token-context evidence."
     )
+    if kb:
+        explanation += f" Pattern: {kb[0].get('pattern_id')}."
     explanation += " (Fallback)"
-
     return AgentEvidence(
         agent_name="token_context_agent",
-        hypothesis=hypothesis,
-        confidence=confidence,
-        supporting_metrics=supporting_metrics,
+        hypothesis=hyp,
+        confidence=conf,
+        supporting_metrics=_enrich_supporting_metrics({}, pack, kb),
         explanation=explanation,
     )
 
 
 def fallback_model_routing(anomaly: AnomalyWindow) -> AgentEvidence:
     """Fallback logic for the Model Routing Agent when LLM calls fail."""
-    signals = anomaly.signals
-    model_changed = signals.model_changed
-    cost_growth_pct = signals.cost_growth_pct or 0.0
-    token_growth_pct = signals.token_growth_pct or 0.0
-    cost_z_score = signals.cost_z_score
+    from llm_cost_investigator.agent_skills import score_model_routing
+    from llm_cost_investigator.knowledge_base import match_patterns
 
-    if model_changed and cost_growth_pct >= 200 and abs(token_growth_pct) < 50:
-        confidence = 0.95
-    elif model_changed and cost_z_score >= 3:
-        confidence = 0.84
-    elif cost_growth_pct >= 100 and abs(token_growth_pct) < 50:
-        confidence = 0.64
-    else:
-        confidence = 0.32
-
-    hypothesis = "expensive_model_misroute" if confidence >= 0.50 else "no_strong_signal"
-
-    supporting_metrics = {
-        "model_changed": model_changed,
-        "cost_growth_pct": cost_growth_pct,
-        "token_growth_pct": token_growth_pct,
-        "cost_z_score": cost_z_score,
-    }
-
+    pack = score_model_routing(anomaly)
+    kb = match_patterns("model_routing_agent", anomaly, pack)
+    hyp = pack["suggested_hypothesis"]
+    conf = float(pack["suggested_confidence"])
     explanation = (
-        "Model routing metrics crossed the expensive model misroute thresholds."
-        if hypothesis == "expensive_model_misroute"
-        else "Weak model-change evidence."
+        "Hard skills indicate expensive model misroute with stable tokens."
+        if hyp == "expensive_model_misroute"
+        else "Hard skills: weak or falsified model-routing evidence."
     )
+    if kb:
+        explanation += f" Pattern: {kb[0].get('pattern_id')}."
     explanation += " (Fallback)"
-
     return AgentEvidence(
         agent_name="model_routing_agent",
-        hypothesis=hypothesis,
-        confidence=confidence,
-        supporting_metrics=supporting_metrics,
+        hypothesis=hyp,
+        confidence=conf,
+        supporting_metrics=_enrich_supporting_metrics({}, pack, kb),
         explanation=explanation,
     )
 
@@ -1184,14 +1256,49 @@ def run_agents_detailed(
         resolved_model = model
         selection_fallback_reason = None
 
+    from llm_cost_investigator.agent_skills import score_all_agents
+    from llm_cost_investigator.evidence_graph import build_graph, summarize_graph
+    from llm_cost_investigator.knowledge_base import match_patterns
+
+    all_packs = score_all_agents(anomaly)
+    graph_summary = summarize_graph(build_graph(anomaly, all_packs))
+
     results = []
     for name in agent_names:
-        # Tool-using path for all three diagnostic agents when conditions are met.
-        # Uses DECISION-injection gating: the prompt contains a pre-evaluated
-        # DECISION line so the model never has to evaluate the conditional itself.
+        if name not in (
+            "retry_loop_agent",
+            "token_context_agent",
+            "model_routing_agent",
+        ):
+            continue
+
+        skill_pack = all_packs[name]
+        kb = match_patterns(name, anomaly, skill_pack)
+        skills_json = json.dumps(skill_pack.get("skills") or {}, indent=2, default=str)
+        kb_json = json.dumps(kb, indent=2, default=str)
+
+        # Falsifier failed → skip LLM, return deterministic no_strong_signal
+        if skill_pack.get("forced_no_strong_signal"):
+            if name == "retry_loop_agent":
+                evidence = fallback_retry_loop(anomaly)
+            elif name == "token_context_agent":
+                evidence = fallback_token_context(anomaly)
+            else:
+                evidence = fallback_model_routing(anomaly)
+            results.append(
+                AgentRunResult(
+                    evidence=evidence,
+                    provider="fallback",
+                    model=resolved_model,
+                    fallback_used=True,
+                    fallback_reason="hard skill falsifier failed",
+                )
+            )
+            continue
+
+        # Tool-using path when live client + store available
         if (
-            name in ("retry_loop_agent", "token_context_agent", "model_routing_agent")
-            and resolved_provider != "fallback"
+            resolved_provider != "fallback"
             and telemetry_store is not None
             and raw_sdk_client is not None
         ):
@@ -1211,7 +1318,7 @@ def run_agents_detailed(
                     model=resolved_model,
                     provider=resolved_provider,
                 )
-            else:  # model_routing_agent
+            else:
                 result = run_model_routing_agent_with_tools(
                     anomaly=anomaly,
                     store=telemetry_store,
@@ -1219,27 +1326,41 @@ def run_agents_detailed(
                     model=resolved_model,
                     provider=resolved_provider,
                 )
-            results.append(result)
+            capped = _apply_skill_pack_to_evidence(result.evidence, skill_pack, kb)
+            results.append(result.model_copy(update={"evidence": capped}))
             continue
 
-        # Single-shot path for all other cases
+        # Single-shot path
         if name == "retry_loop_agent":
             telemetry = build_retry_loop_telemetry(anomaly)
             telemetry_json = json.dumps(telemetry, indent=2)
-            prompt = build_retry_loop_prompt(telemetry_json)
+            prompt = build_retry_loop_prompt(
+                telemetry_json,
+                hard_skill_results_json=skills_json,
+                kb_matches_json=kb_json,
+                evidence_graph_summary=graph_summary,
+            )
             fallback_fn = fallback_retry_loop
         elif name == "token_context_agent":
             telemetry = build_token_context_telemetry(anomaly)
             telemetry_json = json.dumps(telemetry, indent=2)
-            prompt = build_token_context_prompt(telemetry_json)
+            prompt = build_token_context_prompt(
+                telemetry_json,
+                hard_skill_results_json=skills_json,
+                kb_matches_json=kb_json,
+                evidence_graph_summary=graph_summary,
+            )
             fallback_fn = fallback_token_context
-        elif name == "model_routing_agent":
+        else:
             telemetry = build_model_routing_telemetry(anomaly)
             telemetry_json = json.dumps(telemetry, indent=2)
-            prompt = build_model_routing_prompt(telemetry_json)
+            prompt = build_model_routing_prompt(
+                telemetry_json,
+                hard_skill_results_json=skills_json,
+                kb_matches_json=kb_json,
+                evidence_graph_summary=graph_summary,
+            )
             fallback_fn = fallback_model_routing
-        else:
-            continue
 
         if resolved_provider == "fallback":
             evidence = fallback_fn(anomaly)
@@ -1260,6 +1381,7 @@ def run_agents_detailed(
             evidence = call_agent_with_validation(llm_client, prompt, AgentEvidence)
             if evidence.agent_name != name:
                 raise ValueError(f"Agent name mismatch: expected {name}, got {evidence.agent_name}")
+            evidence = _apply_skill_pack_to_evidence(evidence, skill_pack, kb)
             results.append(
                 AgentRunResult(
                     evidence=evidence,
