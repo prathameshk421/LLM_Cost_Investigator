@@ -205,13 +205,15 @@ Do **not** touch for this upgrade: connectors, ingest, web UI stage schema (unle
 
 ## Definition of done
 
-- [ ] Skills computed in Python for all 3 agents  
-- [ ] Falsifier fail → forced `no_strong_signal` without LLM  
-- [ ] Prompts include HARD_SKILL_RESULTS + KB_MATCHES + graph summary  
-- [ ] Aggregator never exceeds skill_band_ceiling  
-- [ ] Tie-break only within 0.05  
-- [ ] `tests/test_replay.py` and `--scenario all --force-fallback` PASS  
-- [ ] Worked examples A–D covered by unit tests  
+- [x] Skills computed in Python for all 3 agents  
+- [x] Falsifier fail → forced `no_strong_signal` without LLM  
+- [x] Prompts include HARD_SKILL_RESULTS + KB_MATCHES + graph summary  
+- [x] Aggregator never exceeds skill_band_ceiling  
+- [x] Tie-break only within 0.05  
+- [x] `tests/test_replay.py` and `--scenario all --force-fallback` PASS  
+- [x] Worked examples A–D style coverage in unit tests (demos + falsifiers + demote/X)  
+- [x] Cross-agent demote (cap 0.74) when competitor hard skills **pass**  
+- [x] X-02 / X-03 attribution on all-`no_strong_signal` (prefer X-03)  
 
 ---
 
@@ -220,4 +222,5 @@ Do **not** touch for this upgrade: connectors, ingest, web UI stage schema (unle
 - Multi-cause X-01 dual listing in incident report  
 - Full-window cost attribution via TelemetryStore queries  
 - Extract prompts to `.txt` files  
-- UI surface for skill/KB cards in stage panels  
+- UI surface for skill/KB cards in stage panels (attribution fields already on RootCauseBrief)  
+

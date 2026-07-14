@@ -180,6 +180,9 @@ class RootCauseResult(BaseModel):
     # None only when hypothesis == "no_strong_signal"
     winning_agent: _AgentName | None = None
     evidence: list[AgentEvidence] = Field(default_factory=list)
+    # When hypothesis is no_strong_signal: why (X-02 volume vs X-03 data quality)
+    attribution_pattern: str | None = None
+    attribution_note: str | None = None
 
 
 class IncidentReport(BaseModel):

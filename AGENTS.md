@@ -28,6 +28,17 @@ Implementation:
 Falsifier skills that **fail** force `no_strong_signal` (often without calling the LLM).
 `supporting_metrics` may include `hard_skills`, `kb_matches`, `skill_band_ceiling`.
 
+### Cross-agent demote + attribution
+
+- Before picking a winner, `select_root_cause` may **demote** a hypothesis when
+  *another* agent’s hard skills **pass** in a way that contradicts it
+  (cap to 0.74; flags `cross_demoted` / `cross_demote_reason`).
+- Skills for demote are scored for **all three agents**, even if the router only
+  called one or two (LLM spend still gated by the router).
+- When every agent is `no_strong_signal`, `RootCauseResult` may set
+  `attribution_pattern` / `attribution_note` to **X-03** (data quality) or
+  **X-02** (likely volume / no bug). Prefer X-03 if both match.
+
 Full design: `docs/agents/agent_system_upgrade.md`  
 Execution notes: `docs/agents/EXECUTION_STEPS.md`
 

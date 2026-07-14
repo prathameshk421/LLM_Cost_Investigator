@@ -37,6 +37,18 @@ RECOMMENDATIONS: dict[str, list[str]] = {
     ],
 }
 
+_X03_RECOMMENDATIONS = [
+    "Check sample vs aggregate consistency (retry_count, tokens, model fields).",
+    "Improve instrumentation: parent_call_id, retry_count, feature_tag metadata.",
+    "Re-export or re-pull telemetry and re-run investigation after data fixes.",
+]
+
+_X02_RECOMMENDATIONS = [
+    "Review legitimate traffic/volume growth before treating this as a client bug.",
+    "Compare cost growth to request volume and business KPIs for the same window.",
+    "Monitor the feature's baseline metrics for continued anomalies.",
+]
+
 ReportNaming = Literal["label", "label_feature_index"]
 
 
@@ -150,13 +162,30 @@ def investigate_calls(
             telemetry_store=store,
         )
         evidence = [run.evidence for run in agent_runs]
-        root_cause = select_root_cause(evidence)
+        from llm_cost_investigator.agent_skills import score_all_agents
+
+        skill_packs = score_all_agents(window)
+        root_cause = select_root_cause(evidence, skill_packs=skill_packs)
         scenario = _report_scenario(
             label, window, index, naming=report_naming
         )
-        recommendations = RECOMMENDATIONS.get(
-            root_cause.hypothesis, ["Monitor baseline metrics."]
-        )
+        if root_cause.hypothesis == "no_strong_signal":
+            if root_cause.attribution_pattern == "X-03":
+                recommendations = list(_X03_RECOMMENDATIONS)
+            elif root_cause.attribution_pattern == "X-02":
+                recommendations = list(_X02_RECOMMENDATIONS)
+            else:
+                recommendations = list(
+                    RECOMMENDATIONS.get(
+                        "no_strong_signal", ["Monitor baseline metrics."]
+                    )
+                )
+        else:
+            recommendations = list(
+                RECOMMENDATIONS.get(
+                    root_cause.hypothesis, ["Monitor baseline metrics."]
+                )
+            )
         report = IncidentReport(
             scenario=scenario,
             root_cause=root_cause,

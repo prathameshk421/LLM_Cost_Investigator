@@ -76,7 +76,9 @@
         },
         "explanation": "Hard skills indicate context bloat / recursive self-calling growth. Pattern: TC-02. (Fallback)"
       }
-    ]
+    ],
+    "attribution_pattern": null,
+    "attribution_note": null
   },
   "anomaly_window": {
     "feature_tag": "agent_reflection",
@@ -277,5 +279,5 @@
     "Implement prompt summarization or token truncation for history.",
     "Add a fail-safe budget check on the chain to terminate expanding contexts."
   ],
-  "generated_at": "2026-07-14T19:45:25.329213Z"
+  "generated_at": "2026-07-14T20:06:23.563103Z"
 }

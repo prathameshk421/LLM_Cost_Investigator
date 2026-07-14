@@ -440,6 +440,8 @@ def stage_root_cause(
     evidence: list[EvidenceSummary],
     recommendations: list[str],
     tie_break_note: str | None = None,
+    attribution_pattern: str | None = None,
+    attribution_note: str | None = None,
 ) -> ReplayStage:
     return ReplayStage(
         id="root_cause",
@@ -452,6 +454,8 @@ def stage_root_cause(
             "all_evidence": [e.model_dump() for e in evidence],
             "recommendations": recommendations,
             "tie_break_note": tie_break_note,
+            "attribution_pattern": attribution_pattern,
+            "attribution_note": attribution_note,
         },
     )
 
@@ -531,6 +535,8 @@ def build_stages_from_report(
             winning_agent=report.root_cause.winning_agent,
             evidence=evidence_summaries,
             recommendations=list(report.recommendations),
+            attribution_pattern=report.root_cause.attribution_pattern,
+            attribution_note=report.root_cause.attribution_note,
         )
     )
     return stages
@@ -573,6 +579,8 @@ def incident_report_to_replay(
             hypothesis=report.root_cause.hypothesis,
             confidence=report.root_cause.confidence,
             winning_agent=report.root_cause.winning_agent,
+            attribution_pattern=report.root_cause.attribution_pattern,
+            attribution_note=report.root_cause.attribution_note,
         ),
         recommendations=list(report.recommendations),
         meta=ReplayMeta(

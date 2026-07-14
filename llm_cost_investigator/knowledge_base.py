@@ -197,11 +197,26 @@ def match_cross_agent(
             if skill.get("falsifier") and skill.get("verdict") == "fail":
                 if "sample" in name or "consistency" in name:
                     any_x3 = True
+    # Prefer X-03 first when both apply (data quality > "volume" explanation)
     if any_x3:
         matches.append(_row("X-03"))
     if not any_strong:
         matches.append(_row("X-02"))
     return matches
+
+
+def primary_cross_pattern(
+    matches: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Pick a single cross-agent pattern: X-03 over X-02 over other."""
+    by_id = {m.get("pattern_id"): m for m in matches if m.get("pattern_id")}
+    if "X-03" in by_id:
+        return by_id["X-03"]
+    if "X-02" in by_id:
+        return by_id["X-02"]
+    if matches:
+        return matches[0]
+    return None
 
 
 def _row(pattern_id: str) -> dict[str, Any]:

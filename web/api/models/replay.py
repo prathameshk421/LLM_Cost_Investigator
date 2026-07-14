@@ -129,6 +129,8 @@ class RootCauseBrief(BaseModel):
     hypothesis: str
     confidence: float
     winning_agent: str | None = None
+    attribution_pattern: str | None = None
+    attribution_note: str | None = None
 
 
 class ReplayStage(BaseModel):

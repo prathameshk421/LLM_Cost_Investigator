@@ -136,7 +136,9 @@
         },
         "explanation": "Hard skills: weak or falsified token-context evidence. (Fallback)"
       }
-    ]
+    ],
+    "attribution_pattern": null,
+    "attribution_note": null
   },
   "anomaly_window": {
     "feature_tag": "support_reply",
@@ -431,5 +433,5 @@
     "Cap the maximum retry count in the client configuration.",
     "Add a circuit breaker pattern to prevent continuous retries during outages."
   ],
-  "generated_at": "2026-07-14T19:45:25.325564Z"
+  "generated_at": "2026-07-14T20:06:23.559252Z"
 }

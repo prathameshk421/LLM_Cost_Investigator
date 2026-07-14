@@ -142,7 +142,9 @@
         },
         "explanation": "Hard skills: weak or falsified token-context evidence. (Fallback)"
       }
-    ]
+    ],
+    "attribution_pattern": null,
+    "attribution_note": null
   },
   "anomaly_window": {
     "feature_tag": "summarizer",
@@ -415,5 +417,5 @@
     "Add CI/CD checks to prevent unintentional model upgrades.",
     "Implement rate limiting or budget alerts for premium model endpoints."
   ],
-  "generated_at": "2026-07-14T19:45:25.331168Z"
+  "generated_at": "2026-07-14T20:06:23.565069Z"
 }
