@@ -136,9 +136,10 @@ def match_patterns(
             matches.append(_row("X-03"))
 
     elif agent_name == "token_context_agent":
-        growth = float(sig.input_token_growth_pct or 0.0)
+        growth_raw = sig.input_token_growth_pct
         depth = int(sig.max_call_chain_depth)
-        if depth >= 5 and growth < 100:
+        # TC-03 only when growth is known and low (None ≠ 0% growth).
+        if depth >= 5 and growth_raw is not None and growth_raw < 100:
             matches.append(_row("TC-03"))
         elif (
             _v(skill_pack, "token_growth_threshold") == "pass"
@@ -234,12 +235,16 @@ def _row(pattern_id: str) -> dict[str, Any]:
 
 
 def pattern_band_ceiling(matches: list[dict[str, Any]], skill_ceiling: float) -> float:
-    """Tighten ceiling using matched pattern high band when present."""
+    """Tighten ceiling using matched pattern high band when present.
+
+    Any ``forces_no_signal`` match (e.g. X-03 data quality) caps at 0.49 even
+    when a strong narrative pattern is also listed.
+    """
     if not matches:
         return skill_ceiling
-    highs = [float(m.get("band_high", 1.0)) for m in matches if not m.get("forces_no_signal")]
-    if any(m.get("forces_no_signal") for m in matches) and not highs:
+    if any(m.get("forces_no_signal") for m in matches):
         return min(skill_ceiling, 0.49)
+    highs = [float(m.get("band_high", 1.0)) for m in matches]
     if highs:
         return min(skill_ceiling, max(highs))
     return skill_ceiling

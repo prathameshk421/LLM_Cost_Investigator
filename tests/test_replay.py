@@ -17,6 +17,7 @@ from llm_cost_investigator.agents import (
     TOKEN_CONTEXT_TOOLS,
     MODEL_ROUTING_TOOLS,
 )
+from llm_cost_investigator.agent_skills import score_all_agents
 from llm_cost_investigator.aggregator import select_root_cause
 from llm_cost_investigator.llm_client import LLMClientConfig, resolve_llm_client
 from llm_cost_investigator.schemas import AgentEvidence
@@ -124,7 +125,10 @@ def _assert_retry_loop() -> None:
     assert ev.hypothesis == "uncapped_retry_loop"
     assert ev.confidence >= 0.82  # retry z-score >= 3 floor (zero-variance baseline now yields z=3.5, not 10.0)
     
-    root_cause = select_root_cause([r.evidence for r in agent_runs])
+    root_cause = select_root_cause(
+        [r.evidence for r in agent_runs],
+        skill_packs=score_all_agents(anomaly),
+    )
     assert root_cause.hypothesis == "uncapped_retry_loop"
     assert root_cause.winning_agent == "retry_loop_agent"
     assert root_cause.confidence == ev.confidence
@@ -153,7 +157,10 @@ def _assert_context_bloat() -> None:
     assert ev.hypothesis == "context_bloat_self_calling_agent"
     assert ev.confidence >= 0.75  # input tokens z-score >= 3 and chain depth >= 4 floor
     
-    root_cause = select_root_cause([r.evidence for r in agent_runs])
+    root_cause = select_root_cause(
+        [r.evidence for r in agent_runs],
+        skill_packs=score_all_agents(anomaly),
+    )
     assert root_cause.hypothesis == "context_bloat_self_calling_agent"
     assert root_cause.winning_agent == "token_context_agent"
     assert root_cause.confidence == ev.confidence
@@ -185,7 +192,10 @@ def _assert_model_misroute() -> None:
     assert ev.hypothesis == "expensive_model_misroute"
     assert ev.confidence >= 0.90  # model changed, cost growth >= 200%, token growth < 50% floor
     
-    root_cause = select_root_cause([r.evidence for r in agent_runs])
+    root_cause = select_root_cause(
+        [r.evidence for r in agent_runs],
+        skill_packs=score_all_agents(anomaly),
+    )
     assert root_cause.hypothesis == "expensive_model_misroute"
     assert root_cause.winning_agent == "model_routing_agent"
     assert root_cause.confidence == ev.confidence

@@ -5,6 +5,7 @@ Numeric thresholds are resolved here — never left to the LLM.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any, Literal
 
 from llm_cost_investigator.ingest.pricing import lookup_rates
@@ -51,6 +52,21 @@ def _any_falsifier_fail(skills: dict[str, dict[str, Any]]) -> bool:
         if s.get("falsifier") and s.get("verdict") == "fail":
             return True
     return False
+
+
+def _as_utc(ts: datetime) -> datetime:
+    """Coerce naive timestamps to UTC so window comparisons never TypeError."""
+    if ts.tzinfo is None:
+        return ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(timezone.utc)
+
+
+def _ts_in_window(ts: datetime, start: datetime, end: datetime) -> bool:
+    """True if ts falls in [start, end], coercing naive sides to UTC."""
+    try:
+        return _as_utc(start) <= _as_utc(ts) <= _as_utc(end)
+    except (TypeError, ValueError):
+        return False
 
 
 def _retry_cost_attribution(samples: list[LLMCall]) -> tuple[float | None, str]:
@@ -175,14 +191,26 @@ def score_retry_loop(anomaly: AnomalyWindow) -> dict[str, Any]:
         s6 = _skill("fail", value=attr, detail=attr_detail, falsifier=True)
         attr_pct = attr
 
-    # 7 non_retry_alternative_scan
-    tok_g = float(sig.input_token_growth_pct or 0.0)
+    # 7 non_retry_alternative_scan (only claim strong alternatives when growth is known)
+    tok_g_raw = sig.input_token_growth_pct
+    cost_g_raw = sig.cost_growth_pct
+    token_g_raw = sig.token_growth_pct
     model_ch = bool(sig.model_changed)
-    if model_ch and (sig.cost_growth_pct or 0) >= 200 and abs(sig.token_growth_pct or 0) < 50:
+    if (
+        model_ch
+        and cost_g_raw is not None
+        and cost_g_raw >= 200
+        and token_g_raw is not None
+        and abs(token_g_raw) < 50
+    ):
         s7 = _skill("fail", value="model_routing_strong", detail="competing model-routing signal")
-    elif tok_g >= 300 and sig.max_call_chain_depth >= 5:
+    elif (
+        tok_g_raw is not None
+        and tok_g_raw >= 300
+        and sig.max_call_chain_depth >= 5
+    ):
         s7 = _skill("fail", value="token_context_strong", detail="competing context-bloat signal")
-    elif tok_g >= 100 or model_ch:
+    elif (tok_g_raw is not None and tok_g_raw >= 100) or model_ch:
         s7 = _skill("soft_pass", value="moderate_alt", detail="some competing signal")
     else:
         s7 = _skill("pass", value="none", detail="no strong alternative")
@@ -249,19 +277,26 @@ def score_retry_loop(anomaly: AnomalyWindow) -> dict[str, Any]:
 def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
     sig = anomaly.signals
     samples = list(anomaly.sample_calls)
-    growth = float(sig.input_token_growth_pct or 0.0)
+    # None means growth is unknown (zero baseline) — never coerce to 0.0.
+    growth_raw = sig.input_token_growth_pct
+    token_g_raw = sig.token_growth_pct if sig.token_growth_pct is not None else growth_raw
+    cost_g_raw = sig.cost_growth_pct
     depth = int(sig.max_call_chain_depth)
     z = float(sig.input_tokens_z_score)
-    cost_g = float(sig.cost_growth_pct or 0.0)
-    token_g = float(sig.token_growth_pct or growth)
 
     # 1 token_growth_threshold
-    if growth >= 300:
-        s1 = _skill("pass", value=growth)
-    elif growth >= 100:
-        s1 = _skill("soft_pass", value=growth)
+    if growth_raw is None:
+        s1 = _skill(
+            "soft_pass",
+            value=None,
+            detail="growth unknown (zero baseline)",
+        )
+    elif growth_raw >= 300:
+        s1 = _skill("pass", value=growth_raw)
+    elif growth_raw >= 100:
+        s1 = _skill("soft_pass", value=growth_raw)
     else:
-        s1 = _skill("fail", value=growth)
+        s1 = _skill("fail", value=growth_raw)
 
     # 2 chain_depth_floor
     if depth >= 5:
@@ -283,7 +318,7 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
         in_window = sum(
             1
             for c in samples
-            if anomaly.start_time <= c.timestamp <= anomaly.end_time
+            if _ts_in_window(c.timestamp, anomaly.start_time, anomaly.end_time)
         )
         frac = in_window / len(samples)
         if frac >= 0.5:
@@ -307,32 +342,40 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
         s4 = _skill("fail", value=z)
 
     # 5 prompt_content_growth_correlation (falsifier)
-    # Fail when cost growth far exceeds token growth (looks like model routing)
-    if token_g <= 0 and cost_g >= 100:
+    # Fail when cost growth far exceeds token growth (looks like model routing).
+    # Missing growth is soft — do not invent "cost without tokens".
+    if cost_g_raw is None or token_g_raw is None:
+        s5 = _skill(
+            "soft_pass",
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
+            detail="growth unknown (zero baseline)",
+            falsifier=True,
+        )
+    elif token_g_raw <= 0 and cost_g_raw >= 100:
         s5 = _skill(
             "fail",
-            value={"cost_growth_pct": cost_g, "token_growth_pct": token_g},
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
             detail="cost grew without token growth",
             falsifier=True,
         )
-    elif token_g > 0 and cost_g > max(token_g * 2.5, token_g + 150):
+    elif token_g_raw > 0 and cost_g_raw > max(token_g_raw * 2.5, token_g_raw + 150):
         s5 = _skill(
             "fail",
-            value={"cost_growth_pct": cost_g, "token_growth_pct": token_g},
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
             detail="cost growth far exceeds token growth",
             falsifier=True,
         )
-    elif token_g > 0 and cost_g > token_g * 1.5 + 50:
+    elif token_g_raw > 0 and cost_g_raw > token_g_raw * 1.5 + 50:
         s5 = _skill(
             "soft_pass",
-            value={"cost_growth_pct": cost_g, "token_growth_pct": token_g},
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
             detail="mild cost/token divergence",
             falsifier=True,
         )
     else:
         s5 = _skill(
             "pass",
-            value={"cost_growth_pct": cost_g, "token_growth_pct": token_g},
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
             detail="cost tracks tokens",
             falsifier=True,
         )
@@ -352,7 +395,12 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
     else:
         max_in = max(c.input_tokens for c in samples)
         min_in = min(c.input_tokens for c in samples)
-        if growth >= 100 and max_in <= min_in * 1.1 and len(samples) >= 3:
+        if (
+            growth_raw is not None
+            and growth_raw >= 100
+            and max_in <= min_in * 1.1
+            and len(samples) >= 3
+        ):
             s7 = _skill("fail", value=(min_in, max_in), detail="samples lack token growth")
         else:
             s7 = _skill("pass", value=(min_in, max_in), detail="samples show token variation")
@@ -380,8 +428,8 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
     else:
         band, conf, hyp = 0.49, 0.28, "no_strong_signal"
 
-    # TC-03 style: deep chain but little token growth
-    if depth >= 5 and growth < 100 and not forced:
+    # TC-03 style: deep chain but little *known* token growth (not unknown)
+    if depth >= 5 and growth_raw is not None and growth_raw < 100 and not forced:
         band = min(band, 0.49)
         conf = min(conf, 0.40)
         hyp = "no_strong_signal"
@@ -394,11 +442,11 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
         "suggested_confidence": conf,
         "suggested_hypothesis": hyp,
         "metrics": {
-            "input_token_growth_pct": growth,
+            "input_token_growth_pct": growth_raw,
             "max_call_chain_depth": depth,
             "input_tokens_z_score": z,
-            "cost_growth_pct": cost_g,
-            "token_growth_pct": token_g,
+            "cost_growth_pct": cost_g_raw,
+            "token_growth_pct": token_g_raw,
         },
     }
 
@@ -407,8 +455,9 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
     sig = anomaly.signals
     samples = list(anomaly.sample_calls)
     model_changed = bool(sig.model_changed)
-    cost_g = float(sig.cost_growth_pct or 0.0)
-    token_g = float(sig.token_growth_pct or 0.0)
+    # None = unknown growth (zero baseline) — never coerce to 0.0 as "stable".
+    cost_g_raw = sig.cost_growth_pct
+    token_g_raw = sig.token_growth_pct
     cost_z = float(sig.cost_z_score)
     before = sig.model_before
     during = sig.model_during
@@ -420,20 +469,32 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
         s1 = _skill("fail", value=False, detail="model did not change", falsifier=True)
 
     # 2 cost_growth_threshold
-    if cost_g >= 200:
-        s2 = _skill("pass", value=cost_g)
-    elif cost_g >= 50:
-        s2 = _skill("soft_pass", value=cost_g)
+    if cost_g_raw is None:
+        s2 = _skill(
+            "soft_pass",
+            value=None,
+            detail="growth unknown (zero baseline)",
+        )
+    elif cost_g_raw >= 200:
+        s2 = _skill("pass", value=cost_g_raw)
+    elif cost_g_raw >= 50:
+        s2 = _skill("soft_pass", value=cost_g_raw)
     else:
-        s2 = _skill("fail", value=cost_g)
+        s2 = _skill("fail", value=cost_g_raw)
 
     # 3 token_stability_check (caps confidence if fail, not hard no_strong)
-    if abs(token_g) < 50:
-        s3 = _skill("pass", value=token_g, detail="tokens stable")
-    elif abs(token_g) <= 100:
-        s3 = _skill("soft_pass", value=token_g, detail="moderate token growth")
+    if token_g_raw is None:
+        s3 = _skill(
+            "soft_pass",
+            value=None,
+            detail="growth unknown (zero baseline) — not proven stable",
+        )
+    elif abs(token_g_raw) < 50:
+        s3 = _skill("pass", value=token_g_raw, detail="tokens stable")
+    elif abs(token_g_raw) <= 100:
+        s3 = _skill("soft_pass", value=token_g_raw, detail="moderate token growth")
     else:
-        s3 = _skill("fail", value=token_g, detail="large token growth confounds routing")
+        s3 = _skill("fail", value=token_g_raw, detail="large token growth confounds routing")
 
     # 4 cost_zscore_check
     if cost_z >= 3:
@@ -530,7 +591,7 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
         band, conf, hyp = 1.0, 0.95, "expensive_model_misroute"
     elif s1["verdict"] == "pass" and s4["verdict"] == "pass":
         band, conf, hyp = 0.89, 0.84, "expensive_model_misroute"
-    elif s1["verdict"] == "pass" and cost_g >= 100:
+    elif s1["verdict"] == "pass" and cost_g_raw is not None and cost_g_raw >= 100:
         band, conf, hyp = 0.74, 0.64, "expensive_model_misroute"
     else:
         band, conf, hyp = 0.49, 0.32, "no_strong_signal"
@@ -551,8 +612,8 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
             "model_changed": model_changed,
             "model_before": before,
             "model_during": during,
-            "cost_growth_pct": cost_g,
-            "token_growth_pct": token_g,
+            "cost_growth_pct": cost_g_raw,
+            "token_growth_pct": token_g_raw,
             "cost_z_score": cost_z,
         },
     }

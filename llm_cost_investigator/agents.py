@@ -377,7 +377,12 @@ def _apply_skill_pack_to_evidence(
     skill_pack: dict[str, Any],
     kb_matches: list[dict[str, Any]] | None = None,
 ) -> AgentEvidence:
-    """Cap confidence / force no_strong_signal from hard skills; attach metrics."""
+    """Cap confidence / force no_strong_signal from hard skills; attach metrics.
+
+    Rubric: confidence below 0.50 must not carry a causal hypothesis. Force
+    ``no_strong_signal`` when a falsifier failed or the skill band ceiling is
+    below 0.50 (weak/insufficient hard evidence).
+    """
     from llm_cost_investigator.knowledge_base import pattern_band_ceiling
 
     ceiling = float(skill_pack.get("band_ceiling", 1.0))
@@ -385,7 +390,7 @@ def _apply_skill_pack_to_evidence(
         ceiling = pattern_band_ceiling(kb_matches, ceiling)
     hyp = evidence.hypothesis
     conf = min(float(evidence.confidence), ceiling)
-    if skill_pack.get("forced_no_strong_signal"):
+    if skill_pack.get("forced_no_strong_signal") or ceiling < 0.50:
         hyp = "no_strong_signal"
         conf = min(conf, 0.49)
     metrics = _enrich_supporting_metrics(
@@ -519,16 +524,22 @@ def build_retry_loop_prompt_v2(telemetry_json: str) -> str:
         _rpc = int(_signals.get("repeated_parent_call_count", 0))
         _tool_required = _retry_z < 2.5 and _rpc >= 1
     except Exception:
-        _tool_required = False  # safe default: allow direct answer if parsing fails
+        # Safe default: allow direct answer if parsing fails (do not reference
+        # unbound _retry_z / _rpc in the directive).
+        tool_directive = (
+            "DECISION: DO NOT call get_call_chain — could not parse signals. "
+            "Answer directly from the aggregate signals."
+        )
+        _tool_required = None  # marker: directive already set
 
-    if _tool_required:
+    if _tool_required is True:
         tool_directive = (
             f"DECISION: MUST CALL get_call_chain — "
             f"retry_z_score={_retry_z} (below 2.5) AND "
             f"repeated_parent_call_count={_rpc} (>= 1). "
             f"Call get_call_chain on at least one available_call_id before answering."
         )
-    else:
+    elif _tool_required is False:
         tool_directive = (
             f"DECISION: DO NOT call get_call_chain — "
             f"retry_z_score={_retry_z} (>= 2.5) OR "

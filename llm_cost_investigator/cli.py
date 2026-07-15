@@ -422,11 +422,16 @@ def _run_investigate(args: argparse.Namespace) -> int:
         label = args.label or (
             f"langfuse_{args.connection}" if args.connection else "langfuse"
         )
-        request = _build_remote_request(args)
-        # Always pass request when since/max explicitly set; else let profile defaults work
-        if args.since_hours is not None or args.max_rows is not None or args.feature_default is not None:
+        # Match pull: only pass PullRequest when overrides are set; else profile defaults.
+        if (
+            args.since_hours is not None
+            or args.max_rows is not None
+            or args.feature_default is not None
+        ):
             request = PullRequest(
-                since_hours=float(args.since_hours) if args.since_hours is not None else 24.0,
+                since_hours=float(args.since_hours)
+                if args.since_hours is not None
+                else 24.0,
                 max_rows=int(args.max_rows)
                 if args.max_rows is not None
                 else DEFAULT_REMOTE_MAX_ROWS,

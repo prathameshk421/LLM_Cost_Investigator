@@ -291,7 +291,49 @@ def _max_call_chain_depth(
 
 
 def _sample_calls(window_calls: list[LLMCall]) -> list[LLMCall]:
-    return sorted(window_calls, key=lambda c: (c.timestamp, c.call_id))[:10]
+    """Pick a representative slice (cap 10): early + high-signal + most recent.
+
+    Chronological first-10 alone misses late retry storms / late model shifts
+    and can false-trigger sample consistency falsifiers.
+    """
+    if len(window_calls) <= 10:
+        return sorted(window_calls, key=lambda c: (c.timestamp, c.call_id))
+
+    ordered = sorted(window_calls, key=lambda c: (c.timestamp, c.call_id))
+    by_id: dict[str, LLMCall] = {}
+
+    def _add(call: LLMCall) -> None:
+        if call.call_id not in by_id and len(by_id) < 10:
+            by_id[call.call_id] = call
+
+    # 1) Earliest calls (window onset)
+    for call in ordered[:2]:
+        _add(call)
+
+    # 2) Highest-signal calls (retry, then cost)
+    signal_ranked = sorted(
+        ordered,
+        key=lambda c: (c.retry_count, c.cost_usd, c.timestamp, c.call_id),
+        reverse=True,
+    )
+    for call in signal_ranked[:3]:
+        _add(call)
+
+    # 3) Most recent calls
+    for call in reversed(ordered):
+        _add(call)
+        if len(by_id) >= 8:
+            break
+
+    # 4) Fill remaining slots evenly across the window
+    if len(by_id) < 10 and len(ordered) > 0:
+        step = max(1, len(ordered) // (10 - len(by_id) + 1))
+        for i in range(0, len(ordered), step):
+            _add(ordered[i])
+            if len(by_id) >= 10:
+                break
+
+    return sorted(by_id.values(), key=lambda c: (c.timestamp, c.call_id))
 
 
 def _window_total_cost(calls: list[LLMCall]) -> float:

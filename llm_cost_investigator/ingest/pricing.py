@@ -39,10 +39,17 @@ def lookup_rates(model: str) -> tuple[float, float, str]:
         inp, out = _MODEL_PRICING[key]
         return inp, out, key
 
-    # Prefix / contains match for versioned names
-    for known, rates in _MODEL_PRICING.items():
-        if key.startswith(known) or known in key:
-            return rates[0], rates[1], known
+    # Prefix / contains match for versioned names — prefer longest key so
+    # "gpt-4o-mini-2024…" maps to gpt-4o-mini, not gpt-4o.
+    candidates = [
+        known
+        for known in _MODEL_PRICING
+        if key.startswith(known) or known in key
+    ]
+    if candidates:
+        best = max(candidates, key=len)
+        rates = _MODEL_PRICING[best]
+        return rates[0], rates[1], best
 
     return FALLBACK_INPUT_PER_M, FALLBACK_OUTPUT_PER_M, "fallback_default"
 
