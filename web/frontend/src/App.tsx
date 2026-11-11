@@ -5,14 +5,23 @@ import { StageContainer } from "./components/StageContainer";
 import { ReplayControls } from "./components/ReplayControls";
 import { InvestigateUpload } from "./components/InvestigateUpload";
 import { InvestigateResults } from "./components/InvestigateResults";
+import { BenchmarkView } from "./components/BenchmarkView";
+import { UsageBadge, useUsage } from "./components/UsageBadge";
 import { useIncident, useIncidentList } from "./hooks/useIncident";
 import { useStageProgression } from "./hooks/useStageProgression";
 import type { InvestigateResponse } from "./types/investigate";
 
-type AppMode = "replay" | "investigate";
+type AppMode = "replay" | "investigate" | "benchmark";
+
+const SUBTITLE: Record<AppMode, string> = {
+  investigate: "Detect a cost spike, route it to diagnostic agents, explain the root cause",
+  replay: "Investigation replay · deterministic DECISION injection · tool-use centerpiece",
+  benchmark: "Root-cause accuracy across seeded, noisy scenarios",
+};
 
 export default function App() {
-  const [mode, setMode] = useState<AppMode>("replay");
+  const [mode, setMode] = useState<AppMode>("investigate");
+  const { usage, error: usageError } = useUsage();
   const [investigateResult, setInvestigateResult] =
     useState<InvestigateResponse | null>(null);
 
@@ -32,32 +41,33 @@ export default function App() {
   const activeStage = stages[progression.index];
 
   return (
-    <div className={"app-shell" + (mode === "investigate" ? " mode-investigate" : "")}>
+    <div className={"app-shell" + (mode !== "replay" ? " mode-investigate" : "")}>
       <header className="app-header">
         <div>
           <h1>LLM Cost Investigator</h1>
-          <div className="subtitle">
-            {mode === "replay"
-              ? "Investigation replay · deterministic DECISION injection · tool-use centerpiece"
-              : "One-shot investigate · upload telemetry from other projects"}
-          </div>
-          <div className="mode-toggle">
-            <button
-              type="button"
-              className={mode === "replay" ? "active" : ""}
-              onClick={() => setMode("replay")}
-            >
-              Replay demo
-            </button>
-            <button
-              type="button"
-              className={mode === "investigate" ? "active" : ""}
-              onClick={() => setMode("investigate")}
-            >
-              Investigate
-            </button>
+          <div className="subtitle">{SUBTITLE[mode]}</div>
+          <div className="mode-toggle" role="tablist">
+            {(
+              [
+                ["investigate", "Investigate"],
+                ["replay", "Replay"],
+                ["benchmark", "Benchmark"],
+              ] as Array<[AppMode, string]>
+            ).map(([m, label]) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                className={mode === m ? "active" : ""}
+                onClick={() => setMode(m)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
+        <div className="header-right">
         {mode === "replay" && incident ? (
           <ReplayControls
             atStart={progression.atStart}
@@ -69,6 +79,8 @@ export default function App() {
             onToggleAuto={() => progression.setAuto((a) => !a)}
           />
         ) : null}
+        <UsageBadge usage={usage} error={usageError} />
+        </div>
       </header>
 
       {mode === "replay" ? (
@@ -136,16 +148,25 @@ export default function App() {
             </section>
           </main>
         </>
+      ) : mode === "benchmark" ? (
+        <main className="main investigate-main">
+          <section className="stage-body investigate-body">
+            <BenchmarkView />
+          </section>
+        </main>
       ) : (
         <main className="main investigate-main">
           <section className="stage-body investigate-body">
-            <InvestigateUpload onResult={setInvestigateResult} />
+            <InvestigateUpload
+              onResult={setInvestigateResult}
+              hfReady={Boolean(usage?.providers?.hf?.configured)}
+            />
             {investigateResult ? (
               <InvestigateResults result={investigateResult} />
             ) : (
               <div className="empty-state" style={{ minHeight: 120, marginTop: 16 }}>
                 <div style={{ color: "var(--text-2)" }}>
-                  Upload a file and run investigation to see anomalies and stage replay.
+                  Pick a scenario and press Run, or upload your own telemetry.
                 </div>
               </div>
             )}

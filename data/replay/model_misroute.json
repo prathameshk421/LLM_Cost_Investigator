@@ -20,12 +20,14 @@
           "input_tokens_z_score": 155.8259871820166,
           "output_tokens_z_score": 83.07125455495019,
           "retry_z_score": 0.0,
-          "calls_z_score": 1.0,
+          "calls_z_score": 2.0,
           "latency_z_score": 82.97369550852524,
           "input_token_growth_pct": 24.559471365638768,
           "output_token_growth_pct": 24.93150684931507,
           "cost_growth_pct": 609.35960591133,
           "token_growth_pct": 24.559471365638768,
+          "avg_input_token_growth_pct": 3.7995594713656384,
+          "unit_cost_growth_pct": 469.21002632038295,
           "max_retry_count": 0,
           "avg_retry_count": 0.0,
           "max_call_chain_depth": 0,
@@ -199,15 +201,14 @@
           },
           {
             "agent_name": "token_context_agent",
-            "selected": true,
+            "selected": false,
             "reasons": [
               "input_tokens_z_score=155.83 >= 3"
             ]
           }
         ],
         "selected": [
-          "model_routing_agent",
-          "token_context_agent"
+          "model_routing_agent"
         ],
         "max_agents": 2
       }
@@ -264,81 +265,78 @@
         "agent_name": "model_routing_agent",
         "hypothesis": "expensive_model_misroute",
         "confidence": 0.95,
-        "explanation": "During the 5‑minute window the feature switched from the cheap gpt-4o-mini to the much pricier gpt-4.1. Cost surged by ~609% while token usage grew only ~25%, well below the 50% threshold. No retry activity was observed. These signals strongly indicate the anomaly is due to routing to a more expensive model.",
+        "explanation": "Hard skills indicate expensive model misroute with stable tokens. Pattern: MR-01. (Fallback)",
         "supporting_metrics": {
+          "model_changed": true,
           "model_before": "gpt-4o-mini",
           "model_during": "gpt-4.1",
           "cost_growth_pct": 609.35960591133,
-          "token_growth_pct": 24.559471365638768,
-          "input_token_growth_pct": 24.559471365638768,
-          "output_token_growth_pct": 24.93150684931507,
-          "retry_z_score": 0.0,
-          "max_retry_count": 0,
-          "model_changed": true,
-          "cost_z_score": 1882.0355656496642
-        },
-        "citations": []
-      }
-    },
-    {
-      "id": "decision",
-      "title": "DECISION — token_context_agent",
-      "kind": "deterministic",
-      "agent_name": "token_context_agent",
-      "payload": {
-        "agent_name": "token_context_agent",
-        "tool_name": "get_call_chain",
-        "tool_required": false,
-        "decision": "DO_NOT_CALL",
-        "decision_line": "DECISION: DO NOT call get_call_chain — input_tokens_z_score=155.8259871820166 (>= 3.0) OR max_call_chain_depth=0 (< 2). Answer directly from the aggregate signals. Skip the tool entirely.",
-        "comparisons": [
-          {
-            "metric": "input_tokens_z_score",
-            "value": 155.8259871820166,
-            "operator": "<",
-            "threshold": 3.0,
-            "passed": false
+          "token_growth_pct": 3.7995594713656384,
+          "cost_z_score": 1882.0355656496642,
+          "unit_cost_growth_pct": 469.21002632038295,
+          "hard_skills": {
+            "model_changed_flag": {
+              "verdict": "pass",
+              "value": true,
+              "detail": "",
+              "falsifier": true
+            },
+            "cost_growth_threshold": {
+              "verdict": "pass",
+              "value": 609.35960591133,
+              "detail": "",
+              "falsifier": false
+            },
+            "token_stability_check": {
+              "verdict": "pass",
+              "value": 3.7995594713656384,
+              "detail": "tokens stable",
+              "falsifier": false
+            },
+            "cost_zscore_check": {
+              "verdict": "pass",
+              "value": 1882.0355656496642,
+              "detail": "",
+              "falsifier": false
+            },
+            "price_tier_consistency": {
+              "verdict": "pass",
+              "value": {
+                "before_price": 0.75,
+                "after_price": 10.0
+              },
+              "detail": "after model is pricier",
+              "falsifier": true
+            },
+            "sample_call_confirmation": {
+              "verdict": "pass",
+              "value": 1.0,
+              "detail": "samples show during model",
+              "falsifier": false
+            },
+            "routing_scope_check": {
+              "verdict": "pass",
+              "value": [
+                "gpt-4.1"
+              ],
+              "detail": "models in samples",
+              "falsifier": false
+            },
+            "unit_price_jump": {
+              "verdict": "pass",
+              "value": 469.21002632038295,
+              "detail": "price per token at least doubled",
+              "falsifier": false
+            }
           },
-          {
-            "metric": "max_call_chain_depth",
-            "value": 0,
-            "operator": ">=",
-            "threshold": 2,
-            "passed": false
-          }
-        ]
-      }
-    },
-    {
-      "id": "tool_trace",
-      "title": "Tool trace — token_context_agent",
-      "kind": "deterministic",
-      "agent_name": "token_context_agent",
-      "payload": {
-        "agent_name": "token_context_agent",
-        "tool_name": "get_call_chain",
-        "tool_required": false,
-        "calls": [],
-        "result": null,
-        "result_summary": "Tool skipped — aggregate signals sufficient"
-      }
-    },
-    {
-      "id": "explanation",
-      "title": "Agent explanation — token_context_agent",
-      "kind": "agentic",
-      "agent_name": "token_context_agent",
-      "payload": {
-        "agent_name": "token_context_agent",
-        "hypothesis": "context_bloat_self_calling_agent",
-        "confidence": 0.62,
-        "explanation": "The anomaly shows an extreme input token z-score indicating unusually large context size, while the call chain depth is zero, ruling out recursive self-calls. The modest token growth (≈24.6%) combined with a massive cost increase suggests the primary driver is context bloat, possibly amplified by a model change.",
-        "supporting_metrics": {
-          "input_tokens_z_score": 155.8259871820166,
-          "input_token_growth_pct": 24.559471365638768,
-          "cost_growth_pct": 609.35960591133,
-          "max_call_chain_depth": 0,
-          "model_changed": true
+          "skill_band_ceiling": 1.0,
+          "forced_no_strong_signal": false,
+          "kb_matches": [
+            {
+              "pattern_id": "MR-01",
+              "story": "Traffic shifted to a pricier model with stable tokens."
+            }
+          ]
         },
         "citations": []
       }
@@ -357,11 +355,6 @@
             "agent_name": "model_routing_agent",
             "hypothesis": "expensive_model_misroute",
             "confidence": 0.95
-          },
-          {
-            "agent_name": "token_context_agent",
-            "hypothesis": "context_bloat_self_calling_agent",
-            "confidence": 0.62
           }
         ],
         "recommendations": [
@@ -376,7 +369,9 @@
   "root_cause": {
     "hypothesis": "expensive_model_misroute",
     "confidence": 0.95,
-    "winning_agent": "model_routing_agent"
+    "winning_agent": "model_routing_agent",
+    "attribution_pattern": null,
+    "attribution_note": null
   },
   "recommendations": [
     "Revert default model routing configurations to more cost-effective models.",
@@ -384,9 +379,9 @@
     "Implement rate limiting or budget alerts for premium model endpoints."
   ],
   "meta": {
-    "provider": "groq",
-    "model": "openai/gpt-oss-120b",
-    "generated_at": "2026-07-08T21:24:25.233110Z",
+    "provider": "fallback",
+    "model": null,
+    "generated_at": "2026-11-11T13:21:18.641846Z",
     "source_files": [
       "data/reports/incidents/model_misroute_incident.json"
     ]

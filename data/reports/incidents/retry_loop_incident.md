@@ -23,20 +23,6 @@ Supporting evidence:
     - skill_band_ceiling: 0.89
     - forced_no_strong_signal: False
     - kb_matches: [{'pattern_id': 'RL-02', 'story': 'Elevated retries with moderate parent fan-out.'}]
-- **token_context_agent** — provider: fallback, model: n/a, fallback: True (hard skill falsifier failed)
-  - Hypothesis: no_strong_signal
-  - Confidence: 0.28
-  - Explanation: Hard skills: weak or falsified token-context evidence. (Fallback)
-  - Supporting metrics:
-    - input_token_growth_pct: 62.166064981949454
-    - max_call_chain_depth: 1
-    - input_tokens_z_score: 481.3136321568297
-    - cost_growth_pct: 609.3596059113302
-    - token_growth_pct: 62.166064981949454
-    - hard_skills: {'token_growth_threshold': {'verdict': 'fail', 'value': 62.166064981949454, 'detail': '', 'falsifier': False}, 'chain_depth_floor': {'verdict': 'fail', 'value': 1, 'detail': '', 'falsifier': False}, 'chain_depth_recency': {'verdict': 'soft_pass', 'value': None, 'detail': 'insufficient chain timing evidence', 'falsifier': True}, 'token_zscore_check': {'verdict': 'pass', 'value': 481.3136321568297, 'detail': '', 'falsifier': False}, 'prompt_content_growth_correlation': {'verdict': 'fail', 'value': {'cost_growth_pct': 609.3596059113302, 'token_growth_pct': 62.166064981949454}, 'detail': 'cost growth far exceeds token growth', 'falsifier': True}, 'self_call_pattern_check': {'verdict': 'soft_pass', 'value': 8, 'detail': 'weak chain signature', 'falsifier': False}, 'sample_consistency_check': {'verdict': 'pass', 'value': (1120, 1126), 'detail': 'samples show token variation', 'falsifier': False}}
-    - skill_band_ceiling: 0.49
-    - forced_no_strong_signal: True
-    - kb_matches: []
 
 Recommendations:
 - Implement exponential backoff with jitter.

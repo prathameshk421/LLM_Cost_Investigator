@@ -2,6 +2,25 @@
 
 Agentic LLM cost anomaly investigator for diagnosing sudden spend spikes in LLM-backed features.
 
+## Results
+
+Measured with the seeded scenario lab (`python -m llm_cost_investigator.benchmark`).
+Each seed makes a new dataset of about 450 calls over 5 features.
+
+| Run | Runs | Root-cause accuracy | False alarm rate | LLM spend |
+|---|---|---|---|---|
+| Deterministic agents, 8% noise | 300 | 100% | 0% | $0 |
+| Deterministic agents, 25% noise | 300 | 99.0% | 2.5% | $0 |
+| Deterministic agents, 35% noise | 300 | 96.3% | 9.2% | $0 |
+| Live LLM agents (HF, `gpt-oss-20b`), 8% noise | 20 | 100% | 0% | $0.0041 for 16 calls |
+
+The two control scenarios (`clean`, `traffic_surge`) measure false alarms.
+An independent probe set (bursty traffic, 0–3 calls per minute) went from 71/90
+to 86/90 correct after the detector fixes listed in `docs/REVIEW.md`.
+
+Merging adjacent flagged windows into one incident cut live spend on a
+sustained misroute from 4 LLM calls to 1 ($0.00103 to $0.00027, 14.8 s to 5.4 s).
+
 ## Why LLM Cost Anomalies Matter
 
 Uncontrolled cost growth in LLM applications can occur rapidly due to software defects, recursive loops, or misconfigurations. Detecting cost spikes deterministically is easy, but identifying *why* they happened requires deep semantic analysis of the underlying API telemetry (e.g., distinguishing between a model upgrade, an infinite retry storm, or expanding prompts). This investigator automates diagnostics using specialized agent roles.
@@ -77,8 +96,26 @@ Optional API keys for live LLM diagnostic agents:
 ```bash
 export GROQ_API_KEY=your_key_here    # Groq provider
 export CEREBRAS_API_KEY=your_key     # Cerebras provider
+export HF_TOKEN=hf_your_token        # Hugging Face Inference Providers
 export LLM_MODEL=openai/gpt-oss-120b  # optional model override
 ```
+
+The `hf` provider uses the Hugging Face router (`router.huggingface.co/v1`,
+OpenAI-compatible, default model `openai/gpt-oss-20b`). If `HF_TOKEN` is not
+set, it reads the token from `hf auth login`. A cached login is only used when
+you pass `--provider hf`, so a run never spends credits by surprise.
+
+### Budget guard
+
+Every live call goes through a budget guard (`llm_cost_investigator/usage.py`).
+When a limit is reached, the agents use the deterministic path. The run still
+finishes, it only stops spending.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `LLM_BUDGET_USD` | `0.05` | Max estimated spend per process |
+| `LLM_MAX_CALLS` | `60` | Max live calls per process |
+| `LLM_CALL_LOG` | `data/logs/llm_calls.jsonl` | One JSON line per live call |
 
 Or copy `.env.example` to `.env` in the project root (keys are loaded automatically):
 
@@ -113,10 +150,10 @@ Live LLM diagnosis (when an API key is configured):
 python -m llm_cost_investigator.cli --scenario model_misroute --provider groq
 ```
 
-Run tests:
+Run tests (see [Testing](#testing)):
 
 ```bash
-python3 tests/test_replay.py
+python -m pytest -q
 ```
 
 ## Investigate real / external telemetry
@@ -155,19 +192,23 @@ python -m llm_cost_investigator.cli investigate \
 
 ### Frontend (Investigate mode)
 
-Same dev stack as replay. Open the UI and switch **Replay demo → Investigate**, then:
+Same dev stack as replay. Open the UI on the **Investigate** tab, then pick a source:
 
-- **File upload** — sample JSONL/CSV/OpenAI-style file (use **Fallback** for offline)
-- **Remote (Langfuse)** — pull last N hours using env keys (no keys in the browser)
+- **Simulate**: one-click lab scenario with a seed and noise level (no file needed)
+- **File upload**: sample JSONL/CSV/OpenAI-style file (use **Fallback** for offline)
+- **Remote (Langfuse)**: pull last N hours using env keys (no keys in the browser)
 
 API endpoints:
 
-- `POST /api/investigate/preview` — ingest only  
-- `POST /api/investigate` — ingest + diagnose  
-- `GET /api/investigate/pricing` — known model rates  
-- `GET /api/connectors` — registered remote connectors  
-- `GET /api/connectors/profiles` — named connection profiles  
-- `POST /api/connectors/test|preview|investigate` — Langfuse pull path  
+- `POST /api/investigate/preview`: ingest only  
+- `POST /api/investigate`: ingest + diagnose  
+- `GET /api/investigate/pricing`: known model rates  
+- `GET /api/connectors`: registered remote connectors  
+- `GET /api/connectors/profiles`: named connection profiles  
+- `POST /api/connectors/test|preview|investigate`: Langfuse pull path
+- `POST /api/simulate`: make a lab dataset and diagnose it (`scenario`, `seed`, `noise`, `provider`)
+- `GET /api/usage`: live LLM spend, limits, provider status, recent calls
+- `GET /api/benchmark`: accuracy benchmark (deterministic agents, no spend)  
 
 ### Pull from Langfuse
 
@@ -204,7 +245,48 @@ Or one script:
 ```
 
 - API: http://127.0.0.1:8000  
-- UI: http://127.0.0.1:5173  
+- UI: http://localhost:5173  
+
+The UI has three tabs:
+
+- **Investigate** (default): run a lab scenario in one click (deterministic or
+  live LLM agents), upload your own telemetry, or pull from Langfuse. Results
+  show a correct/wrong verdict, a cost timeline with the flagged windows, and
+  the stage-by-stage replay of the agents.
+- **Replay**: recorded investigations, including live tool-use transcripts.
+- **Benchmark**: accuracy per scenario, false alarm rate and a confusion matrix.
+
+## Testing
+
+| What | Command | Needs |
+|---|---|---|
+| Unit, replay, API tests (73) | `python -m pytest -q` | nothing |
+| Three demo scenarios | `python -m llm_cost_investigator.cli --scenario all --force-fallback` | nothing |
+| Accuracy benchmark | `python -m llm_cost_investigator.benchmark --seeds 30 --noise 0.15` | nothing |
+| CI accuracy gate | add `--min-accuracy 0.97` (exit 1 below it) | nothing |
+| Live LLM benchmark | `python -m llm_cost_investigator.benchmark --seeds 3 --provider hf` | `HF_TOKEN` or `hf auth login` |
+| UI end to end | start API + UI, open **Investigate → Simulate → Run** | nothing |
+
+`.github/workflows/ci.yml` runs pytest, the scenario CLI, the accuracy gate and
+the frontend build on every push.
+
+### Scenario lab
+
+`llm_cost_investigator/scenario_lab.py` makes a new noisy dataset per seed:
+random start time, jittered baseline, random incident size, and distractor
+features. Scenarios: `retry_loop`, `context_bloat`, `model_misroute`, plus the
+controls `traffic_surge` (real demand, no bug) and `clean`.
+
+## Logs and observability
+
+| Where | What |
+|---|---|
+| `data/logs/llm_calls.jsonl` | Every live LLM call: model, tokens, latency, est. USD, tool calls, errors |
+| `GET /api/usage` | Live spend, limits, provider status and the last 50 calls |
+| UI header **LLM budget** badge | Same data; click it for the recent call table |
+| `data/reports/incidents/*.md/json` | One report per investigated incident |
+| `data/reports/benchmark.json` | Last CLI benchmark run, with every failed case |
+| API stdout | uvicorn access log + one line per `/api/simulate` run |
 
 ## Sample `--force-fallback` Output
 
@@ -212,7 +294,7 @@ Or one script:
 Fallback used: model_routing_agent (fallback provider explicitly selected)
 
 Scenario:         model_misroute
-Detected anomaly: summarizer cost spike
+Detected anomaly: summarizer model change (gpt-4o-mini → gpt-4.1)
 Routed agents:    model_routing_agent
 Root cause:       expensive_model_misroute
 Confidence:       0.95
@@ -245,8 +327,4 @@ Normalized UI catalog fixtures:
 
 ## Replay Tests
 
-Replay tests validate detector, router, agent routing, aggregator, and markdown/JSON report generation against mock telemetry. Run:
-
-```bash
-python3 tests/test_replay.py
-```
+Replay tests validate detector, router, agent routing, aggregator, and markdown/JSON report generation against mock telemetry. They run as part of `python -m pytest -q`.

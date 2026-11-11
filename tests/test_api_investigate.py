@@ -46,5 +46,10 @@ def main() -> int:
     return 0
 
 
+def test_script_main() -> None:
+    """Run the script-style checks under pytest (they used to be skipped)."""
+    assert main() == 0
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

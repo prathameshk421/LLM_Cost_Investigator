@@ -318,7 +318,9 @@
   "root_cause": {
     "hypothesis": "expensive_model_misroute",
     "confidence": 0.68,
-    "winning_agent": "model_routing_agent"
+    "winning_agent": "model_routing_agent",
+    "attribution_pattern": null,
+    "attribution_note": null
   },
   "recommendations": [
     "Pin production features to an approved model allow-list.",
@@ -328,7 +330,7 @@
   "meta": {
     "provider": "groq",
     "model": "openai/gpt-oss-120b",
-    "generated_at": "2026-07-09T08:42:52.369121Z",
+    "generated_at": "2026-11-11T13:21:18.747919Z",
     "source_files": [
       "data/reports/transcripts/live_model_routing_tool_use.txt"
     ]

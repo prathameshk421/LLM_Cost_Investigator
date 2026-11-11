@@ -92,6 +92,13 @@ def _print_summary_table(results: list[ScenarioResult]) -> None:
     print(sep)
 
 
+EXPECTED_ROOT_CAUSE: dict[str, str] = {
+    "retry_loop": "uncapped_retry_loop",
+    "context_bloat": "context_bloat_self_calling_agent",
+    "model_misroute": "expensive_model_misroute",
+}
+
+
 def process_scenario(
     scenario: str,
     *,
@@ -127,8 +134,9 @@ def process_scenario(
     report_path = result.report_paths[0] if result.report_paths else "n/a"
     report_write_ok = report_path != "n/a"
     selected_agents = route_agents(report.anomaly_window)
+    # PASS needs the *right* root cause, not just any confident one.
     passed = (
-        report.root_cause.hypothesis != "no_strong_signal"
+        report.root_cause.hypothesis == EXPECTED_ROOT_CAUSE.get(scenario)
         and report.root_cause.confidence >= PASS_CONFIDENCE_THRESHOLD
         and report_write_ok
     )
@@ -163,7 +171,7 @@ def _parse_map_arg(raw: str | None) -> dict[str, str] | None:
 def _add_provider_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--provider",
-        choices=["groq", "cerebras", "cerebus", "fallback"],
+        choices=["groq", "cerebras", "cerebus", "hf", "fallback"],
         default=None,
         help="LLM provider for diagnostic agents. Defaults to env auto-detect.",
     )
@@ -320,7 +328,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--provider",
-        choices=["groq", "cerebras", "cerebus", "fallback"],
+        choices=["groq", "cerebras", "cerebus", "hf", "fallback"],
         default=None,
         help=argparse.SUPPRESS,
     )

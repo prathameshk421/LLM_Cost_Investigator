@@ -21,6 +21,20 @@ _MODEL_PRICING: dict[str, tuple[float, float]] = {
     "llama-3.3-70b": (0.59, 0.79),
     "llama-3.1-8b": (0.05, 0.08),
     "openai/gpt-oss-120b": (0.15, 0.60),
+    "openai/gpt-oss-20b": (0.05, 0.20),
+    # Newer families (approximate public list prices, USD per 1M tokens).
+    "gpt-4.1-nano": (0.10, 0.40),
+    "gpt-5": (1.25, 10.00),
+    "gpt-5-mini": (0.25, 2.00),
+    "gpt-5-nano": (0.05, 0.40),
+    "o3": (2.00, 8.00),
+    "o4-mini": (1.10, 4.40),
+    "claude-3-7-sonnet": (3.00, 15.00),
+    "claude-sonnet-4": (3.00, 15.00),
+    "claude-opus-4": (15.00, 75.00),
+    "claude-haiku-4": (1.00, 5.00),
+    "gemini-2.5-pro": (1.25, 10.00),
+    "gemini-2.5-flash": (0.30, 2.50),
 }
 
 # Used when model is unknown — intentionally cheap-ish so estimates don't invent huge spikes alone.
@@ -41,10 +55,12 @@ def lookup_rates(model: str) -> tuple[float, float, str]:
 
     # Prefix / contains match for versioned names — prefer longest key so
     # "gpt-4o-mini-2024…" maps to gpt-4o-mini, not gpt-4o.
+    # Short keys such as "o1" / "o3" only match as a prefix: a plain
+    # substring test would price "gpt-4o1x" or "pro1" as o1.
     candidates = [
         known
         for known in _MODEL_PRICING
-        if key.startswith(known) or known in key
+        if key.startswith(known) or (len(known) >= 6 and known in key)
     ]
     if candidates:
         best = max(candidates, key=len)

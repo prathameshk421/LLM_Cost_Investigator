@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Callable
 
 from llm_cost_investigator.schemas import AgentEvidence, AgentRunResult, AnomalyWindow
@@ -818,6 +819,49 @@ Telemetry:
 # Validation wrapper
 # ---------------------------------------------------------------------------
 
+_FENCE_RE = re.compile(r"^\s*```(?:json|JSON)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL)
+
+ALLOWED_HYPOTHESES: dict[str, set[str]] = {
+    "retry_loop_agent": {"uncapped_retry_loop", "no_strong_signal"},
+    "token_context_agent": {"context_bloat_self_calling_agent", "no_strong_signal"},
+    "model_routing_agent": {"expensive_model_misroute", "no_strong_signal"},
+}
+
+
+def _clean_json_text(raw: str) -> str:
+    """Strip a markdown code fence or prose around one JSON object.
+
+    Many models wrap JSON in ```json fences even when told not to. Removing
+    the fence is safe; the schema still validates every field.
+    """
+    text = (raw or "").strip()
+    match = _FENCE_RE.match(text)
+    if match:
+        text = match.group(1).strip()
+    if not text.startswith("{"):
+        start, end = text.find("{"), text.rfind("}")
+        if start != -1 and end > start:
+            text = text[start : end + 1]
+    return text
+
+
+def parse_agent_evidence(raw: str, schema: type[AgentEvidence] = AgentEvidence) -> AgentEvidence:
+    return schema.model_validate_json(_clean_json_text(raw))
+
+
+def check_agent_scope(evidence: AgentEvidence, expected_agent: str) -> None:
+    """Reject evidence from the wrong agent or outside the agent's role."""
+    if evidence.agent_name != expected_agent:
+        raise ValueError(
+            f"Agent name mismatch: expected {expected_agent}, got {evidence.agent_name}"
+        )
+    allowed = ALLOWED_HYPOTHESES.get(expected_agent, set())
+    if evidence.hypothesis not in allowed:
+        raise ValueError(
+            f"{expected_agent} returned out-of-scope hypothesis {evidence.hypothesis!r}"
+        )
+
+
 def call_agent_with_validation(
     llm_client: Callable[[str], str],
     prompt: str,
@@ -826,7 +870,7 @@ def call_agent_with_validation(
     """Call the LLM client and validate output with JSON repair retry."""
     raw = llm_client(prompt)
     try:
-        return schema.model_validate_json(raw)
+        return parse_agent_evidence(raw, schema)
     except Exception as e:
         repair_prompt = f"""Your previous response was not valid JSON for the required schema.
 Return only corrected JSON. No markdown. No prose.
@@ -835,7 +879,7 @@ Invalid response:
 {raw}"""
         try:
             repaired = llm_client(repair_prompt)
-            return schema.model_validate_json(repaired)
+            return parse_agent_evidence(repaired, schema)
         except Exception as e2:
             raise ValueError(f"Failed to parse LLM output after repair: {e2}") from e2
 
@@ -882,7 +926,7 @@ def call_agent_with_tools(
 
         raw = msg.content or ""
         try:
-            return schema.model_validate_json(raw)
+            return parse_agent_evidence(raw, schema)
         except Exception as e:
             repair_prompt = (
                 "Your previous response was not valid JSON for the required "
@@ -895,7 +939,7 @@ def call_agent_with_tools(
             )
             repaired = response2.choices[0].message.content or ""
             try:
-                return schema.model_validate_json(repaired)
+                return parse_agent_evidence(repaired, schema)
             except Exception as e2:
                 raise ValueError(
                     f"Failed to parse LLM output after repair: {e2}"
@@ -942,10 +986,7 @@ def run_retry_loop_agent_with_tools(
             tool_executor=tool_executor,
             schema=AgentEvidence,
         )
-        if evidence.agent_name != "retry_loop_agent":
-            raise ValueError(
-                f"Agent name mismatch: expected retry_loop_agent, got {evidence.agent_name}"
-            )
+        check_agent_scope(evidence, "retry_loop_agent")
         return AgentRunResult(
             evidence=evidence,
             provider=provider,
@@ -1007,10 +1048,7 @@ def run_token_context_agent_with_tools(
             tool_executor=tool_executor,
             schema=AgentEvidence,
         )
-        if evidence.agent_name != "token_context_agent":
-            raise ValueError(
-                f"Agent name mismatch: expected token_context_agent, got {evidence.agent_name}"
-            )
+        check_agent_scope(evidence, "token_context_agent")
         return AgentRunResult(
             evidence=evidence,
             provider=provider,
@@ -1075,10 +1113,7 @@ def run_model_routing_agent_with_tools(
             tool_executor=tool_executor,
             schema=AgentEvidence,
         )
-        if evidence.agent_name != "model_routing_agent":
-            raise ValueError(
-                f"Agent name mismatch: expected model_routing_agent, got {evidence.agent_name}"
-            )
+        check_agent_scope(evidence, "model_routing_agent")
         return AgentRunResult(
             evidence=evidence,
             provider=provider,
@@ -1390,8 +1425,7 @@ def run_agents_detailed(
 
         try:
             evidence = call_agent_with_validation(llm_client, prompt, AgentEvidence)
-            if evidence.agent_name != name:
-                raise ValueError(f"Agent name mismatch: expected {name}, got {evidence.agent_name}")
+            check_agent_scope(evidence, name)
             evidence = _apply_skill_pack_to_evidence(evidence, skill_pack, kb)
             results.append(
                 AgentRunResult(

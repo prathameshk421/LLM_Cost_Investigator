@@ -405,6 +405,29 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
         else:
             s7 = _skill("pass", value=(min_in, max_in), detail="samples show token variation")
 
+    # 8 per_call_growth_check (falsifier)
+    # Total tokens grow with call volume. Context bloat needs bigger prompts
+    # per call, or a parent chain. Without either, the growth is traffic.
+    per_call = sig.avg_input_token_growth_pct
+    if per_call is None:
+        s8 = _skill("soft_pass", value=None, detail="per-call growth unknown", falsifier=True)
+    elif per_call >= 50 or depth >= 3:
+        s8 = _skill("pass", value=per_call, detail="prompts per call grew", falsifier=True)
+    elif per_call < 25 and depth < 2:
+        s8 = _skill(
+            "fail",
+            value=per_call,
+            detail="token growth is call volume, prompt size per call is flat",
+            falsifier=True,
+        )
+    else:
+        s8 = _skill("soft_pass", value=per_call, detail="mild per-call growth", falsifier=True)
+
+    # Total growth with flat per-call prompts is volume. Do not let it count
+    # as a full pass (the aggregator uses this verdict to demote other causes).
+    if s8["verdict"] == "fail" and s1["verdict"] == "pass":
+        s1 = _skill("soft_pass", value=growth_raw, detail="total growth is call volume")
+
     skills = {
         "token_growth_threshold": s1,
         "chain_depth_floor": s2,
@@ -413,8 +436,15 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
         "prompt_content_growth_correlation": s5,
         "self_call_pattern_check": s6,
         "sample_consistency_check": s7,
+        "per_call_growth_check": s8,
     }
     forced = _any_falsifier_fail(skills)
+    early_bloat = (
+        depth >= 4
+        and per_call is not None
+        and per_call >= 25
+        and s6["verdict"] == "pass"
+    )
 
     if forced:
         band, conf, hyp = 0.49, 0.28, "no_strong_signal"
@@ -425,11 +455,22 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
         band, conf, hyp = 0.89, 0.84, "context_bloat_self_calling_agent"
     elif s1["verdict"] in ("pass", "soft_pass") or s4["verdict"] == "pass":
         band, conf, hyp = 0.74, 0.62, "context_bloat_self_calling_agent"
+    elif early_bloat:
+        # Early stage: a self-call chain whose prompts grow per hop, caught
+        # before total spend left the noise band.
+        band, conf, hyp = 0.74, 0.66, "context_bloat_self_calling_agent"
     else:
         band, conf, hyp = 0.49, 0.28, "no_strong_signal"
 
-    # TC-03 style: deep chain but little *known* token growth (not unknown)
-    if depth >= 5 and growth_raw is not None and growth_raw < 100 and not forced:
+    # TC-03 style: deep chain but little *known* token growth (not unknown).
+    # Per-call growth counts too: an early chain has low total growth.
+    if (
+        depth >= 5
+        and growth_raw is not None
+        and growth_raw < 100
+        and not early_bloat
+        and not forced
+    ):
         band = min(band, 0.49)
         conf = min(conf, 0.40)
         hyp = "no_strong_signal"
@@ -443,6 +484,7 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
         "suggested_hypothesis": hyp,
         "metrics": {
             "input_token_growth_pct": growth_raw,
+            "avg_input_token_growth_pct": per_call,
             "max_call_chain_depth": depth,
             "input_tokens_z_score": z,
             "cost_growth_pct": cost_g_raw,
@@ -457,7 +499,11 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
     model_changed = bool(sig.model_changed)
     # None = unknown growth (zero baseline) — never coerce to 0.0 as "stable".
     cost_g_raw = sig.cost_growth_pct
+    # Prefer per-call token growth: window totals also move with call volume,
+    # and a misroute changes price per token, not prompt size.
     token_g_raw = sig.token_growth_pct
+    if token_g_raw is not None and sig.avg_input_token_growth_pct is not None:
+        token_g_raw = sig.avg_input_token_growth_pct
     cost_z = float(sig.cost_z_score)
     before = sig.model_before
     during = sig.model_during
@@ -570,6 +616,18 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
         detail="models in samples",
     )
 
+    # 8 unit_price_jump: USD per 1k tokens. Volume and prompt size cancel out,
+    # so this isolates the price of the model itself.
+    unit_g = sig.unit_cost_growth_pct
+    if unit_g is None:
+        s8 = _skill("soft_pass", value=None, detail="unit price unknown (no baseline tokens)")
+    elif unit_g >= 100:
+        s8 = _skill("pass", value=unit_g, detail="price per token at least doubled")
+    elif unit_g >= 30:
+        s8 = _skill("soft_pass", value=unit_g, detail="price per token rose")
+    else:
+        s8 = _skill("fail", value=unit_g, detail="price per token flat")
+
     skills = {
         "model_changed_flag": s1,
         "cost_growth_threshold": s2,
@@ -578,6 +636,7 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
         "price_tier_consistency": s5,
         "sample_call_confirmation": s6,
         "routing_scope_check": s7,
+        "unit_price_jump": s8,
     }
     forced = _any_falsifier_fail(skills)
 
@@ -593,6 +652,10 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
         band, conf, hyp = 0.89, 0.84, "expensive_model_misroute"
     elif s1["verdict"] == "pass" and cost_g_raw is not None and cost_g_raw >= 100:
         band, conf, hyp = 0.74, 0.64, "expensive_model_misroute"
+    elif s1["verdict"] == "pass" and s5["verdict"] == "pass" and s8["verdict"] == "pass":
+        # Confirmed switch to a pricier tier, but total spend moved little
+        # (e.g. traffic dropped at the same time). Real bug, lower impact.
+        band, conf, hyp = 0.74, 0.70, "expensive_model_misroute"
     else:
         band, conf, hyp = 0.49, 0.32, "no_strong_signal"
 
@@ -615,6 +678,7 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
             "cost_growth_pct": cost_g_raw,
             "token_growth_pct": token_g_raw,
             "cost_z_score": cost_z,
+            "unit_cost_growth_pct": unit_g,
         },
     }
 

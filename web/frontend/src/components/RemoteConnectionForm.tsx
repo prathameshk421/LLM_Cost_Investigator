@@ -22,7 +22,7 @@ export function RemoteConnectionForm({
   const [featureDefault, setFeatureDefault] = useState("");
   const [environment, setEnvironment] = useState("");
   const [label, setLabel] = useState("langfuse");
-  const [provider, setProvider] = useState<"fallback" | "groq" | "cerebras">("fallback");
+  const [provider, setProvider] = useState<"fallback" | "hf" | "groq" | "cerebras">("fallback");
   const [maxAnomalies, setMaxAnomalies] = useState(5);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -204,12 +204,13 @@ export function RemoteConnectionForm({
           <select
             value={provider}
             onChange={(e) =>
-              setProvider(e.target.value as "fallback" | "groq" | "cerebras")
+              setProvider(e.target.value as "fallback" | "hf" | "groq" | "cerebras")
             }
           >
             <option value="fallback">Fallback (offline)</option>
             <option value="groq">Groq</option>
             <option value="cerebras">Cerebras</option>
+            <option value="hf">Hugging Face</option>
           </select>
         </label>
         <label>

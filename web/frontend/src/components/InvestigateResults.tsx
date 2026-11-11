@@ -4,6 +4,8 @@ import { useStageProgression } from "../hooks/useStageProgression";
 import { StageRail } from "./StageRail";
 import { StageContainer } from "./StageContainer";
 import { ReplayControls } from "./ReplayControls";
+import { CostTimeline } from "./CostTimeline";
+import { RunVerdict } from "./RunVerdict";
 
 export function InvestigateResults({ result }: { result: InvestigateResponse }) {
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -23,6 +25,10 @@ export function InvestigateResults({ result }: { result: InvestigateResponse }) 
 
   return (
     <div className="investigate-results">
+      {result.run_meta ? <RunVerdict meta={result.run_meta} /> : null}
+      {result.timeline && result.timeline.windows.length > 1 ? (
+        <CostTimeline data={result.timeline} />
+      ) : null}
       <div className="ingest-banner">
         <div>
           <strong>Ingest</strong> · {result.ingest.adapter} · accepted=

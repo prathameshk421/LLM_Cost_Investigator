@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routes.connectors import router as connectors_router
 from api.routes.incidents import router as incidents_router
 from api.routes.investigate import router as investigate_router
+from api.routes.lab import router as lab_router
 from api.services.catalog import catalog
 
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +48,7 @@ app.add_middleware(
 app.include_router(incidents_router)
 app.include_router(investigate_router)
 app.include_router(connectors_router)
+app.include_router(lab_router)
 
 
 @app.get("/health")

@@ -165,3 +165,7 @@ resume.synctex.gz
 *.tsbuildinfo
 .eslintcache
 web/frontend/dist-ssr/
+
+# Runtime output: live LLM call log and benchmark results
+data/logs/
+data/reports/benchmark.json

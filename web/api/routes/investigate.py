@@ -5,10 +5,31 @@ from __future__ import annotations
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from api.models.investigate import InvestigateResponse, PreviewResponse, PricingEntry
-from api.services.live_investigate import investigate_bytes, preview_bytes
+from api.services.live_investigate import MAX_UPLOAD_BYTES, investigate_bytes, preview_bytes
 from llm_cost_investigator.ingest import known_models
 
 router = APIRouter(prefix="/api/investigate", tags=["investigate"])
+
+VALID_ADAPTERS = {"auto", "jsonl", "openai", "csv"}
+
+
+def _read_upload(file: UploadFile) -> bytes:
+    """Read at most MAX_UPLOAD_BYTES + 1 so an oversized file is never fully loaded."""
+    data = file.file.read(MAX_UPLOAD_BYTES + 1)
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Upload exceeds {MAX_UPLOAD_BYTES // (1024 * 1024)} MB limit",
+        )
+    return data
+
+
+def _check_adapter(adapter: str) -> None:
+    if adapter not in VALID_ADAPTERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown adapter {adapter!r}. Use one of: {', '.join(sorted(VALID_ADAPTERS))}",
+        )
 
 
 @router.get("/pricing", response_model=list[PricingEntry])
@@ -17,14 +38,15 @@ def list_pricing() -> list[PricingEntry]:
 
 
 @router.post("/preview", response_model=PreviewResponse)
-async def preview_ingest(
+def preview_ingest(
     file: UploadFile = File(...),
     adapter: str = Form("auto"),
     feature_default: str | None = Form(None),
     column_mapping: str | None = Form(None),
     csv_delimiter: str | None = Form(None),
 ) -> PreviewResponse:
-    data = await file.read()
+    _check_adapter(adapter)
+    data = _read_upload(file)
     filename = file.filename or "upload.bin"
     try:
         return preview_bytes(
@@ -40,7 +62,7 @@ async def preview_ingest(
 
 
 @router.post("", response_model=InvestigateResponse)
-async def run_investigate(
+def run_investigate(
     file: UploadFile = File(...),
     adapter: str = Form("auto"),
     feature_default: str | None = Form(None),
@@ -52,7 +74,8 @@ async def run_investigate(
     force_fallback: bool = Form(True),
     max_anomalies: int = Form(5),
 ) -> InvestigateResponse:
-    data = await file.read()
+    _check_adapter(adapter)
+    data = _read_upload(file)
     filename = file.filename or "upload.bin"
     try:
         return investigate_bytes(

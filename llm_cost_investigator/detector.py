@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from math import sqrt
 from typing import Iterable
 
@@ -15,6 +15,10 @@ MIN_BASELINE_WINDOWS = 3
 COST_Z_THRESHOLD = 3.0
 MIN_CURRENT_CALL_COUNT = 3
 MIN_TOTAL_COST_USD = 0.01
+# Structural early-warning thresholds (see _structural_break).
+STRUCTURAL_RETRY_MIN = 4
+STRUCTURAL_DEPTH_MIN = 4
+STRUCTURAL_MARGIN = 3
 
 
 @dataclass(frozen=True)
@@ -29,6 +33,8 @@ class WindowStats:
     total_cost_usd: float
     total_input_tokens: int
     total_output_tokens: int
+    avg_input_tokens: float
+    unit_cost_per_1k: float
     avg_retry_count: float
     max_retry_count: int
     avg_latency_ms: float
@@ -47,6 +53,9 @@ def detect_anomalies(calls: list[LLMCall]) -> list[AnomalyWindow]:
     if not calls:
         return []
 
+    # Treat naive timestamps as UTC so mixed inputs cannot crash sorting.
+    calls = [_as_utc(call) for call in calls]
+
     anomalies: list[AnomalyWindow] = []
     calls_by_feature: dict[str, list[LLMCall]] = defaultdict(list)
     for call in calls:
@@ -63,7 +72,7 @@ def detect_anomalies(calls: list[LLMCall]) -> list[AnomalyWindow]:
 
             if len(previous_stats) >= MIN_BASELINE_WINDOWS:
                 signals = _build_signals(stats, previous_stats)
-                if _is_anomalous(stats, signals):
+                if _is_anomalous(stats, signals, previous_stats):
                     anomalies.append(
                         AnomalyWindow(
                             feature_tag=feature_tag,
@@ -74,6 +83,10 @@ def detect_anomalies(calls: list[LLMCall]) -> list[AnomalyWindow]:
                             sample_calls=_sample_calls(window_calls),
                         )
                     )
+                    # Keep flagged windows out of the baseline. Otherwise a
+                    # sustained incident raises its own baseline and hides
+                    # the windows that follow it.
+                    continue
 
             previous_stats.append(stats)
 
@@ -87,6 +100,12 @@ def detect_anomalies(calls: list[LLMCall]) -> list[AnomalyWindow]:
             anomaly.feature_tag,
         ),
     )
+
+
+def _as_utc(call: LLMCall) -> LLMCall:
+    if call.timestamp.tzinfo is None:
+        return call.model_copy(update={"timestamp": call.timestamp.replace(tzinfo=timezone.utc)})
+    return call
 
 
 def _build_windows(calls: list[LLMCall]) -> dict[datetime, list[LLMCall]]:
@@ -124,6 +143,8 @@ def _compute_window_stats(
         total_cost_usd=total_cost_usd,
         total_input_tokens=total_input_tokens,
         total_output_tokens=total_output_tokens,
+        avg_input_tokens=_mean(call.input_tokens for call in window_calls),
+        unit_cost_per_1k=_unit_cost(total_cost_usd, total_input_tokens + total_output_tokens),
         avg_retry_count=_mean(retry_counts),
         max_retry_count=max(retry_counts, default=0),
         avg_latency_ms=_mean(latencies),
@@ -166,6 +187,12 @@ def _build_signals(stats: WindowStats, baseline_stats: list[WindowStats]) -> Ano
         output_token_growth_pct=output_growth,
         cost_growth_pct=_growth_pct(stats.total_cost_usd, cost_mean),
         token_growth_pct=input_growth,
+        unit_cost_growth_pct=_growth_pct(
+            stats.unit_cost_per_1k, _baseline_mean(baseline_stats, "unit_cost_per_1k")
+        ),
+        avg_input_token_growth_pct=_growth_pct(
+            stats.avg_input_tokens, _baseline_mean(baseline_stats, "avg_input_tokens")
+        ),
         max_retry_count=stats.max_retry_count,
         avg_retry_count=stats.avg_retry_count,
         max_call_chain_depth=stats.max_call_chain_depth,
@@ -177,13 +204,19 @@ def _build_signals(stats: WindowStats, baseline_stats: list[WindowStats]) -> Ano
     )
 
 
-def _is_anomalous(stats: WindowStats, signals: AnomalySignals) -> bool:
+def _is_anomalous(
+    stats: WindowStats,
+    signals: AnomalySignals,
+    baseline_stats: list[WindowStats] | None = None,
+) -> bool:
     enough_activity = (
         stats.call_count >= MIN_CURRENT_CALL_COUNT
         or stats.total_cost_usd >= MIN_TOTAL_COST_USD
     )
     if not enough_activity:
         return False
+    if baseline_stats and _structural_break(stats, baseline_stats):
+        return True
     return (
         signals.cost_z_score >= COST_Z_THRESHOLD
         or signals.input_tokens_z_score >= 3.0
@@ -195,6 +228,31 @@ def _is_anomalous(stats: WindowStats, signals: AnomalySignals) -> bool:
             and signals.cost_growth_pct > 0
         )
     )
+
+
+def _structural_break(stats: WindowStats, baseline_stats: list[WindowStats]) -> bool:
+    """Early warning: call-graph shape changed before spend did.
+
+    A retry storm or a deep self-call chain is a bug even while cost is
+    still inside normal noise. Both are measured against the feature's own
+    baseline, so a feature that always chains or retries does not trigger.
+    """
+    base_retry = max(b.max_retry_count for b in baseline_stats)
+    base_depth = max(b.max_call_chain_depth for b in baseline_stats)
+    retry_storm = (
+        stats.max_retry_count >= STRUCTURAL_RETRY_MIN
+        and stats.max_retry_count >= base_retry + STRUCTURAL_MARGIN
+        and stats.repeated_parent_call_count >= 1
+    )
+    deep_chain = (
+        stats.max_call_chain_depth >= STRUCTURAL_DEPTH_MIN
+        and stats.max_call_chain_depth >= base_depth + STRUCTURAL_MARGIN
+    )
+    return retry_storm or deep_chain
+
+
+def _unit_cost(cost_usd: float, tokens: int) -> float:
+    return cost_usd / tokens * 1000 if tokens > 0 else 0.0
 
 
 def _values(stats: Iterable[WindowStats], field_name: str) -> list[float]:
@@ -229,11 +287,11 @@ def _z_score(current: float, baseline_values: list[float]) -> float:
     if baseline_std == 0:
         if current == baseline_mean:
             return 0.0
-        # When there is zero variance in the baseline, estimate a minimum
-        # standard deviation proportional to the data scale so that mild
-        # deviations (e.g. 1 retry vs 7) produce meaningfully different
-        # z-scores instead of both being clamped to 10.0.
-        min_std = max(abs(baseline_mean) * 0.1, 1.0)
+        # Zero variance in the baseline: use a floor of 10% of the mean.
+        # The floor must be relative. An absolute floor of 1.0 is one whole
+        # USD for cost, so a flat $0.01 baseline could grow 100x unseen.
+        # Only a zero mean (e.g. no retries) uses the unit floor.
+        min_std = abs(baseline_mean) * 0.1 if baseline_mean != 0 else 1.0
         return (current - baseline_mean) / min_std
 
     return (current - baseline_mean) / baseline_std

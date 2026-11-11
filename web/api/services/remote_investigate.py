@@ -11,14 +11,13 @@ from api.models.investigate import (
     LiveIncident,
     PreviewResponse,
 )
-from api.services.stage_builder import incident_report_to_replay
+from api.services.live_investigate import investigate_calls_response
 from llm_cost_investigator.connectors import (
     DEFAULT_REMOTE_MAX_ROWS,
     ConnectorError,
     PullRequest,
     pull_calls,
 )
-from llm_cost_investigator.investigate import investigate_calls
 
 
 def _ingest_summary(report) -> IngestSummary:
@@ -165,48 +164,18 @@ def investigate_remote(
     if report.accepted == 0:
         raise ValueError("No accepted rows after remote pull (empty window or all dropped)")
 
-    resolved_provider = "fallback" if force_fallback else provider
     stem = label or (
         f"langfuse_{connection}" if connection else f"langfuse_{connector or 'remote'}"
     )
-    result = investigate_calls(
+    response = investigate_calls_response(
         calls,
-        label=stem,
-        provider=resolved_provider,
-        model=model,
-        max_anomalies=max(1, min(max_anomalies, 20)),
-        write_reports=write_reports,
-        report_naming="label_feature_index",
-    )
-
-    live_incidents: list[LiveIncident] = []
-    for incident_report in result.incidents:
-        rid = f"live_{incident_report.scenario}"
-        replay = incident_report_to_replay(
-            incident_report,
-            incident_id=rid,
-            title=(
-                f"{incident_report.anomaly_window.feature_tag} — "
-                f"{incident_report.root_cause.hypothesis}"
-            ),
-            source_files=[f"connector:{meta.get('connector')}"],
-        )
-        live_incidents.append(
-            LiveIncident.from_replay(
-                replay,
-                raw_report=incident_report.model_dump(mode="json"),
-            )
-        )
-
-    return InvestigateResponse(
         ingest=_ingest_summary(report),
-        summary=InvestigationSummary(
-            label=result.label,
-            call_count=result.call_count,
-            feature_tags=result.feature_tags,
-            anomaly_count=result.anomaly_count,
-            no_anomaly_reason=result.no_anomaly_reason,
-        ),
-        incidents=live_incidents,
-        pull_meta=meta,
+        label=stem,
+        source_name=f"connector:{meta.get('connector')}",
+        provider=provider,
+        model=model,
+        force_fallback=force_fallback,
+        max_anomalies=max_anomalies,
+        write_reports=write_reports,
     )
+    return response.model_copy(update={"pull_meta": meta})

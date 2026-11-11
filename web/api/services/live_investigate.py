@@ -13,6 +13,7 @@ from api.models.investigate import (
     PreviewResponse,
 )
 from api.services.stage_builder import incident_report_to_replay
+from api.services.timeline import build_timeline
 from llm_cost_investigator.ingest import (
     IngestOptions,
     guess_column_mapping,
@@ -129,8 +130,43 @@ def investigate_bytes(
     if report.accepted == 0:
         raise ValueError("No accepted rows after ingest")
 
-    resolved_provider = "fallback" if force_fallback else provider
     stem = label or (filename.rsplit(".", 1)[0] if filename else "upload")
+    return investigate_calls_response(
+        calls,
+        ingest=_ingest_summary(report),
+        label=stem,
+        source_name=filename,
+        provider=provider,
+        model=model,
+        force_fallback=force_fallback,
+        max_anomalies=max_anomalies,
+        write_reports=write_reports,
+    )
+
+
+def investigate_calls_response(
+    calls: list,
+    *,
+    ingest: IngestSummary,
+    label: str,
+    source_name: str,
+    provider: str | None = None,
+    model: str | None = None,
+    force_fallback: bool = False,
+    max_anomalies: int = 5,
+    write_reports: bool = True,
+    extra_meta: dict | None = None,
+) -> InvestigateResponse:
+    """Run the pipeline on normalized calls and shape the API response."""
+    import time
+
+    from llm_cost_investigator.usage import ledger
+
+    resolved_provider = "fallback" if force_fallback else provider
+    stem = label
+    filename = source_name
+    usage_before = ledger.snapshot()
+    started = time.perf_counter()
     result = investigate_calls(
         calls,
         label=stem,
@@ -160,8 +196,24 @@ def investigate_bytes(
             )
         )
 
+    usage_after = ledger.snapshot()
+    run_meta = {
+        "elapsed_ms": int((time.perf_counter() - started) * 1000),
+        "llm_calls": usage_after["calls"] - usage_before["calls"],
+        "llm_tokens": (usage_after["prompt_tokens"] + usage_after["completion_tokens"])
+        - (usage_before["prompt_tokens"] + usage_before["completion_tokens"]),
+        "llm_est_usd": round(usage_after["spent_usd"] - usage_before["spent_usd"], 6),
+        "provider_requested": resolved_provider or "auto",
+        "flagged_windows": len(result.flagged_windows),
+        "incident_groups": result.incident_groups,
+    }
+    if extra_meta:
+        run_meta.update(extra_meta)
+
     return InvestigateResponse(
-        ingest=_ingest_summary(report),
+        ingest=ingest,
+        timeline=build_timeline(calls, result.incidents, result.flagged_windows),
+        run_meta=run_meta,
         summary=InvestigationSummary(
             label=result.label,
             call_count=result.call_count,

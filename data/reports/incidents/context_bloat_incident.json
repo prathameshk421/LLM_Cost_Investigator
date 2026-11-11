@@ -11,6 +11,7 @@
         "confidence": 0.84,
         "supporting_metrics": {
           "input_token_growth_pct": 294.0677966101695,
+          "avg_input_token_growth_pct": 228.38983050847457,
           "max_call_chain_depth": 5,
           "input_tokens_z_score": 1454.8417278608008,
           "cost_growth_pct": 313.79310344827593,
@@ -63,6 +64,12 @@
               ],
               "detail": "samples show token variation",
               "falsifier": false
+            },
+            "per_call_growth_check": {
+              "verdict": "pass",
+              "value": 228.38983050847457,
+              "detail": "prompts per call grew",
+              "falsifier": true
             }
           },
           "skill_band_ceiling": 0.89,
@@ -89,12 +96,14 @@
       "input_tokens_z_score": 1454.8417278608008,
       "output_tokens_z_score": 125.06331729701293,
       "retry_z_score": 0.0,
-      "calls_z_score": 1.0,
+      "calls_z_score": 2.0,
       "latency_z_score": 172.07774996355664,
       "input_token_growth_pct": 294.0677966101695,
       "output_token_growth_pct": 42.15384615384615,
       "cost_growth_pct": 313.79310344827593,
       "token_growth_pct": 294.0677966101695,
+      "avg_input_token_growth_pct": 228.38983050847457,
+      "unit_cost_growth_pct": 19.234219783273197,
       "max_retry_count": 0,
       "avg_retry_count": 0.0,
       "max_call_chain_depth": 5,
@@ -203,6 +212,7 @@
         "confidence": 0.84,
         "supporting_metrics": {
           "input_token_growth_pct": 294.0677966101695,
+          "avg_input_token_growth_pct": 228.38983050847457,
           "max_call_chain_depth": 5,
           "input_tokens_z_score": 1454.8417278608008,
           "cost_growth_pct": 313.79310344827593,
@@ -255,6 +265,12 @@
               ],
               "detail": "samples show token variation",
               "falsifier": false
+            },
+            "per_call_growth_check": {
+              "verdict": "pass",
+              "value": 228.38983050847457,
+              "detail": "prompts per call grew",
+              "falsifier": true
             }
           },
           "skill_band_ceiling": 0.89,
@@ -279,5 +295,5 @@
     "Implement prompt summarization or token truncation for history.",
     "Add a fail-safe budget check on the chain to terminate expanding contexts."
   ],
-  "generated_at": "2026-07-14T20:06:23.563103Z"
+  "generated_at": "2026-11-11T13:21:18.639837Z"
 }

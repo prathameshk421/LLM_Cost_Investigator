@@ -371,7 +371,9 @@
   "root_cause": {
     "hypothesis": "uncapped_retry_loop",
     "confidence": 0.72,
-    "winning_agent": "retry_loop_agent"
+    "winning_agent": "retry_loop_agent",
+    "attribution_pattern": null,
+    "attribution_note": null
   },
   "recommendations": [
     "Implement exponential backoff with jitter.",
@@ -381,7 +383,7 @@
   "meta": {
     "provider": "synthetic",
     "model": null,
-    "generated_at": "2026-07-09T08:42:52.370013Z",
+    "generated_at": "2026-11-11T13:21:18.748543Z",
     "source_files": [
       "scripts/run_tool_use_live.py"
     ]

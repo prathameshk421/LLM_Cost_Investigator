@@ -7,20 +7,23 @@ import type {
 } from "../types/investigate";
 import { CsvMappingForm } from "./CsvMappingForm";
 import { RemoteConnectionForm } from "./RemoteConnectionForm";
+import { SimulatePanel } from "./SimulatePanel";
 
-type SourceMode = "file" | "remote";
+type SourceMode = "simulate" | "file" | "remote";
 
 export function InvestigateUpload({
   onResult,
+  hfReady = false,
 }: {
   onResult: (result: InvestigateResponse) => void;
+  hfReady?: boolean;
 }) {
-  const [source, setSource] = useState<SourceMode>("file");
+  const [source, setSource] = useState<SourceMode>("simulate");
   const [file, setFile] = useState<File | null>(null);
   const [adapter, setAdapter] = useState<AdapterChoice>("auto");
   const [featureDefault, setFeatureDefault] = useState("");
   const [label, setLabel] = useState("");
-  const [provider, setProvider] = useState<"fallback" | "groq" | "cerebras">("fallback");
+  const [provider, setProvider] = useState<"fallback" | "hf" | "groq" | "cerebras">("fallback");
   const [maxAnomalies, setMaxAnomalies] = useState(5);
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [headers, setHeaders] = useState<string[]>([]);
@@ -91,6 +94,13 @@ export function InvestigateUpload({
       <div className="investigate-actions" style={{ marginBottom: 12 }}>
         <button
           type="button"
+          className={source === "simulate" ? "primary" : undefined}
+          onClick={() => setSource("simulate")}
+        >
+          Simulate
+        </button>
+        <button
+          type="button"
           className={source === "file" ? "primary" : undefined}
           onClick={() => setSource("file")}
         >
@@ -105,7 +115,9 @@ export function InvestigateUpload({
         </button>
       </div>
 
-      {source === "remote" ? (
+      {source === "simulate" ? (
+        <SimulatePanel onResult={onResult} hfReady={hfReady} />
+      ) : source === "remote" ? (
         <RemoteConnectionForm onResult={onResult} />
       ) : (
         <>
@@ -148,12 +160,13 @@ export function InvestigateUpload({
               <select
                 value={provider}
                 onChange={(e) =>
-                  setProvider(e.target.value as "fallback" | "groq" | "cerebras")
+                  setProvider(e.target.value as "fallback" | "hf" | "groq" | "cerebras")
                 }
               >
                 <option value="fallback">Fallback (offline)</option>
                 <option value="groq">Groq</option>
                 <option value="cerebras">Cerebras</option>
+                <option value="hf">Hugging Face</option>
               </select>
             </label>
             <label>

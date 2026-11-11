@@ -64,6 +64,9 @@ class InvestigationResult(BaseModel):
     incidents: list[IncidentReport] = Field(default_factory=list)
     report_paths: list[str] = Field(default_factory=list)
     no_anomaly_reason: str | None = None
+    # Every flagged window, including ones merged into a neighbour incident.
+    flagged_windows: list[dict[str, Any]] = Field(default_factory=list)
+    incident_groups: int = 0
 
 
 def sanitize_slug(value: str) -> str:
@@ -103,6 +106,35 @@ def _report_scenario(
     if naming == "label":
         return sanitize_slug(label)
     return f"{sanitize_slug(label)}_{sanitize_slug(window.feature_tag)}_{index}"
+
+
+def group_adjacent_windows(anomalies: list[AnomalyWindow]) -> list[list[AnomalyWindow]]:
+    """Group flagged windows of one feature that touch each other in time.
+
+    Input order is the detector rank. Each group lists its windows in rank
+    order (so ``group[0]`` is the strongest), and groups keep the rank of
+    their strongest window.
+    """
+    rank = {id(w): i for i, w in enumerate(anomalies)}
+    by_feature: dict[str, list[AnomalyWindow]] = {}
+    for w in anomalies:
+        by_feature.setdefault(w.feature_tag, []).append(w)
+
+    groups: list[list[AnomalyWindow]] = []
+    for windows in by_feature.values():
+        current: list[AnomalyWindow] = []
+        for w in sorted(windows, key=lambda w: w.start_time):
+            if current and w.start_time > current[-1].end_time:
+                groups.append(current)
+                current = []
+            current.append(w)
+        if current:
+            groups.append(current)
+
+    for g in groups:
+        g.sort(key=lambda w: rank[id(w)])
+    groups.sort(key=lambda g: rank[id(g[0])])
+    return groups
 
 
 def investigate_calls(
@@ -148,7 +180,21 @@ def investigate_calls(
             no_anomaly_reason="No anomalous windows detected against baseline.",
         )
 
-    selected_windows = anomalies[: max(1, max_anomalies)]
+    groups = group_adjacent_windows(anomalies)
+    flagged_windows = [
+        {
+            "feature_tag": w.feature_tag,
+            "start_time": w.start_time,
+            "end_time": w.end_time,
+            "group": gi,
+        }
+        for gi, group in enumerate(groups)
+        for w in group
+    ]
+    # One investigation per incident: the highest-ranked window of each run
+    # of adjacent flagged windows. A sustained incident spans many windows;
+    # paying agents once per window repeats the same diagnosis.
+    selected_windows = [group[0] for group in groups][: max(1, max_anomalies)]
     incidents: list[IncidentReport] = []
     report_paths: list[str] = []
 
@@ -214,6 +260,8 @@ def investigate_calls(
         incidents=incidents,
         report_paths=report_paths,
         no_anomaly_reason=None,
+        flagged_windows=flagged_windows,
+        incident_groups=len(groups),
     )
 
 

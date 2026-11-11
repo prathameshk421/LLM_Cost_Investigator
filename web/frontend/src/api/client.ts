@@ -1,8 +1,12 @@
 import type { IncidentSummary, ReplayIncident } from "../types/replay";
 import type {
   AdapterChoice,
+  BenchmarkReport,
   InvestigateResponse,
+  LabScenario,
   PreviewResponse,
+  ProviderChoice,
+  UsageSnapshot,
 } from "../types/investigate";
 import type {
   ConnectorInfo,
@@ -30,11 +34,11 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   });
   if (!res.ok) {
     let detail = `${res.status} ${res.statusText}`;
+    const text = await res.text().catch(() => "");
     try {
-      const data = (await res.json()) as { detail?: string };
-      if (data.detail) detail = data.detail;
+      const data = JSON.parse(text) as { detail?: unknown };
+      if (data.detail) detail = formatDetail(data.detail);
     } catch {
-      const text = await res.text().catch(() => "");
       if (text) detail = text;
     }
     throw new Error(detail);
@@ -75,11 +79,11 @@ async function postForm<T>(path: string, form: FormData): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { method: "POST", body: form });
   if (!res.ok) {
     let detail = `${res.status} ${res.statusText}`;
+    const text = await res.text().catch(() => "");
     try {
-      const body = (await res.json()) as { detail?: string };
-      if (body.detail) detail = body.detail;
+      const body = JSON.parse(text) as { detail?: unknown };
+      if (body.detail) detail = formatDetail(body.detail);
     } catch {
-      const text = await res.text().catch(() => "");
       if (text) detail = text;
     }
     throw new Error(detail);
@@ -130,4 +134,39 @@ export function runConnectorInvestigate(
   params: RemotePullParams
 ): Promise<InvestigateResponse> {
   return postJson("/api/connectors/investigate", params);
+}
+
+function formatDetail(detail: unknown): string {
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    // FastAPI 422: [{loc, msg}, ...]
+    return detail
+      .map((d) => {
+        const item = d as { loc?: unknown[]; msg?: string };
+        return `${(item.loc ?? []).slice(1).join(".")}: ${item.msg ?? ""}`;
+      })
+      .join("; ");
+  }
+  return JSON.stringify(detail);
+}
+
+export interface SimulateParams {
+  scenario: LabScenario;
+  seed: number;
+  noise: number;
+  provider: ProviderChoice;
+  model?: string;
+}
+
+export function runSimulation(params: SimulateParams): Promise<InvestigateResponse> {
+  return postJson("/api/simulate", params);
+}
+
+export function getUsage(): Promise<UsageSnapshot> {
+  return getJson("/api/usage");
+}
+
+export function getBenchmark(seeds: number, noise: number, refresh = false): Promise<BenchmarkReport> {
+  const q = new URLSearchParams({ seeds: String(seeds), noise: String(noise), refresh: String(refresh) });
+  return getJson(`/api/benchmark?${q}`);
 }

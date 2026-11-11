@@ -78,6 +78,10 @@ class InvestigateResponse(BaseModel):
     summary: InvestigationSummary
     incidents: list[LiveIncident] = Field(default_factory=list)
     pull_meta: dict[str, Any] | None = None
+    # Per-feature cost per detector window, plus flagged windows (for charts).
+    timeline: dict[str, Any] | None = None
+    # Wall time and live LLM usage for this one request.
+    run_meta: dict[str, Any] | None = None
 
 
 class PreviewResponse(BaseModel):

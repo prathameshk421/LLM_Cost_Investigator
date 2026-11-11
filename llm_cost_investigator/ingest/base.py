@@ -22,16 +22,33 @@ class TelemetryAdapter(Protocol):
         ...
 
 
+def decode_bytes(data: bytes) -> str:
+    """Decode telemetry bytes: UTF-16 by BOM, else UTF-8 (BOM optional).
+
+    Excel and Windows tools often export UTF-16 or cp1252. A clear error is
+    better than a raw UnicodeDecodeError deep in an adapter.
+    """
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return data.decode("utf-16")
+    try:
+        return data.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError(
+            "File is not UTF-8 or UTF-16 text "
+            f"(bad byte at offset {exc.start}). Re-export it as UTF-8."
+        ) from exc
+
+
 def read_source_text(source: Path | bytes | str) -> str:
     if isinstance(source, bytes):
-        return source.decode("utf-8-sig")
+        return decode_bytes(source)
     if isinstance(source, Path):
-        return source.read_text(encoding="utf-8-sig")
+        return decode_bytes(source.read_bytes())
     # str path or raw text
     path = Path(source)
     if path.exists() and path.is_file():
-        return path.read_text(encoding="utf-8-sig")
-    return source
+        return decode_bytes(path.read_bytes())
+    return source.lstrip("\ufeff")
 
 
 def read_source_bytes(source: Path | bytes | str) -> bytes:

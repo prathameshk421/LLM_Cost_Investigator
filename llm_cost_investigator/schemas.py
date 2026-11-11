@@ -86,6 +86,12 @@ class AnomalySignals(BaseModel):
     output_token_growth_pct: float | None = 0.0
     cost_growth_pct: float | None = 0.0
     token_growth_pct: float | None = 0.0
+    # Growth of the mean input tokens *per call*. Window totals also grow with
+    # plain traffic volume; this one only grows when prompts get bigger.
+    avg_input_token_growth_pct: float | None = 0.0
+    # Growth of USD per 1k tokens. A pricier model raises this even when
+    # traffic and prompt size stay flat. None when the baseline has no tokens.
+    unit_cost_growth_pct: float | None = 0.0
 
     # Absolute maximums within the anomaly window
     max_retry_count: int = 0
@@ -159,7 +165,7 @@ class AgentRunResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     evidence: AgentEvidence
-    provider: Literal["groq", "cerebras", "fallback"]
+    provider: Literal["groq", "cerebras", "hf", "fallback"]
     model: str | None = None
     fallback_used: bool = False
     fallback_reason: str | None = None

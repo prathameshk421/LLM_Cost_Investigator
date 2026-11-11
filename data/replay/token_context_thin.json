@@ -312,7 +312,9 @@
   "root_cause": {
     "hypothesis": "context_bloat_self_calling_agent",
     "confidence": 0.68,
-    "winning_agent": "token_context_agent"
+    "winning_agent": "token_context_agent",
+    "attribution_pattern": null,
+    "attribution_note": null
   },
   "recommendations": [
     "Cap recursive self-calls with a max reflection depth.",
@@ -322,7 +324,7 @@
   "meta": {
     "provider": "cerebras",
     "model": "gpt-oss-120b",
-    "generated_at": "2026-07-09T08:42:52.367406Z",
+    "generated_at": "2026-11-11T13:21:18.746797Z",
     "source_files": [
       "data/reports/transcripts/live_token_context_tool_use.txt"
     ]
