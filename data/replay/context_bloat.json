@@ -5,8 +5,8 @@
   "scenario_label": "context_bloat",
   "feature_tag": "agent_reflection",
   "window": {
-    "start_time": "2026-07-08T09:30:00Z",
-    "end_time": "2026-07-08T09:35:00Z"
+    "start_time": "2026-07-08T10:10:00Z",
+    "end_time": "2026-07-08T10:15:00Z"
   },
   "stages": [
     {
@@ -16,23 +16,26 @@
       "agent_name": null,
       "payload": {
         "signals": {
-          "cost_z_score": 969.1646364744149,
-          "input_tokens_z_score": 1454.8417278608008,
-          "output_tokens_z_score": 125.06331729701293,
+          "cost_z_score": 1023.0475985450921,
+          "input_tokens_z_score": 1570.2372248894658,
+          "output_tokens_z_score": 132.0165032973421,
           "retry_z_score": 0.0,
           "calls_z_score": 2.0,
-          "latency_z_score": 172.07774996355664,
-          "input_token_growth_pct": 294.0677966101695,
+          "latency_z_score": 174.65128389888656,
+          "input_token_growth_pct": 294.1314175008072,
           "output_token_growth_pct": 42.15384615384615,
-          "cost_growth_pct": 313.79310344827593,
-          "token_growth_pct": 294.0677966101695,
-          "avg_input_token_growth_pct": 228.38983050847457,
-          "unit_cost_growth_pct": 19.234219783273197,
+          "cost_growth_pct": 313.7931034482759,
+          "token_growth_pct": 294.1314175008072,
+          "avg_input_token_growth_pct": 228.4428479173394,
+          "unit_cost_growth_pct": 19.218605783093054,
           "max_retry_count": 0,
           "avg_retry_count": 0.0,
           "max_call_chain_depth": 5,
           "repeated_parent_call_count": 0,
           "model_changed": false,
+          "history_max_chain_depth": 0,
+          "history_max_retry_count": 0,
+          "causal_evidence": true,
           "models_seen": [
             "gpt-4o-mini"
           ],
@@ -42,7 +45,7 @@
         "highlights": [
           {
             "key": "cost_z_score",
-            "value": 969.1646364744149,
+            "value": 1023.0475985450921,
             "threshold": ">= 3 anomaly",
             "status": "fail"
           },
@@ -54,25 +57,25 @@
           },
           {
             "key": "input_tokens_z_score",
-            "value": 1454.8417278608008,
+            "value": 1570.2372248894658,
             "threshold": ">= 3 route token agent / < 3 may force tool",
             "status": "fail"
           },
           {
             "key": "cost_growth_pct",
-            "value": 313.79310344827593,
+            "value": 313.7931034482759,
             "threshold": null,
             "status": "fail"
           },
           {
             "key": "input_token_growth_pct",
-            "value": 294.0677966101695,
+            "value": 294.1314175008072,
             "threshold": null,
             "status": "neutral"
           },
           {
             "key": "token_growth_pct",
-            "value": 294.0677966101695,
+            "value": 294.1314175008072,
             "threshold": "< 50 with cost spike → model route",
             "status": "neutral"
           },
@@ -202,7 +205,7 @@
             "agent_name": "token_context_agent",
             "selected": true,
             "reasons": [
-              "input_tokens_z_score=1454.84 >= 3",
+              "input_tokens_z_score=1570.24 >= 3",
               "input_token_growth_pct=294.1 >= 100",
               "max_call_chain_depth=5 >= 4"
             ]
@@ -224,11 +227,11 @@
         "tool_name": "get_call_chain",
         "tool_required": false,
         "decision": "DO_NOT_CALL",
-        "decision_line": "DECISION: DO NOT call get_call_chain — input_tokens_z_score=1454.8417278608008 (>= 3.0) OR max_call_chain_depth=5 (< 2). Answer directly from the aggregate signals. Skip the tool entirely.",
+        "decision_line": "DECISION: DO NOT call get_call_chain — input_tokens_z_score=1570.2372248894658 (>= 3.0) OR max_call_chain_depth=5 (< 2). Answer directly from the aggregate signals. Skip the tool entirely.",
         "comparisons": [
           {
             "metric": "input_tokens_z_score",
-            "value": 1454.8417278608008,
+            "value": 1570.2372248894658,
             "operator": "<",
             "threshold": 3.0,
             "passed": false
@@ -268,16 +271,16 @@
         "confidence": 0.84,
         "explanation": "Hard skills indicate context bloat / recursive self-calling growth. Pattern: TC-02. (Fallback)",
         "supporting_metrics": {
-          "input_token_growth_pct": 294.0677966101695,
-          "avg_input_token_growth_pct": 228.38983050847457,
+          "input_token_growth_pct": 294.1314175008072,
+          "avg_input_token_growth_pct": 228.4428479173394,
           "max_call_chain_depth": 5,
-          "input_tokens_z_score": 1454.8417278608008,
-          "cost_growth_pct": 313.79310344827593,
-          "token_growth_pct": 294.0677966101695,
+          "input_tokens_z_score": 1570.2372248894658,
+          "cost_growth_pct": 313.7931034482759,
+          "token_growth_pct": 294.1314175008072,
           "hard_skills": {
             "token_growth_threshold": {
               "verdict": "soft_pass",
-              "value": 294.0677966101695,
+              "value": 294.1314175008072,
               "detail": "",
               "falsifier": false
             },
@@ -295,15 +298,15 @@
             },
             "token_zscore_check": {
               "verdict": "pass",
-              "value": 1454.8417278608008,
+              "value": 1570.2372248894658,
               "detail": "",
               "falsifier": false
             },
             "prompt_content_growth_correlation": {
               "verdict": "pass",
               "value": {
-                "cost_growth_pct": 313.79310344827593,
-                "token_growth_pct": 294.0677966101695
+                "cost_growth_pct": 313.7931034482759,
+                "token_growth_pct": 294.1314175008072
               },
               "detail": "cost tracks tokens",
               "falsifier": true
@@ -325,7 +328,7 @@
             },
             "per_call_growth_check": {
               "verdict": "pass",
-              "value": 228.38983050847457,
+              "value": 228.4428479173394,
               "detail": "prompts per call grew",
               "falsifier": true
             }
@@ -382,7 +385,7 @@
   "meta": {
     "provider": "fallback",
     "model": null,
-    "generated_at": "2026-11-11T13:21:18.639837Z",
+    "generated_at": "2026-11-11T18:38:43.102987Z",
     "source_files": [
       "data/reports/incidents/context_bloat_incident.json"
     ]

@@ -6,21 +6,26 @@ import { ReplayControls } from "./components/ReplayControls";
 import { InvestigateUpload } from "./components/InvestigateUpload";
 import { InvestigateResults } from "./components/InvestigateResults";
 import { BenchmarkView } from "./components/BenchmarkView";
+import { SpendView } from "./components/SpendView";
+import { LiveView } from "./components/LiveView";
+import "./styles/spend.css";
 import { UsageBadge, useUsage } from "./components/UsageBadge";
 import { useIncident, useIncidentList } from "./hooks/useIncident";
 import { useStageProgression } from "./hooks/useStageProgression";
 import type { InvestigateResponse } from "./types/investigate";
 
-type AppMode = "replay" | "investigate" | "benchmark";
+type AppMode = "spend" | "live" | "replay" | "investigate" | "benchmark";
 
 const SUBTITLE: Record<AppMode, string> = {
+  spend: "Where the money goes, why it changed, and where the month will land",
+  live: "Live ingest, rolling spend and incidents as they open",
   investigate: "Detect a cost spike, route it to diagnostic agents, explain the root cause",
   replay: "Investigation replay · deterministic DECISION injection · tool-use centerpiece",
   benchmark: "Root-cause accuracy across seeded, noisy scenarios",
 };
 
 export default function App() {
-  const [mode, setMode] = useState<AppMode>("investigate");
+  const [mode, setMode] = useState<AppMode>("spend");
   const { usage, error: usageError } = useUsage();
   const [investigateResult, setInvestigateResult] =
     useState<InvestigateResponse | null>(null);
@@ -49,6 +54,8 @@ export default function App() {
           <div className="mode-toggle" role="tablist">
             {(
               [
+                ["spend", "Spend"],
+                ["live", "Live"],
                 ["investigate", "Investigate"],
                 ["replay", "Replay"],
                 ["benchmark", "Benchmark"],
@@ -148,6 +155,12 @@ export default function App() {
             </section>
           </main>
         </>
+      ) : mode === "spend" || mode === "live" ? (
+        <main className="main investigate-main">
+          <section className="stage-body investigate-body wide-body">
+            {mode === "spend" ? <SpendView /> : <LiveView />}
+          </section>
+        </main>
       ) : mode === "benchmark" ? (
         <main className="main investigate-main">
           <section className="stage-body investigate-body">

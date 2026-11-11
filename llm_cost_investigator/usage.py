@@ -6,10 +6,14 @@ usage, an estimated USD cost, and one JSON line in the call log.
 
 Limits (environment variables, per process):
 
-- ``LLM_MAX_CALLS``   maximum number of live calls (default 60)
-- ``LLM_BUDGET_USD``  maximum estimated spend in USD (default 0.05)
+- ``LLM_MAX_CALLS``   maximum number of live calls per UTC day (default 60)
+- ``LLM_BUDGET_USD``  maximum estimated spend in USD per UTC day (default 0.05)
 - ``LLM_CALL_LOG``    path of the JSONL call log
                       (default ``data/logs/llm_calls.jsonl``)
+
+The limits are per UTC day and survive restarts: at start-up the ledger
+rebuilds today's totals from the call log, so a restart loop cannot spend a
+fresh budget each time.
 
 When a limit is reached the wrapper raises ``BudgetExceeded``. The agent
 runner catches every exception and uses the deterministic fallback, so a
@@ -66,6 +70,10 @@ def estimate_usd(model: str | None, prompt_tokens: int, completion_tokens: int) 
     return (prompt_tokens * rate_in + completion_tokens * rate_out) / 1_000_000
 
 
+def _today() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+
 def _env_float(name: str, default: float) -> float:
     try:
         return float(os.environ.get(name, "").strip() or default)
@@ -98,13 +106,51 @@ class UsageLedger:
     completion_tokens: int = 0
     spent_usd: float = 0.0
     recent: list[dict[str, Any]] = field(default_factory=list)
+    day: str = field(default_factory=lambda: _today())
+    restore: bool = True
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     RECENT_MAX = 50
 
+    def __post_init__(self) -> None:
+        if self.restore:
+            self._restore_today()
+
+    def _restore_today(self) -> None:
+        """Rebuild today's totals from the JSONL call log (restart safety)."""
+        try:
+            lines = self.log_path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            return
+        for line in lines:
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if str(entry.get("ts", ""))[:10] != self.day:
+                continue
+            self.calls += 1
+            if entry.get("error"):
+                self.errors += 1
+            self.prompt_tokens += int(entry.get("prompt_tokens") or 0)
+            self.completion_tokens += int(entry.get("completion_tokens") or 0)
+            self.spent_usd += float(entry.get("est_usd") or 0.0)
+            self.recent.append(entry)
+        del self.recent[: -self.RECENT_MAX]
+
+    def _roll_day(self) -> None:
+        """Start a new budget day at UTC midnight. Caller holds the lock."""
+        today = _today()
+        if today != self.day:
+            self.day = today
+            self.calls = self.errors = self.blocked = 0
+            self.prompt_tokens = self.completion_tokens = 0
+            self.spent_usd = 0.0
+
     def check(self) -> None:
         """Raise BudgetExceeded if a further call would break a limit."""
         with self._lock:
+            self._roll_day()
             reason = None
             if self.calls >= self.max_calls:
                 reason = f"call cap reached ({self.calls}/{self.max_calls} calls)"
@@ -119,6 +165,7 @@ class UsageLedger:
     def record(self, entry: dict[str, Any]) -> None:
         """Add one finished call to the totals and append it to the log."""
         with self._lock:
+            self._roll_day()
             self.calls += 1
             if entry.get("error"):
                 self.errors += 1
@@ -140,7 +187,9 @@ class UsageLedger:
 
     def snapshot(self) -> dict[str, Any]:
         with self._lock:
+            self._roll_day()
             return {
+                "day": self.day,
                 "calls": self.calls,
                 "errors": self.errors,
                 "blocked": self.blocked,

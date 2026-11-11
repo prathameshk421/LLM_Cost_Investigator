@@ -64,13 +64,16 @@ def _route_token_context(signals) -> bool:
     - input_token_growth_pct >= 100, or
     - max_call_chain_depth >= 4
     """
-    if signals.max_call_chain_depth >= 4:
+    from llm_cost_investigator.agent_skills import effective_chain_depth
+
+    depth = effective_chain_depth(signals)
+    if depth >= 4:
         return True
     # Total input tokens also grow with plain call volume. Only treat total
     # growth as a context signal when prompts per call grew too, or a chain
     # exists. Otherwise a traffic surge looks like context bloat.
     per_call = signals.avg_input_token_growth_pct
-    prompts_grew = per_call is None or per_call >= 25 or signals.max_call_chain_depth >= 2
+    prompts_grew = per_call is None or per_call >= 25 or depth >= 2
     if not prompts_grew:
         return False
     if signals.input_tokens_z_score >= 3.0:

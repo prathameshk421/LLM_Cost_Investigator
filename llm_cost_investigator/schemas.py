@@ -101,6 +101,14 @@ class AnomalySignals(BaseModel):
 
     # Model routing signals
     model_changed: bool = False
+    # Feature history at the time of this window (accepted, non-flagged
+    # windows only). Evidence counts only when it is new for the feature:
+    # a RAG pipeline that always chains 3 deep is not "context bloat".
+    history_max_chain_depth: int = 0
+    history_max_retry_count: int = 0
+    # True when the window holds causal evidence (new model, retries above
+    # the normal client cap, or a chain deeper than history). Used to rank.
+    causal_evidence: bool = False
     models_seen: list[str] = Field(default_factory=list)
     model_before: str | None = None
     model_during: str | None = None

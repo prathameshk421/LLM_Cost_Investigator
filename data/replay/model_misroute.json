@@ -5,8 +5,8 @@
   "scenario_label": "model_misroute",
   "feature_tag": "summarizer",
   "window": {
-    "start_time": "2026-07-08T09:30:00Z",
-    "end_time": "2026-07-08T09:35:00Z"
+    "start_time": "2026-07-08T10:10:00Z",
+    "end_time": "2026-07-08T10:15:00Z"
   },
   "stages": [
     {
@@ -16,23 +16,26 @@
       "agent_name": null,
       "payload": {
         "signals": {
-          "cost_z_score": 1882.0355656496642,
-          "input_tokens_z_score": 155.8259871820166,
-          "output_tokens_z_score": 83.07125455495019,
+          "cost_z_score": 1986.6717102044943,
+          "input_tokens_z_score": 168.26278904906877,
+          "output_tokens_z_score": 87.68979416100827,
           "retry_z_score": 0.0,
           "calls_z_score": 2.0,
-          "latency_z_score": 82.97369550852524,
-          "input_token_growth_pct": 24.559471365638768,
+          "latency_z_score": 84.12890893648535,
+          "input_token_growth_pct": 24.575151057401808,
           "output_token_growth_pct": 24.93150684931507,
           "cost_growth_pct": 609.35960591133,
-          "token_growth_pct": 24.559471365638768,
-          "avg_input_token_growth_pct": 3.7995594713656384,
-          "unit_cost_growth_pct": 469.21002632038295,
+          "token_growth_pct": 24.575151057401808,
+          "avg_input_token_growth_pct": 3.812625881168182,
+          "unit_cost_growth_pct": 469.15052958333644,
           "max_retry_count": 0,
           "avg_retry_count": 0.0,
           "max_call_chain_depth": 0,
           "repeated_parent_call_count": 0,
           "model_changed": true,
+          "history_max_chain_depth": 0,
+          "history_max_retry_count": 0,
+          "causal_evidence": true,
           "models_seen": [
             "gpt-4.1"
           ],
@@ -42,7 +45,7 @@
         "highlights": [
           {
             "key": "cost_z_score",
-            "value": 1882.0355656496642,
+            "value": 1986.6717102044943,
             "threshold": ">= 3 anomaly",
             "status": "fail"
           },
@@ -54,7 +57,7 @@
           },
           {
             "key": "input_tokens_z_score",
-            "value": 155.8259871820166,
+            "value": 168.26278904906877,
             "threshold": ">= 3 route token agent / < 3 may force tool",
             "status": "fail"
           },
@@ -66,13 +69,13 @@
           },
           {
             "key": "input_token_growth_pct",
-            "value": 24.559471365638768,
+            "value": 24.575151057401808,
             "threshold": null,
             "status": "neutral"
           },
           {
             "key": "token_growth_pct",
-            "value": 24.559471365638768,
+            "value": 24.575151057401808,
             "threshold": "< 50 with cost spike → model route",
             "status": "neutral"
           },
@@ -189,7 +192,7 @@
             "selected": true,
             "reasons": [
               "model_changed == True",
-              "cost_z_score=1882.04 >= 3 and |token_growth| < 50"
+              "cost_z_score=1986.67 >= 3 and |token_growth| < 50"
             ]
           },
           {
@@ -203,7 +206,7 @@
             "agent_name": "token_context_agent",
             "selected": false,
             "reasons": [
-              "input_tokens_z_score=155.83 >= 3"
+              "input_tokens_z_score=168.26 >= 3"
             ]
           }
         ],
@@ -223,7 +226,7 @@
         "tool_name": "get_window_calls",
         "tool_required": false,
         "decision": "DO_NOT_CALL",
-        "decision_line": "DECISION: DO NOT call get_window_calls — model_changed=True and cost_z_score=1882.0355656496642. Answer directly from the aggregate signals. Skip the tool entirely.",
+        "decision_line": "DECISION: DO NOT call get_window_calls — model_changed=True and cost_z_score=1986.6717102044943. Answer directly from the aggregate signals. Skip the tool entirely.",
         "comparisons": [
           {
             "metric": "model_changed",
@@ -234,7 +237,7 @@
           },
           {
             "metric": "cost_z_score",
-            "value": 1882.0355656496642,
+            "value": 1986.6717102044943,
             "operator": "<",
             "threshold": 3.0,
             "passed": false
@@ -271,9 +274,9 @@
           "model_before": "gpt-4o-mini",
           "model_during": "gpt-4.1",
           "cost_growth_pct": 609.35960591133,
-          "token_growth_pct": 3.7995594713656384,
-          "cost_z_score": 1882.0355656496642,
-          "unit_cost_growth_pct": 469.21002632038295,
+          "token_growth_pct": 3.812625881168182,
+          "cost_z_score": 1986.6717102044943,
+          "unit_cost_growth_pct": 469.15052958333644,
           "hard_skills": {
             "model_changed_flag": {
               "verdict": "pass",
@@ -289,13 +292,13 @@
             },
             "token_stability_check": {
               "verdict": "pass",
-              "value": 3.7995594713656384,
+              "value": 3.812625881168182,
               "detail": "tokens stable",
               "falsifier": false
             },
             "cost_zscore_check": {
               "verdict": "pass",
-              "value": 1882.0355656496642,
+              "value": 1986.6717102044943,
               "detail": "",
               "falsifier": false
             },
@@ -324,7 +327,7 @@
             },
             "unit_price_jump": {
               "verdict": "pass",
-              "value": 469.21002632038295,
+              "value": 469.15052958333644,
               "detail": "price per token at least doubled",
               "falsifier": false
             }
@@ -381,7 +384,7 @@
   "meta": {
     "provider": "fallback",
     "model": null,
-    "generated_at": "2026-11-11T13:21:18.641846Z",
+    "generated_at": "2026-11-11T18:38:43.108902Z",
     "source_files": [
       "data/reports/incidents/model_misroute_incident.json"
     ]

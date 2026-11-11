@@ -467,7 +467,8 @@ def test_late_retry_storm_samples_include_retries() -> None:
 
     base = datetime(2026, 7, 1, 12, 0, tzinfo=timezone.utc)
     calls: list[LLMCall] = []
-    for wi in range(4):
+    # 12 baseline windows: the detector warm-up (MIN_BASELINE_WINDOWS).
+    for wi in range(12):
         for j in range(3):
             t = base + timedelta(minutes=5 * wi, seconds=j * 10)
             calls.append(
@@ -483,7 +484,7 @@ def test_late_retry_storm_samples_include_retries() -> None:
                     retry_count=0,
                 )
             )
-    aw = base + timedelta(minutes=20)
+    aw = base + timedelta(minutes=60)
     for j in range(20):
         t = aw + timedelta(seconds=j * 5)
         rc = 6 if j >= 15 else 0

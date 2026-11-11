@@ -4,22 +4,28 @@ Agentic LLM cost anomaly investigator for diagnosing sudden spend spikes in LLM-
 
 ## Results
 
-Measured with the seeded scenario lab (`python -m llm_cost_investigator.benchmark`).
-Each seed makes a new dataset of about 450 calls over 5 features.
+**Read the held-out row first.** The scenario lab was used while the rules were
+tuned, so its numbers are in-sample. The held-out set comes from a generator
+written blind to the rules (`benchmarks/heldout/SPEC.md`), and the reported
+seeds were never used for tuning.
 
-| Run | Runs | Root-cause accuracy | False alarm rate | LLM spend |
+| Evaluation | Datasets | Incidents caught | False alarm rate | Notes |
 |---|---|---|---|---|
-| Deterministic agents, 8% noise | 300 | 100% | 0% | $0 |
-| Deterministic agents, 25% noise | 300 | 99.0% | 2.5% | $0 |
-| Deterministic agents, 35% noise | 300 | 96.3% | 9.2% | $0 |
-| Live LLM agents (HF, `gpt-oss-20b`), 8% noise | 20 | 100% | 0% | $0.0041 for 16 calls |
+| **Held-out, fresh seeds 30-59** | 840 (28 cases) | **99.4%** | **0 / 300 negatives** | precision ≥ 0.98 per root cause, 0.42 s per 11k-call dataset |
+| Held-out, test half (scored once) | 420 | 99.6% | 2.0% | before the cheaper-model falsifier |
+| Held-out, same code before the fixes | 840 | 66% | 85% | the overfit baseline |
+| 60-day history, live-tick scan | 3,585 slices × 5 histories | 15 / 15 incidents | 0 false reports | trailing 6 h every 2 h |
+| Scenario lab (in-sample) | 300 per noise level | 100% | 0% | 8% to 35% noise |
+| Live LLM agents (HF `gpt-oss-20b`) | 20 | 100% | 0% | $0.0041 for 16 calls |
 
-The two control scenarios (`clean`, `traffic_surge`) measure false alarms.
-An independent probe set (bursty traffic, 0–3 calls per minute) went from 71/90
-to 86/90 correct after the detector fixes listed in `docs/REVIEW.md`.
+Held-out cases include hard negatives (traffic surge, marketing burst, switch to
+a cheaper model, A/B ratio shift, +40% prompts, normal RAG chains, clock gaps)
+and subtle positives (2x misroute at night, depth-4 chains, small retry storms).
+Run it with `make heldout`. CI runs a 4-seed held-out gate on every push.
 
-Merging adjacent flagged windows into one incident cut live spend on a
-sustained misroute from 4 LLM calls to 1 ($0.00103 to $0.00027, 14.8 s to 5.4 s).
+Known limits: the detector needs 1 hour of history for a feature before it
+gives a verdict, and it still flags about 200 window groups per 53-hour dataset
+before diagnosis filters them (see `docs/ARCHITECTURE.md`).
 
 ## Why LLM Cost Anomalies Matter
 
@@ -46,6 +52,19 @@ Presentation layer (optional):
 ```text
 data/reports + data/replay  -->  web/api (FastAPI)  -->  web/frontend (React replay UI)
 ```
+
+## Product architecture (v2)
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the decisions and the HTTP contract.
+
+- **Ingest:** `POST /v1/ingest` (canonical or OpenTelemetry GenAI-style events) into a bounded queue
+  and a batch writer. An optional Kafka/Redpanda bridge (`docker compose --profile kafka up`) posts into the same endpoint.
+- **Storage:** DuckDB warehouse (`data/warehouse.duckdb`), 65x to 260x faster than SQLite on the spend rollups at 1M calls.
+- **Live detection:** a deterministic tick every 30 s over the trailing 6 h opens incidents.
+  LLM agents run only when a user clicks *Diagnose with LLM* (budget-guarded).
+- **Spend analytics:** KPIs, month-end forecast with a P10-P90 band, budgets and alerts,
+  cost drivers split into volume / tokens-per-call / price effects, model what-if, retry and chain waste.
+- **UI tabs:** Spend · Live · Investigate · Replay · Benchmark. **Run:** `make dev` or `docker compose up`.
 
 ## Repository layout
 

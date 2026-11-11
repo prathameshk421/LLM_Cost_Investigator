@@ -8,6 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Literal
 
+from llm_cost_investigator.detector import NORMAL_RETRY_CAP
 from llm_cost_investigator.ingest.pricing import lookup_rates
 from llm_cost_investigator.schemas import AnomalyWindow, LLMCall
 
@@ -257,6 +258,26 @@ def score_retry_loop(anomaly: AnomalyWindow) -> dict[str, Any]:
         band = min(band, 0.74)
         conf = min(conf, 0.60)
 
+    # Normal clients retry up to NORMAL_RETRY_CAP times, and some features
+    # always retry a little. A loop needs retries above both.
+    retry_floor = max(NORMAL_RETRY_CAP, int(sig.history_max_retry_count))
+    if max_retry <= retry_floor:
+        band, conf, hyp = min(band, 0.49), min(conf, 0.30), "no_strong_signal"
+    elif (
+        forced
+        and s6["verdict"] == "fail"
+        and s5["verdict"] != "fail"
+        and not any(
+            v.get("falsifier") and v.get("verdict") == "fail"
+            for k, v in skills.items()
+            if k != "cost_attribution_check"
+        )
+    ):
+        # A small storm on a busy feature has a low share of the window's
+        # cost. That lowers impact, not the evidence: cap, do not veto.
+        forced = False
+        band, conf, hyp = 0.74, 0.60, "uncapped_retry_loop"
+
     return {
         "agent_name": "retry_loop_agent",
         "skills": skills,
@@ -274,6 +295,16 @@ def score_retry_loop(anomaly: AnomalyWindow) -> dict[str, Any]:
     }
 
 
+def effective_chain_depth(sig: Any) -> int:
+    """Chain depth that is new for this feature, else 0.
+
+    A RAG pipeline that always runs 3 steps has depth 3 in every window.
+    Only a chain deeper than the feature's own history is evidence.
+    """
+    depth = int(sig.max_call_chain_depth)
+    return depth if depth > int(sig.history_max_chain_depth) else 0
+
+
 def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
     sig = anomaly.signals
     samples = list(anomaly.sample_calls)
@@ -281,7 +312,7 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
     growth_raw = sig.input_token_growth_pct
     token_g_raw = sig.token_growth_pct if sig.token_growth_pct is not None else growth_raw
     cost_g_raw = sig.cost_growth_pct
-    depth = int(sig.max_call_chain_depth)
+    depth = effective_chain_depth(sig)
     z = float(sig.input_tokens_z_score)
 
     # 1 token_growth_threshold
@@ -411,7 +442,10 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
     per_call = sig.avg_input_token_growth_pct
     if per_call is None:
         s8 = _skill("soft_pass", value=None, detail="per-call growth unknown", falsifier=True)
-    elif per_call >= 50 or depth >= 3:
+    elif depth >= 3 or per_call >= (50 if depth >= 2 else 75):
+        # With no call chain the only evidence is prompt size itself, and a
+        # sparse window (2-4 calls) moves 30-50% from noise alone. Ask for
+        # at least +75% before calling it bloat without a chain.
         s8 = _skill("pass", value=per_call, detail="prompts per call grew", falsifier=True)
     elif per_call < 25 and depth < 2:
         s8 = _skill(
@@ -453,7 +487,9 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
     elif s4["verdict"] == "pass" and depth >= 4:
         # demo context_bloat: growth ~294 soft, z high, depth 5
         band, conf, hyp = 0.89, 0.84, "context_bloat_self_calling_agent"
-    elif s1["verdict"] in ("pass", "soft_pass") or s4["verdict"] == "pass":
+    elif (s1["verdict"] in ("pass", "soft_pass") or s4["verdict"] == "pass") and (
+        depth >= 2 or s8["verdict"] == "pass"
+    ):
         band, conf, hyp = 0.74, 0.62, "context_bloat_self_calling_agent"
     elif early_bloat:
         # Early stage: a self-call chain whose prompts grow per hop, caught
@@ -461,6 +497,11 @@ def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
         band, conf, hyp = 0.74, 0.66, "context_bloat_self_calling_agent"
     else:
         band, conf, hyp = 0.49, 0.28, "no_strong_signal"
+
+    # The hypothesis is a *self-calling* agent: without a chain that is new
+    # for this feature, bigger prompts alone are a product change, not bloat.
+    if depth < 2 and hyp != "no_strong_signal":
+        band, conf, hyp = min(band, 0.49), min(conf, 0.28), "no_strong_signal"
 
     # TC-03 style: deep chain but little *known* token growth (not unknown).
     # Per-call growth counts too: an early chain has low total growth.
@@ -652,12 +693,18 @@ def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
         band, conf, hyp = 0.89, 0.84, "expensive_model_misroute"
     elif s1["verdict"] == "pass" and cost_g_raw is not None and cost_g_raw >= 100:
         band, conf, hyp = 0.74, 0.64, "expensive_model_misroute"
-    elif s1["verdict"] == "pass" and s5["verdict"] == "pass" and s8["verdict"] == "pass":
+    elif s1["verdict"] == "pass" and s5["verdict"] == "pass" and s8["verdict"] in ("pass", "soft_pass"):
         # Confirmed switch to a pricier tier, but total spend moved little
         # (e.g. traffic dropped at the same time). Real bug, lower impact.
         band, conf, hyp = 0.74, 0.70, "expensive_model_misroute"
     else:
         band, conf, hyp = 0.49, 0.32, "no_strong_signal"
+
+    # "Expensive" misroute needs the price per token to rise. If the new
+    # traffic is cheaper per token, total cost grew from volume or prompt
+    # size, and a switch to a cheaper model is not this bug.
+    if unit_g is not None and unit_g < 0 and hyp == "expensive_model_misroute":
+        band, conf, hyp = min(band, 0.49), min(conf, 0.32), "no_strong_signal"
 
     # Cap when tokens confound
     if s3["verdict"] == "fail" and hyp != "no_strong_signal":

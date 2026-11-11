@@ -61,7 +61,7 @@ _TARGET_FEATURE = {
 }
 _PREMIUM_MODELS = ("gpt-4.1", "gpt-4o", "claude-3-5-sonnet")
 
-BASELINE_MINUTES = 30
+BASELINE_MINUTES = 70  # detector needs 12 windows (1 h) of history before a verdict
 
 
 @dataclass(frozen=True)

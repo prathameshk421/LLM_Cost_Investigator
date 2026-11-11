@@ -169,3 +169,4 @@ web/frontend/dist-ssr/
 # Runtime output: live LLM call log and benchmark results
 data/logs/
 data/reports/benchmark.json
+data/warehouse.duckdb*

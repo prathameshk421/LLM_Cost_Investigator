@@ -72,9 +72,9 @@ def _top_hypothesis(calls: list[LLMCall]) -> str:
 
 def test_traffic_surge_is_not_context_bloat() -> None:
     """Audit #1: 10x calls of identical shape was diagnosed as context bloat."""
-    calls = [_call(i, m) for i, m in enumerate(range(30))]
+    calls = [_call(i, m) for i, m in enumerate(range(70))]
     n = len(calls)
-    for m in range(30, 40):
+    for m in range(70, 80):
         for j in range(10):
             calls.append(_call(n, m + j / 10))
             n += 1
@@ -95,10 +95,10 @@ def test_mixed_naive_and_aware_timestamps_do_not_crash() -> None:
 
 def test_retry_storm_detected_before_cost_moves() -> None:
     """Structural early warning: retries flagged even inside cost noise."""
-    calls = [_call(i, m, cost_usd=0.0003 * (1 + (m % 5))) for i, m in enumerate(range(30))]
+    calls = [_call(i, m, cost_usd=0.0003 * (1 + (m % 5))) for i, m in enumerate(range(70))]
     for a in range(6):
         calls.append(
-            _call(100 + a, 31 + a * 0.2, retry_count=a, parent_call_id="p", cost_usd=0.0003)
+            _call(100 + a, 71 + a * 0.2, retry_count=a, parent_call_id="p", cost_usd=0.0003)
         )
     windows = detect_anomalies(calls)
     assert any(w.signals.max_retry_count >= 5 for w in windows)
@@ -324,3 +324,12 @@ def test_oversized_upload_is_413(client, monkeypatch) -> None:
         files={"file": ("x.jsonl", io.BytesIO(b"{}" * 50))},
     )
     assert r.status_code == 413
+
+
+def test_full_app_routes_do_not_shadow_each_other(client) -> None:
+    """Integration: /api/incidents/live was captured by /api/incidents/{id}."""
+    r = client.get("/api/incidents/live")
+    assert r.status_code == 200, r.text
+    assert isinstance(r.json(), list)
+    for path in ("/api/analytics/overview", "/api/budgets", "/api/warehouse/stats", "/api/usage"):
+        assert client.get(path).status_code == 200, path

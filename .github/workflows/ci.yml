@@ -22,7 +22,13 @@ jobs:
       - name: Accuracy gate (fresh seeds, 15% noise)
         run: |
           python -m llm_cost_investigator.benchmark --seeds 30 --noise 0.15 \
-            --out benchmark.json --min-accuracy 0.97
+            --out benchmark.json --min-accuracy 0.97  # in-sample smoke check only
+      - name: Held-out gate (blind generator, seeds never used for tuning)
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m benchmarks.heldout.run --seed-from 60 --seed-to 64 \
+            --min-hit 0.95 --max-false-alarm 0.05
       - uses: actions/upload-artifact@v4
         if: always()
         with:
