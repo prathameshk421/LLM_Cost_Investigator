@@ -11,7 +11,8 @@ seeds were never used for tuning.
 
 | Evaluation | Datasets | Incidents caught | False alarm rate | Notes |
 |---|---|---|---|---|
-| **Held-out, fresh seeds 30-59** | 840 (28 cases) | **99.4%** | **0 / 300 negatives** | precision ≥ 0.98 per root cause, 0.42 s per 11k-call dataset |
+| **Held-out, fresh seeds 90-119** | 840 (28 cases) | **99.6%** | **0 / 300 negatives** | precision ≥ 0.99 per root cause, about 12 incident groups per dataset |
+| Held-out, fresh seeds 30-59 (before the volume gate) | 840 | 99.4% | 0 / 300 | about 200 flagged groups per dataset |
 | Held-out, test half (scored once) | 420 | 99.6% | 2.0% | before the cheaper-model falsifier |
 | Held-out, same code before the fixes | 840 | 66% | 85% | the overfit baseline |
 | 60-day history, live-tick scan | 3,585 slices × 5 histories | 15 / 15 incidents | 0 false reports | trailing 6 h every 2 h |
@@ -24,8 +25,9 @@ and subtle positives (2x misroute at night, depth-4 chains, small retry storms).
 Run it with `make heldout`. CI runs a 4-seed held-out gate on every push.
 
 Known limits: the detector needs 1 hour of history for a feature before it
-gives a verdict, and it still flags about 200 window groups per 53-hour dataset
-before diagnosis filters them (see `docs/ARCHITECTURE.md`).
+gives a verdict. Pure traffic growth is shown in spend analytics, not raised as
+an incident. A live LLM can disagree with the hard skills; the finding is then
+kept at reduced confidence and flagged for review (see `docs/ARCHITECTURE.md`).
 
 ## Why LLM Cost Anomalies Matter
 

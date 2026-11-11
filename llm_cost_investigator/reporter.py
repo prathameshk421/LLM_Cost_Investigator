@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from pathlib import Path
 
 from llm_cost_investigator.schemas import IncidentReport
@@ -9,10 +11,12 @@ from llm_cost_investigator.schemas import IncidentReport
 
 def write_report(
     report: IncidentReport,
-    output_dir: str | Path = "data/reports/incidents",
+    output_dir: str | Path | None = None,
     print_summary: bool = True,
 ) -> tuple[Path, Path]:
     """Write report artifacts to disk and print terminal summary."""
+    if output_dir is None:
+        output_dir = os.environ.get("LLMCI_REPORTS_DIR", "data/reports/incidents")
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
     

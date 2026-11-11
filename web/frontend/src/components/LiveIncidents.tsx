@@ -24,6 +24,11 @@ function IncidentRow({ inc }: { inc: LiveIncidentSummary }) {
 
   const rc = result?.root_cause;
   const recs = result?.recommendations ?? [];
+  // Set by the backend when the LLM dismissed a cause that the hard skills
+  // support: the finding is kept at reduced confidence and flagged.
+  const runs = ((result?.raw_report as { agent_runs?: Array<{ evidence?: { supporting_metrics?: Record<string, unknown> } }> } | null | undefined)
+    ?.agent_runs ?? []);
+  const disagreed = runs.some((r) => r.evidence?.supporting_metrics?.llm_disagreed === true);
   return (
     <li className="lv-incident">
       <div className="lv-inc-head">
@@ -54,6 +59,12 @@ function IncidentRow({ inc }: { inc: LiveIncidentSummary }) {
               {rc.winning_agent ? ` (${rc.winning_agent})` : ""}
             </span>
           </div>
+          {disagreed ? (
+            <div className="lv-disagree" role="note">
+              <span aria-hidden="true">⚠</span> The LLM found no strong signal, but the hard
+              skills support this cause. Kept at reduced confidence: review it.
+            </div>
+          ) : null}
           {recs.length > 0 ? (
             <ul className="lv-recs">
               {recs.map((r, i) => (

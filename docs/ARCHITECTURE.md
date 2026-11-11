@@ -184,6 +184,14 @@ Demo generators got 70-75 minute baselines to match; 30 minutes had been a lab a
 Rule for future changes: tune on `--half dev`, report fresh seeds. CI runs
 `python -m benchmarks.heldout.run --seed-from 60 --seed-to 64 --min-hit 0.95 --max-false-alarm 0.05`.
 
-Still open: the detector flags about 200 window groups per 53-hour dataset (diagnosis filters them);
-a seasonal or volume-normalised baseline should cut that. Incidents that start in a feature's first
-hour of history are learned as normal.
+### Follow-up fixes (2026-11-12)
+
+| Problem | Fix | Measured |
+|---|---|---|
+| About 200 flagged window groups per 53 h dataset, almost all diurnal volume ramps | Volume gate: an incident needs a per-call change (cost per call or prompt size per call, z ≥ 3 and ≥ 30%) or causal evidence (retries above cap, new model, new deeper chain). Pure volume belongs in spend analytics. Flag `LLMCI_VOLUME_GATE=0` restores the old triggers. | Dev half: groups 200 → 13, accuracy unchanged (99.3% / 0%). Fresh seeds 90-119: **99.6% caught, 0/300 false alarms**, about 12 groups. |
+| A live LLM answered "no strong signal" on a clear retry storm, and that erased the finding | `agents._apply_skill_pack_to_evidence`: an LLM "no" cannot erase a cause that hard skills support; it is kept at ≤ 0.60 with `llm_disagreed` and shown in the UI | `test_llm_no_signal_cannot_erase_verified_skill_finding` |
+| Library code printed to stdout | `logging`; the CLI attaches a plain handler, so its output is unchanged | |
+| Tests rewrote tracked report fixtures | `LLMCI_REPORTS_DIR`, set to a temp dir in `tests/conftest.py` | `git status` clean after `pytest` |
+| Live tab lost demo state after a reload | `GET /api/stream/demo`, read on mount | |
+
+Still open: incidents that start in a feature's first hour of history are learned as normal.

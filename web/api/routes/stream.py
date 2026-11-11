@@ -132,6 +132,12 @@ def demo(req: DemoRequest) -> dict[str, Any]:
     return svc.demo_start(rate=req.rate, incident=req.incident)
 
 
+@router.get("/api/stream/demo")
+def demo_state() -> dict[str, Any]:
+    """Current demo traffic state, so a reloaded UI shows the right button."""
+    return get_service().demo_state()
+
+
 @router.get("/api/incidents/live")
 def live_incidents(limit: int = Query(50, ge=1, le=500)) -> list[dict[str, Any]]:
     return get_service().list_incidents(limit)

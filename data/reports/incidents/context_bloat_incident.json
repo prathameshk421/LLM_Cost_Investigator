@@ -104,6 +104,9 @@
       "token_growth_pct": 294.1314175008072,
       "avg_input_token_growth_pct": 228.4428479173394,
       "unit_cost_growth_pct": 19.218605783093054,
+      "cost_per_call_z_score": 798.2019724912257,
+      "cost_per_call_growth_pct": 244.82758620689654,
+      "avg_input_tokens_z_score": 1219.555077140237,
       "max_retry_count": 0,
       "avg_retry_count": 0.0,
       "max_call_chain_depth": 5,
@@ -298,5 +301,5 @@
     "Implement prompt summarization or token truncation for history.",
     "Add a fail-safe budget check on the chain to terminate expanding contexts."
   ],
-  "generated_at": "2026-11-11T18:38:43.102987Z"
+  "generated_at": "2026-11-11T19:14:41.610173Z"
 }

@@ -35,6 +35,10 @@ STRUCTURAL_DEPTH_MIN = 4
 STRUCTURAL_MARGIN = 3
 # Minimum calls in a window before per-call averages count as evidence.
 MIN_PER_CALL_SAMPLES = 5
+# Incidents need a per-call change (see _is_anomalous). Volume-only windows
+# are not incidents. LLMCI_VOLUME_GATE=0 restores the total-based triggers.
+VOLUME_GATE = os.environ.get("LLMCI_VOLUME_GATE", "1") != "0"
+PER_CALL_MIN_GROWTH_PCT = 30.0
 # Robust (median/MAD) z-scores need a few baseline windows to be stable.
 # Off by default: on the lab benchmark at 35% noise it cut accuracy from
 # 97.0% to 93.0% with a fixed |z| >= 3 threshold (see docs/ARCHITECTURE.md).
@@ -55,6 +59,7 @@ class WindowStats:
     total_input_tokens: int
     total_output_tokens: int
     avg_input_tokens: float
+    cost_per_call: float
     unit_cost_per_1k: float
     avg_retry_count: float
     max_retry_count: int
@@ -195,6 +200,7 @@ def _compute_window_stats(
         total_input_tokens=total_input_tokens,
         total_output_tokens=total_output_tokens,
         avg_input_tokens=_mean(call.input_tokens for call in window_calls),
+        cost_per_call=total_cost_usd / call_count if call_count else 0.0,
         unit_cost_per_1k=_unit_cost(total_cost_usd, total_input_tokens + total_output_tokens),
         avg_retry_count=_mean(retry_counts),
         max_retry_count=max(retry_counts, default=0),
@@ -257,6 +263,13 @@ def _build_signals(
         output_token_growth_pct=output_growth,
         cost_growth_pct=_growth_pct(stats.total_cost_usd, cost_mean),
         token_growth_pct=input_growth,
+        cost_per_call_z_score=_z_score(stats.cost_per_call, _values(baseline_stats, "cost_per_call")),
+        cost_per_call_growth_pct=_growth_pct(
+            stats.cost_per_call, _baseline_mean(baseline_stats, "cost_per_call")
+        ),
+        avg_input_tokens_z_score=_z_score(
+            stats.avg_input_tokens, _values(baseline_stats, "avg_input_tokens")
+        ),
         unit_cost_growth_pct=_growth_pct(
             stats.unit_cost_per_1k, _baseline_mean(baseline_stats, "unit_cost_per_1k")
         ),
@@ -303,6 +316,30 @@ def _is_anomalous(
         return False
     if baseline_stats and _structural_break(stats, baseline_stats):
         return True
+    if VOLUME_GATE:
+        # Retry loops, context bloat and misroutes all change what one call
+        # costs (or add retries / a new model, handled above and below).
+        # Pure volume swings (diurnal ramps, surges) only move totals; they
+        # belong in spend analytics, not in the incident queue.
+        retry_trigger = (
+            signals.retry_z_score >= 3.0
+            and stats.max_retry_count > max(NORMAL_RETRY_CAP, signals.history_max_retry_count)
+        )
+        if retry_trigger:
+            return True
+        if signals.model_changed and signals.cost_growth_pct is not None and signals.cost_growth_pct > 0:
+            return True
+        if stats.call_count < MIN_PER_CALL_SAMPLES:
+            return False
+        per_call_cost = (
+            signals.cost_per_call_z_score >= COST_Z_THRESHOLD
+            and (signals.cost_per_call_growth_pct or 0) >= PER_CALL_MIN_GROWTH_PCT
+        )
+        per_call_tokens = (
+            signals.avg_input_tokens_z_score >= 3.0
+            and (signals.avg_input_token_growth_pct or 0) >= PER_CALL_MIN_GROWTH_PCT
+        )
+        return per_call_cost or per_call_tokens
     return (
         signals.cost_z_score >= COST_Z_THRESHOLD
         or signals.input_tokens_z_score >= 3.0

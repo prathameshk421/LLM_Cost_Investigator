@@ -28,6 +28,9 @@
           "token_growth_pct": 62.18279348050339,
           "avg_input_token_growth_pct": 1.364245925314621,
           "unit_cost_growth_pct": 342.50570135200815,
+          "cost_per_call_z_score": 1119.410009711026,
+          "cost_per_call_growth_pct": 343.34975369458135,
+          "avg_input_tokens_z_score": 11.398516507486493,
           "max_retry_count": 7,
           "avg_retry_count": 3.5,
           "max_call_chain_depth": 1,
@@ -391,7 +394,7 @@
   "meta": {
     "provider": "fallback",
     "model": null,
-    "generated_at": "2026-11-11T18:38:43.097130Z",
+    "generated_at": "2026-11-11T19:14:41.605516Z",
     "source_files": [
       "data/reports/incidents/retry_loop_incident.json"
     ]

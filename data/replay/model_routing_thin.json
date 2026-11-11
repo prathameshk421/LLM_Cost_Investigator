@@ -330,7 +330,7 @@
   "meta": {
     "provider": "groq",
     "model": "openai/gpt-oss-120b",
-    "generated_at": "2026-11-11T18:38:43.231679Z",
+    "generated_at": "2026-11-11T19:14:41.749404Z",
     "source_files": [
       "data/reports/transcripts/live_model_routing_tool_use.txt"
     ]

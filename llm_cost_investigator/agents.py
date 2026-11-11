@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from typing import Any, Callable
 
 from llm_cost_investigator.schemas import AgentEvidence, AgentRunResult, AnomalyWindow
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -399,11 +402,34 @@ def _apply_skill_pack_to_evidence(
         {**skill_pack, "band_ceiling": ceiling},
         kb_matches,
     )
+    explanation = evidence.explanation
+    suggested = skill_pack.get("suggested_hypothesis", "no_strong_signal")
+    if (
+        hyp == "no_strong_signal"
+        and suggested != "no_strong_signal"
+        and not skill_pack.get("forced_no_strong_signal")
+        and ceiling >= 0.50
+    ):
+        # The LLM dismissed a finding that the deterministic hard skills
+        # support. The same window can get a different LLM answer on the
+        # next run, so an LLM "no" must not silently erase verified
+        # evidence: keep the skill verdict at reduced confidence and record
+        # the disagreement for review.
+        hyp = suggested
+        conf = min(float(skill_pack.get("suggested_confidence", 0.6)), 0.60, ceiling)
+        metrics["llm_disagreed"] = True
+        metrics["llm_hypothesis"] = evidence.hypothesis
+        metrics["llm_confidence"] = float(evidence.confidence)
+        explanation = (
+            "LLM found no strong signal, but hard skills support this cause; "
+            "kept at reduced confidence. LLM said: " + evidence.explanation
+        )
     return evidence.model_copy(
         update={
             "hypothesis": hyp,
             "confidence": conf,
             "supporting_metrics": metrics,
+            "explanation": explanation,
         }
     )
 
@@ -996,7 +1022,7 @@ def run_retry_loop_agent_with_tools(
         )
     except Exception as exc:
         reason = f"Tool-use call failed: {type(exc).__name__}: {exc}"
-        print(f"Fallback used: retry_loop_agent ({reason})")
+        logger.info(f"Fallback used: retry_loop_agent ({reason})")
         return AgentRunResult(
             evidence=fallback_retry_loop(anomaly),
             provider="fallback",
@@ -1058,7 +1084,7 @@ def run_token_context_agent_with_tools(
         )
     except Exception as exc:
         reason = f"Tool-use call failed: {type(exc).__name__}: {exc}"
-        print(f"Fallback used: token_context_agent ({reason})")
+        logger.info(f"Fallback used: token_context_agent ({reason})")
         return AgentRunResult(
             evidence=fallback_token_context(anomaly),
             provider="fallback",
@@ -1123,7 +1149,7 @@ def run_model_routing_agent_with_tools(
         )
     except Exception as exc:
         reason = f"Tool-use call failed: {type(exc).__name__}: {exc}"
-        print(f"Fallback used: model_routing_agent ({reason})")
+        logger.info(f"Fallback used: model_routing_agent ({reason})")
         return AgentRunResult(
             evidence=fallback_model_routing(anomaly),
             provider="fallback",
@@ -1411,7 +1437,7 @@ def run_agents_detailed(
         if resolved_provider == "fallback":
             evidence = fallback_fn(anomaly)
             reason_suffix = f" ({selection_fallback_reason})" if selection_fallback_reason else ""
-            print(f"Fallback used: {name}{reason_suffix}")
+            logger.info(f"Fallback used: {name}{reason_suffix}")
             results.append(
                 AgentRunResult(
                     evidence=evidence,
@@ -1442,7 +1468,7 @@ def run_agents_detailed(
                 f"{type(exc).__name__}: {exc}"
             )
             reason_suffix = f" ({fallback_reason})" if fallback_reason else ""
-            print(f"Fallback used: {name}{reason_suffix}")
+            logger.info(f"Fallback used: {name}{reason_suffix}")
             results.append(
                 AgentRunResult(
                     evidence=fallback_fn(anomaly),

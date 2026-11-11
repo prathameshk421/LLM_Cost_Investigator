@@ -324,7 +324,7 @@
   "meta": {
     "provider": "cerebras",
     "model": "gpt-oss-120b",
-    "generated_at": "2026-11-11T18:38:43.229743Z",
+    "generated_at": "2026-11-11T19:14:41.747909Z",
     "source_files": [
       "data/reports/transcripts/live_token_context_tool_use.txt"
     ]

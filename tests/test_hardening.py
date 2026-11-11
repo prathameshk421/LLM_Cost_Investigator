@@ -333,3 +333,17 @@ def test_full_app_routes_do_not_shadow_each_other(client) -> None:
     assert isinstance(r.json(), list)
     for path in ("/api/analytics/overview", "/api/budgets", "/api/warehouse/stats", "/api/usage"):
         assert client.get(path).status_code == 200, path
+
+
+def test_llm_no_signal_cannot_erase_verified_skill_finding() -> None:
+    """Live bug: the LLM said no_strong_signal on a clear retry storm and won."""
+    lab = generate_lab_calls("retry_loop", seed=2)
+    window = next(w for w in detect_anomalies(lab.calls) if w.feature_tag == "support_reply")
+    nss = _evidence_json("retry_loop_agent", "no_strong_signal")
+    runs = run_agents_detailed(["retry_loop_agent"], window, llm_client=lambda _p: nss, provider="groq")
+    ev = runs[0].evidence
+    assert not runs[0].fallback_used
+    assert ev.hypothesis == "uncapped_retry_loop"
+    assert ev.confidence <= 0.60
+    assert ev.supporting_metrics["llm_disagreed"] is True
+    assert ev.supporting_metrics["llm_hypothesis"] == "no_strong_signal"

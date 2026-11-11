@@ -92,6 +92,10 @@ class AnomalySignals(BaseModel):
     # Growth of USD per 1k tokens. A pricier model raises this even when
     # traffic and prompt size stay flat. None when the baseline has no tokens.
     unit_cost_growth_pct: float | None = 0.0
+    # Cost per call vs baseline. Volume swings move totals but not this.
+    cost_per_call_z_score: float = 0.0
+    cost_per_call_growth_pct: float | None = 0.0
+    avg_input_tokens_z_score: float = 0.0
 
     # Absolute maximums within the anomaly window
     max_retry_count: int = 0

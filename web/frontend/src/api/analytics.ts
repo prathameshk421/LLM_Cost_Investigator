@@ -86,5 +86,7 @@ export const getLiveIncidents = (limit = 50) =>
 export const diagnoseIncident = (id: string, provider: DiagnoseProvider) =>
   sendJson<DiagnosedIncident>("POST", `/api/incidents/live/${encodeURIComponent(id)}/diagnose`, { provider });
 
+export const getDemoState = () => getJson<DemoState>("/api/stream/demo");
+
 export const setDemo = (action: "start" | "stop", rate: number, incident: DemoIncident) =>
   sendJson<DemoState>("POST", "/api/stream/demo", { action, rate, incident });

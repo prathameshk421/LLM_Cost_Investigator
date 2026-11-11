@@ -145,7 +145,7 @@ def investigate_calls(
     model: str | None = None,
     max_anomalies: int = 5,
     write_reports: bool = True,
-    output_dir: str | Path = "data/reports/incidents",
+    output_dir: str | Path | None = None,
     report_naming: ReportNaming = "label_feature_index",
 ) -> InvestigationResult:
     """Run detector → router → agents → aggregator on normalized calls.

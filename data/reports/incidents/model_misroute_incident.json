@@ -104,6 +104,9 @@
       "token_growth_pct": 24.575151057401808,
       "avg_input_token_growth_pct": 3.812625881168182,
       "unit_cost_growth_pct": 469.15052958333644,
+      "cost_per_call_z_score": 1601.2220655407166,
+      "cost_per_call_growth_pct": 491.13300492610847,
+      "avg_input_tokens_z_score": 26.104542058258957,
       "max_retry_count": 0,
       "avg_retry_count": 0.0,
       "max_call_chain_depth": 0,
@@ -298,5 +301,5 @@
     "Add CI/CD checks to prevent unintentional model upgrades.",
     "Implement rate limiting or budget alerts for premium model endpoints."
   ],
-  "generated_at": "2026-11-11T18:38:43.108902Z"
+  "generated_at": "2026-11-11T19:14:41.615349Z"
 }

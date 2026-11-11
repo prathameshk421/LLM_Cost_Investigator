@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getLiveIncidents, setDemo } from "../api/analytics";
+import { getDemoState, getLiveIncidents, setDemo } from "../api/analytics";
 import type {
   BudgetEvent,
   DemoIncident,
@@ -55,6 +55,26 @@ export function LiveView() {
   const [running, setRunning] = useState(false);
   const [demoBusy, setDemoBusy] = useState(false);
   const [demoErr, setDemoErr] = useState<string | null>(null);
+
+  // A reload (or traffic started from the CLI) must show the real state.
+  useEffect(() => {
+    let alive = true;
+    getDemoState()
+      .then((s) => {
+        if (!alive) return;
+        setRunning(!!s.running);
+        if (s.running) {
+          if (s.rate) setRate(s.rate);
+          setIncident(s.incident ?? "none");
+        }
+      })
+      .catch(() => {
+        /* stream status is optional */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const addIncident = useCallback((inc: LiveIncidentSummary) => {
     setIncidents((prev) => {

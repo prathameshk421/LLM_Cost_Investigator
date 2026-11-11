@@ -618,6 +618,16 @@ def _run_connections(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    import logging
+
+    # Library code logs fallback notes; the CLI shows them as plain lines.
+    _h = logging.StreamHandler()
+    _h.setFormatter(logging.Formatter("%(message)s"))
+    _agents_log = logging.getLogger("llm_cost_investigator.agents")
+    if not _agents_log.handlers:
+        _agents_log.addHandler(_h)
+        _agents_log.setLevel(logging.INFO)
+        _agents_log.propagate = False
     parser = build_parser()
     args = parser.parse_args(argv)
 
