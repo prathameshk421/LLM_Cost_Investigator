@@ -1,0 +1,18 @@
+{
+ "n": 40,
+ "truth_vs_tool": {
+  "agree": 40,
+  "rate": 1.0,
+  "kappa": 1.0
+ },
+ "truth_vs_model": {
+  "agree": 11,
+  "rate": 0.275,
+  "kappa": 0.08
+ },
+ "tool_vs_model": {
+  "agree": 11,
+  "rate": 0.275,
+  "kappa": 0.08
+ }
+}

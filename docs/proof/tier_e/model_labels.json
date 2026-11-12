@@ -1,0 +1,166 @@
+{
+ "S01": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S02": [],
+ "S03": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S04": [],
+ "S05": [],
+ "S06": [],
+ "S07": [],
+ "S08": [],
+ "S09": [],
+ "S10": [],
+ "S11": [],
+ "S12": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S13": [],
+ "S14": [],
+ "S15": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S16": [],
+ "S17": [
+  [
+   "context_bloat_self_calling_agent",
+   "doc_summarizer"
+  ],
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S18": [],
+ "S19": [],
+ "S20": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S21": [
+  [
+   "context_bloat_self_calling_agent",
+   "doc_summarizer"
+  ]
+ ],
+ "S22": [],
+ "S23": [],
+ "S24": [],
+ "S25": [],
+ "S26": [],
+ "S27": [],
+ "S28": [],
+ "S29": [],
+ "S30": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ]
+ ],
+ "S31": [],
+ "S32": [
+  [
+   "context_bloat_self_calling_agent",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ],
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S33": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "context_bloat_self_calling_agent",
+   "rag_search"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S34": [],
+ "S35": [],
+ "S36": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S37": [],
+ "S38": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S39": [],
+ "S40": []
+}

@@ -1,0 +1,50 @@
+{
+ "note": "Take 1 (2026-11-12). Real calls: DeepSeek V4.1 Flash via Deploy (classify, reflect) and gpt-oss-20b via HF (summarize). Baseline 07:59-09:14 event time; bug 1 (retry loop) from 09:14. Bug 2 (misroute to gpt-oss-120b) window hit a network outage: the 40 pricier calls mostly failed (1,075 tokens total), so no extra spend. The SSD holding the code was unplugged at about 11:28 UTC; all processes died before bug 3 (bloat) started.",
+ "calls_by_model": [
+  {
+   "model": "deepseek-ai/deepseek-v4.1-flash-1017",
+   "calls": 1082,
+   "input_tokens": 80854,
+   "output_tokens": 51060,
+   "cost_usd": 0.23403
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "calls": 221,
+   "input_tokens": 24295,
+   "output_tokens": 30570,
+   "cost_usd": 0.00733
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "calls": 40,
+   "input_tokens": 654,
+   "output_tokens": 421,
+   "cost_usd": 0.00035
+  }
+ ],
+ "incidents": [
+  {
+   "incident_id": "inc_7d35d1c0ec75",
+   "feature_tag": "classify",
+   "hypothesis": "uncapped_retry_loop",
+   "confidence": 0.6,
+   "start_ts": "2026-11-12 09:10:00",
+   "end_ts": "2026-11-12 09:35:00",
+   "cost_usd": 0.15827000000000002,
+   "status": "open"
+  }
+ ],
+ "baseline_alarms": [
+  {
+   "n": 0
+  }
+ ],
+ "retry_bug_calls": [
+  {
+   "calls": 560,
+   "max_retry": 14,
+   "cost": 0.14672
+  }
+ ]
+}

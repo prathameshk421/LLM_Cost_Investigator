@@ -23,9 +23,7 @@ from benchmarks.heldout.stats import NSS, score_dataset, wilson
 from benchmarks.real import burstgpt_adapter as bg
 from benchmarks.real.inject import KINDS, inject_meta
 
-DEFAULT_CSV = ("/private/tmp/claude-501/-Volumes-SSD-Projects-Personal-LLM-Cost-Investigator--"
-               "claude-worktrees-project-review-testing-57183c/c1eedabc-20d4-4c90-895a-1b295847e983/"
-               "scratchpad/burstgpt/BurstGPT_1.csv")
+DEFAULT_CSV = "data/external/BurstGPT_1.csv"  # `make burstgpt` downloads it (CC-BY-4.0)
 CSV = os.environ.get("BURSTGPT_CSV", DEFAULT_CSV)
 HOURS = 72
 _COLS = None

@@ -170,3 +170,4 @@ web/frontend/dist-ssr/
 data/logs/
 data/reports/benchmark.json
 data/warehouse.duckdb*
+data/external/
