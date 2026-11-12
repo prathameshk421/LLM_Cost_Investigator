@@ -1,0 +1,18 @@
+{
+ "note": "Take 2 (2026-11-12). Real calls; died at about 18:25 IST when the SSD holding the code disconnected, before the misroute bug (due about 18:32 IST). Evidence: a clean real baseline.",
+ "calls": 278,
+ "event_start_utc": "2026-11-12 11:30:14.846185",
+ "event_end_utc": "2026-11-12 12:39:29.846185",
+ "baseline_minutes": 69.2,
+ "incidents_during_baseline": 0,
+ "calls_by_model": [
+  [
+   "openai/gpt-oss-20b",
+   93
+  ],
+  [
+   "deepseek-ai/deepseek-v4.1-flash-1017",
+   185
+  ]
+ ]
+}
