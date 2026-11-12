@@ -27,10 +27,13 @@ PATTERNS: list[dict[str, Any]] = [
     {
         "pattern_id": "RL-03",
         "owner": "retry_loop_agent",
-        "band_low": 0.0,
-        "band_high": 0.49,
-        "story": "Retries present but not driving spend (low cost attribution).",
-        "forces_no_signal": True,
+        "band_low": 0.50,
+        # A small storm on a busy feature has a low share of window cost.
+        # That lowers impact, not the evidence: cap, do not veto. Vetoing
+        # missed small storms on the held-out set (docs/ARCHITECTURE.md).
+        "band_high": 0.74,
+        "story": "Retries above the normal cap, but a small share of spend (low impact).",
+        "forces_no_signal": False,
     },
     {
         "pattern_id": "TC-01",

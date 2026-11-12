@@ -8,6 +8,13 @@ Limits (environment variables, per process):
 
 - ``LLM_MAX_CALLS``   maximum number of live calls per UTC day (default 60)
 - ``LLM_BUDGET_USD``  maximum estimated spend in USD per UTC day (default 0.05)
+- ``LLM_MAX_TOKENS``  output cap per call (default 2048). DeepSeek can print
+                      its tool-call syntax as text and repeat it until the
+                      context overflows (seen in the Heimdall project), so
+                      every call gets a hard ``max_tokens``.
+- ``LLM_CALL_DEADLINE_S``  hard wall-clock limit per call (default 90). The
+                      SDK timeout applies per network read, so a slow server
+                      kept one live call open for 304 s in testing.
 - ``LLM_CALL_LOG``    path of the JSONL call log
                       (default ``data/logs/llm_calls.jsonl``)
 
@@ -47,12 +54,21 @@ MODEL_RATES: dict[str, tuple[float, float]] = {
     "gpt-oss-120b": (0.25, 0.75),
     "meta-llama/llama-3.1-8b-instruct": (0.10, 0.10),
     "qwen/qwen3-32b": (0.30, 0.60),
+    # DeepSeek V4.x Flash list price is about $0.07 / $0.17; use a safe upper bound.
+    "deepseek-ai/deepseek-v4.1-flash-1017": (0.15, 0.40),
 }
 DEFAULT_RATE: tuple[float, float] = (1.00, 3.00)
 
 
 class BudgetExceeded(RuntimeError):
     """Raised before a live call when a budget limit is already reached."""
+
+
+class ToolSyntaxLeak(RuntimeError):
+    """The model printed its tool-call markup as text (a DeepSeek failure mode)."""
+
+
+TOOL_SYNTAX_LEAK = "DSML"
 
 
 def _rate_for(model: str | None) -> tuple[float, float]:
@@ -214,6 +230,35 @@ class UsageLedger:
 ledger = UsageLedger()
 
 
+class CallDeadlineExceeded(TimeoutError):
+    """A live call ran past LLM_CALL_DEADLINE_S; the agent falls back."""
+
+
+_deadline_pool = None
+
+
+def _call_with_deadline(fn, deadline_s: float):
+    """Run ``fn`` and stop waiting after ``deadline_s`` seconds.
+
+    The worker thread cannot be killed, so a stuck call finishes in the
+    background, but the caller (and the user) stops waiting for it.
+    """
+    global _deadline_pool
+    if deadline_s <= 0:
+        return fn()
+    if _deadline_pool is None:
+        from concurrent.futures import ThreadPoolExecutor
+
+        _deadline_pool = ThreadPoolExecutor(max_workers=16, thread_name_prefix="llm-call")
+    future = _deadline_pool.submit(fn)
+    from concurrent.futures import TimeoutError as FutureTimeout
+
+    try:
+        return future.result(timeout=deadline_s)
+    except FutureTimeout:
+        raise CallDeadlineExceeded(f"live call exceeded {deadline_s:.0f}s deadline") from None
+
+
 class _Completions:
     def __init__(self, inner: Any, provider: str, usage: UsageLedger) -> None:
         self._inner = inner
@@ -222,6 +267,7 @@ class _Completions:
 
     def create(self, **kwargs: Any) -> Any:
         self._usage.check()
+        kwargs.setdefault("max_tokens", _env_int("LLM_MAX_TOKENS", 2048))
         model = kwargs.get("model")
         started = time.perf_counter()
         entry: dict[str, Any] = {
@@ -232,7 +278,10 @@ class _Completions:
             "messages": len(kwargs.get("messages") or []),
         }
         try:
-            response = self._inner.create(**kwargs)
+            response = _call_with_deadline(
+                lambda: self._inner.create(**kwargs),
+                _env_float("LLM_CALL_DEADLINE_S", 90.0),
+            )
         except Exception as exc:
             entry.update(
                 latency_ms=int((time.perf_counter() - started) * 1000),
@@ -256,6 +305,13 @@ class _Completions:
             finish_reason=getattr(choice, "finish_reason", None),
             tool_calls=len(getattr(msg, "tool_calls", None) or []),
         )
+        content = getattr(msg, "content", None) or ""
+        if TOOL_SYNTAX_LEAK in content:
+            # The model wrote a tool call as text instead of calling the tool.
+            # Count it as an error so the agent repairs once, then falls back.
+            entry["error"] = "tool-call syntax leaked into text (DSML)"
+            self._usage.record(entry)
+            raise ToolSyntaxLeak(entry["error"])
         self._usage.record(entry)
         return response
 

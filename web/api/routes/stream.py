@@ -42,7 +42,7 @@ class DemoRequest(BaseModel):
 class DiagnoseRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    provider: Literal["hf", "fallback"] = "fallback"
+    provider: Literal["hf", "deploy", "fallback"] = "fallback"
 
 
 @router.post("/v1/ingest", status_code=202)

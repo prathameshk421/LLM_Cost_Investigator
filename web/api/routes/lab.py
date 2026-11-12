@@ -40,7 +40,7 @@ class SimulateRequest(BaseModel):
     scenario: Literal["retry_loop", "context_bloat", "model_misroute", "traffic_surge", "clean"]
     seed: int = Field(default=0, ge=0, le=1_000_000)
     noise: float = Field(default=0.08, ge=0.0, le=0.5)
-    provider: Literal["fallback", "hf", "groq", "cerebras"] = "fallback"
+    provider: Literal["fallback", "hf", "deploy", "groq", "cerebras"] = "fallback"
     model: str | None = Field(default=None, max_length=120)
 
 
@@ -93,7 +93,7 @@ def simulate(req: SimulateRequest) -> InvestigateResponse:
 def usage() -> dict[str, Any]:
     """Live LLM spend in this API process, limits, and recent calls."""
     providers = {}
-    for name in ("hf", "groq", "cerebras"):
+    for name in ("hf", "deploy", "groq", "cerebras"):
         providers[name] = {
             "configured": bool(_api_key_for(name)),
             "key_env": PROVIDER_API_KEY_ENV[name],

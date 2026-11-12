@@ -177,7 +177,7 @@ class AgentRunResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     evidence: AgentEvidence
-    provider: Literal["groq", "cerebras", "hf", "fallback"]
+    provider: Literal["groq", "cerebras", "hf", "deploy", "fallback"]
     model: str | None = None
     fallback_used: bool = False
     fallback_reason: str | None = None

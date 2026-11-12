@@ -434,6 +434,19 @@ def _apply_skill_pack_to_evidence(
     )
 
 
+def _kb_capped_confidence(pack: dict[str, Any], kb: list[dict[str, Any]]) -> float:
+    """Same ceiling as the live path (_apply_skill_pack_to_evidence).
+
+    Deterministic and live runs must cap confidence the same way, or a live
+    call that fails and falls back gives a different answer than the
+    deterministic mode does on the same window.
+    """
+    from llm_cost_investigator.knowledge_base import pattern_band_ceiling
+
+    ceiling = pattern_band_ceiling(kb, float(pack.get("band_ceiling", 1.0)))
+    return min(float(pack["suggested_confidence"]), ceiling)
+
+
 def fallback_retry_loop(anomaly: AnomalyWindow) -> AgentEvidence:
     """Fallback logic for the Retry Loop Agent when LLM calls fail."""
     from llm_cost_investigator.agent_skills import score_retry_loop
@@ -442,7 +455,9 @@ def fallback_retry_loop(anomaly: AnomalyWindow) -> AgentEvidence:
     pack = score_retry_loop(anomaly)
     kb = match_patterns("retry_loop_agent", anomaly, pack)
     hyp = pack["suggested_hypothesis"]
-    conf = float(pack["suggested_confidence"])
+    conf = _kb_capped_confidence(pack, kb)
+    if conf < 0.50:
+        hyp = "no_strong_signal"  # rubric: below 0.50 carries no causal claim
     explanation = (
         "Hard skills indicate uncapped retry loop / repeated failed calls."
         if hyp == "uncapped_retry_loop"
@@ -468,7 +483,9 @@ def fallback_token_context(anomaly: AnomalyWindow) -> AgentEvidence:
     pack = score_token_context(anomaly)
     kb = match_patterns("token_context_agent", anomaly, pack)
     hyp = pack["suggested_hypothesis"]
-    conf = float(pack["suggested_confidence"])
+    conf = _kb_capped_confidence(pack, kb)
+    if conf < 0.50:
+        hyp = "no_strong_signal"  # rubric: below 0.50 carries no causal claim
     explanation = (
         "Hard skills indicate context bloat / recursive self-calling growth."
         if hyp == "context_bloat_self_calling_agent"
@@ -494,7 +511,9 @@ def fallback_model_routing(anomaly: AnomalyWindow) -> AgentEvidence:
     pack = score_model_routing(anomaly)
     kb = match_patterns("model_routing_agent", anomaly, pack)
     hyp = pack["suggested_hypothesis"]
-    conf = float(pack["suggested_confidence"])
+    conf = _kb_capped_confidence(pack, kb)
+    if conf < 0.50:
+        hyp = "no_strong_signal"  # rubric: below 0.50 carries no causal claim
     explanation = (
         "Hard skills indicate expensive model misroute with stable tokens."
         if hyp == "expensive_model_misroute"

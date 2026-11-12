@@ -90,6 +90,7 @@ export function SimulatePanel({
             <option value="hf" disabled={!hfReady}>
               Live LLM · Hugging Face{hfReady ? "" : " (no token)"}
             </option>
+            <option value="deploy">Live LLM · DeepSeek (Deploy)</option>
             <option value="groq">Live LLM · Groq</option>
             <option value="cerebras">Live LLM · Cerebras</option>
           </select>

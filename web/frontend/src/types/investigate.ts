@@ -71,7 +71,7 @@ export type LabScenario =
   | "traffic_surge"
   | "clean";
 
-export type ProviderChoice = "fallback" | "hf" | "groq" | "cerebras";
+export type ProviderChoice = "fallback" | "hf" | "deploy" | "groq" | "cerebras";
 
 export interface UsageCall {
   ts: string;

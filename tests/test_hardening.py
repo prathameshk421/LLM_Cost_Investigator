@@ -295,7 +295,7 @@ def test_simulate_rejects_unknown_scenario(client) -> None:
 def test_usage_endpoint(client) -> None:
     body = client.get("/api/usage").json()
     assert {"spent_usd", "budget_usd", "max_calls", "providers"} <= body.keys()
-    assert set(body["providers"]) == {"hf", "groq", "cerebras"}
+    assert set(body["providers"]) == {"hf", "deploy", "groq", "cerebras"}
 
 
 def test_benchmark_endpoint(client) -> None:
@@ -347,3 +347,71 @@ def test_llm_no_signal_cannot_erase_verified_skill_finding() -> None:
     assert ev.confidence <= 0.60
     assert ev.supporting_metrics["llm_disagreed"] is True
     assert ev.supporting_metrics["llm_hypothesis"] == "no_strong_signal"
+
+
+def test_every_live_call_gets_an_output_cap(tmp_path) -> None:
+    """DeepSeek can loop on its own tool-call text; a max_tokens cap bounds it."""
+    seen = {}
+
+    class Inner:
+        def create(self, **kwargs):
+            seen.update(kwargs)
+            msg = SimpleNamespace(content="{}", tool_calls=None)
+            return SimpleNamespace(
+                choices=[SimpleNamespace(message=msg, finish_reason="stop")],
+                usage=SimpleNamespace(prompt_tokens=10, completion_tokens=5),
+            )
+
+    ledger = UsageLedger(max_calls=5, budget_usd=1.0, log_path=tmp_path / "l.jsonl", restore=False)
+    client = BudgetedOpenAI(SimpleNamespace(chat=SimpleNamespace(completions=Inner())), "deploy", ledger)
+    client.chat.completions.create(model="m", messages=[])
+    assert seen["max_tokens"] > 0
+
+
+def test_tool_syntax_leak_is_an_error(tmp_path) -> None:
+    """Heimdall saw DeepSeek print '<｜DSML｜tool_calls>' as text; treat it as a failed call."""
+    from llm_cost_investigator.usage import ToolSyntaxLeak
+
+    class Inner:
+        def create(self, **kwargs):
+            msg = SimpleNamespace(content="<｜DSML｜tool_calls> get_call_chain", tool_calls=None)
+            return SimpleNamespace(
+                choices=[SimpleNamespace(message=msg, finish_reason="stop")],
+                usage=SimpleNamespace(prompt_tokens=10, completion_tokens=5),
+            )
+
+    ledger = UsageLedger(max_calls=5, budget_usd=1.0, log_path=tmp_path / "l.jsonl", restore=False)
+    client = BudgetedOpenAI(SimpleNamespace(chat=SimpleNamespace(completions=Inner())), "deploy", ledger)
+    with pytest.raises(ToolSyntaxLeak):
+        client.chat.completions.create(model="m", messages=[])
+    assert ledger.snapshot()["errors"] == 1
+
+
+def test_deploy_provider_needs_explicit_choice(monkeypatch) -> None:
+    for env in ("GROQ_API_KEY", "CEREBRAS_API_KEY", "HF_TOKEN", "LLM_PROVIDER"):
+        monkeypatch.delenv(env, raising=False)
+    monkeypatch.setenv("DEPLOY_API_KEY", "x")
+    assert llm_client.resolve_llm_client().provider == "fallback"
+    explicit = llm_client.resolve_llm_client(llm_client.LLMClientConfig(provider="deepseek"))
+    assert explicit.provider == "deploy"
+    assert explicit.model == "deepseek-ai/deepseek-v4.1-flash-1017"
+
+
+def test_slow_live_call_hits_hard_deadline(tmp_path, monkeypatch) -> None:
+    """A 304 s call was seen live: the SDK timeout is per read, not total."""
+    import time as _time
+
+    from llm_cost_investigator.usage import CallDeadlineExceeded
+
+    class Slow:
+        def create(self, **kwargs):
+            _time.sleep(2)
+
+    monkeypatch.setenv("LLM_CALL_DEADLINE_S", "0.2")
+    ledger = UsageLedger(max_calls=5, budget_usd=1.0, log_path=tmp_path / "l.jsonl", restore=False)
+    client = BudgetedOpenAI(SimpleNamespace(chat=SimpleNamespace(completions=Slow())), "deploy", ledger)
+    t = _time.time()
+    with pytest.raises(CallDeadlineExceeded):
+        client.chat.completions.create(model="m", messages=[])
+    assert _time.time() - t < 1.5
+    assert ledger.snapshot()["errors"] == 1

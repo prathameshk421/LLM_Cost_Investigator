@@ -26,7 +26,7 @@ def _load_dotenv(path: str | Path = ".env") -> None:
 
 _load_dotenv()
 
-ProviderName = Literal["groq", "cerebras", "hf", "fallback"]
+ProviderName = Literal["groq", "cerebras", "hf", "deploy", "fallback"]
 
 
 PROVIDER_BASE_URLS: dict[str, str] = {
@@ -34,18 +34,22 @@ PROVIDER_BASE_URLS: dict[str, str] = {
     "cerebras": "https://api.cerebras.ai/v1",
     # Hugging Face Inference Providers router (OpenAI-compatible).
     "hf": "https://router.huggingface.co/v1",
+    # Deploy: OpenAI-compatible gateway serving DeepSeek (used by Heimdall).
+    "deploy": "https://api.deploy.com/api/v1",
 }
 
 PROVIDER_API_KEY_ENV: dict[str, str] = {
     "groq": "GROQ_API_KEY",
     "cerebras": "CEREBRAS_API_KEY",
     "hf": "HF_TOKEN",
+    "deploy": "DEPLOY_API_KEY",
 }
 
 PROVIDER_MODEL_ENV: dict[str, str] = {
     "groq": "GROQ_MODEL",
     "cerebras": "CEREBRAS_MODEL",
     "hf": "HF_MODEL",
+    "deploy": "DEPLOY_MODEL",
 }
 
 DEFAULT_MODELS: dict[str, str] = {
@@ -53,6 +57,7 @@ DEFAULT_MODELS: dict[str, str] = {
     "cerebras": "gpt-oss-120b",
     # Small, cheap, supports tool calls. About $0.0001 per agent call.
     "hf": "openai/gpt-oss-20b",
+    "deploy": "deepseek-ai/deepseek-v4.1-flash-1017",
 }
 
 
@@ -135,9 +140,12 @@ def _normalise_provider(provider: str | None) -> ProviderName | None:
     if normalised in {"huggingface", "hugging_face"}:
         normalised = "hf"
 
-    if normalised not in {"groq", "cerebras", "hf", "fallback"}:
+    if normalised == "deepseek":
+        normalised = "deploy"
+
+    if normalised not in {"groq", "cerebras", "hf", "deploy", "fallback"}:
         raise ValueError(
-            "Unsupported LLM provider. Use groq, cerebras, hf, or fallback."
+            "Unsupported LLM provider. Use groq, cerebras, hf, deploy, or fallback."
         )
     return normalised  # type: ignore[return-value]
 
@@ -151,6 +159,8 @@ def _first_configured_provider() -> ProviderName | None:
     # explicitly or have HF_TOKEN set, so a run never spends credits by surprise.
     if os.environ.get("HF_TOKEN", "").strip():
         return "hf"
+    # Deploy is never auto-selected: it is a billed key shared with another
+    # project, so it must be chosen with --provider deploy.
     return None
 
 

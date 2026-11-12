@@ -171,7 +171,7 @@ def _parse_map_arg(raw: str | None) -> dict[str, str] | None:
 def _add_provider_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--provider",
-        choices=["groq", "cerebras", "cerebus", "hf", "fallback"],
+        choices=["groq", "cerebras", "cerebus", "hf", "deploy", "fallback"],
         default=None,
         help="LLM provider for diagnostic agents. Defaults to env auto-detect.",
     )
@@ -328,7 +328,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--provider",
-        choices=["groq", "cerebras", "cerebus", "hf", "fallback"],
+        choices=["groq", "cerebras", "cerebus", "hf", "deploy", "fallback"],
         default=None,
         help=argparse.SUPPRESS,
     )

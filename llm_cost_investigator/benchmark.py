@@ -146,7 +146,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--provider",
         default="fallback",
-        choices=["fallback", "groq", "cerebras", "hf"],
+        choices=["fallback", "groq", "cerebras", "hf", "deploy"],
         help="fallback is free and offline; live providers use the budget guard",
     )
     parser.add_argument("--model", default=None)
