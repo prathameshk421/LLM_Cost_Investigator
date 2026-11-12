@@ -415,3 +415,12 @@ def test_slow_live_call_hits_hard_deadline(tmp_path, monkeypatch) -> None:
         client.chat.completions.create(model="m", messages=[])
     assert _time.time() - t < 1.5
     assert ledger.snapshot()["errors"] == 1
+
+
+def test_llm_guard_can_be_disabled_for_ablation(monkeypatch) -> None:
+    monkeypatch.setenv("LLMCI_LLM_GUARD", "0")
+    lab = generate_lab_calls("retry_loop", seed=2)
+    window = next(w for w in detect_anomalies(lab.calls) if w.feature_tag == "support_reply")
+    nss = _evidence_json("retry_loop_agent", "no_strong_signal")
+    runs = run_agents_detailed(["retry_loop_agent"], window, llm_client=lambda _p: nss, provider="groq")
+    assert runs[0].evidence.hypothesis == "no_strong_signal"

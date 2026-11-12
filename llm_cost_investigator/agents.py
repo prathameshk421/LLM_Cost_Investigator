@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from typing import Any, Callable
 
@@ -409,6 +410,8 @@ def _apply_skill_pack_to_evidence(
         and suggested != "no_strong_signal"
         and not skill_pack.get("forced_no_strong_signal")
         and ceiling >= 0.50
+        # LLMCI_LLM_GUARD=0 turns the guard off (ablation arm only).
+        and os.environ.get("LLMCI_LLM_GUARD", "1") != "0"
     ):
         # The LLM dismissed a finding that the deterministic hard skills
         # support. The same window can get a different LLM answer on the
