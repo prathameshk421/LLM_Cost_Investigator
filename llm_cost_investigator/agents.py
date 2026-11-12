@@ -1481,7 +1481,9 @@ def run_agents_detailed(
                 f"{type(exc).__name__}: {exc}"
             )
     else:
-        resolved_provider = provider or "fallback"
+        # An injected client is a live client. Without a provider name it was
+        # labelled "fallback" and silently never called (0 calls, no reason).
+        resolved_provider = provider or "custom"
         resolved_model = model
         selection_fallback_reason = None
 

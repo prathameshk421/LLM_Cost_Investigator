@@ -432,3 +432,18 @@ def test_duplicate_call_ids_do_not_crash_investigation() -> None:
     calls = lab.calls + lab.calls[: len(lab.calls) // 10]
     result = investigate_calls(calls, provider="fallback", write_reports=False)
     assert any(i.root_cause.hypothesis == "uncapped_retry_loop" for i in result.incidents)
+
+
+def test_injected_llm_client_is_called_without_provider_name() -> None:
+    """Bug: run_agents_detailed(..., llm_client=c) with no provider ignored c."""
+    lab = generate_lab_calls("retry_loop", seed=2)
+    window = next(w for w in detect_anomalies(lab.calls) if w.feature_tag == "support_reply")
+    calls = []
+
+    def client(prompt: str) -> str:
+        calls.append(prompt)
+        return _evidence_json("retry_loop_agent", "uncapped_retry_loop")
+
+    runs = run_agents_detailed(["retry_loop_agent"], window, llm_client=client)
+    assert len(calls) == 1
+    assert runs[0].provider == "custom" and not runs[0].fallback_used
