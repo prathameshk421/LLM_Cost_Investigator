@@ -13,9 +13,10 @@ Plan: [PLAN.md](PLAN.md). Raw outputs: [data/](data/). Intervals are Wilson 95%.
 | A | vs three hand rules (B2) | same | B2: 100% caught, **16.4% false alarms**, 10.7% wrong extra labels | product has **33x fewer false alarms**; B2 catches more and faster |
 | A | Live LLM ablation (DeepSeek V4.1 Flash), seeds 200-203 | 112 paired | exact match: deterministic 110, LLM + guard 110, LLM without guard 111; McNemar p = 1.0 | **C5 pass**: the LLM does not lower accuracy; $0.0018 per dataset |
 | B | Real traffic background: BurstGPT (real Azure OpenAI requests), injected incidents | 200 injected + 100 clean 72 h slices | 96.5% caught (193/200); 0 false incidents over 171 feature-weeks | **pass** (≥ 90%, ≤ 1 per feature-week) |
+| B | Raw real trace, no injection | 240 feature-days, 1.4M requests | 0 incidents reported. The detector flagged 178 windows (heavy-tailed real prompt sizes); diagnosis labelled all 178 as volume (X-02). | not falsified (> 1 per feature-day) |
 | C | Red team: 12 adversarial cases × 20 seeds | 240 datasets | 0 crashes; 0% confident wrong labels [0-2] | **pass** (after one crash fix found on dev seeds, see addendum 3) |
-| D | Live app with real LLM calls and three real induced bugs | 1 recorded take | see [tier_d.md](tier_d.md) | pending |
-| E | Independent blind labels | - | not run yet (needs a second person) | open |
+| D | Live app with real LLM calls and three real induced bugs | take 1 (1,343 real calls) | 0 alarms in the 75-min baseline; real retry loop caught in its first window. Misroute window invalid (network outage: the pricier calls failed, no extra spend). | partial; take 2 (misroute, bloat) running |
+| E | Blind labels of 40 slices on fresh seeds (CSV only, no tool output) | 40 | Fable: 40/40 vs truth, 40/40 vs tool (κ = 1.0). gpt-oss-20b: 10/40 (could not do the task). Tool vs truth: 40/40. | **pass** with caveats: Fable wrote the generator; it was added after gpt-oss failed; no human labels (addenda 4-5) |
 
 ## Tier A detail
 
