@@ -208,6 +208,13 @@ def score() -> None:
     arms = {"truth": [lab(key[s]["truth"]) for s in sids], "tool": [lab(key[s]["tool"]) for s in sids]}
     if model:
         arms["model"] = [lab(model.get(s, [])) for s in sids]
+    fable_file = OUT / "fable_labels.json"
+    if fable_file.exists():
+        # A blind labeller run by a different, stronger model (Fable). It
+        # wrote the held-out generator earlier, so it is independent of the
+        # detection rules but not of how the incidents were designed.
+        fable = json.loads(fable_file.read_text())
+        arms["fable"] = [lab(fable.get(s, [])) for s in sids]
     if human:
         arms["human"] = [lab(human.get(s, [])) for s in sids]
     res = {"n": len(sids)}

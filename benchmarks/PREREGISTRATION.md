@@ -143,3 +143,14 @@ model labeller only (gpt-oss-20b, a different model family from the
 DeepSeek agents). The proof pack therefore makes **no claim of independent
 human verification**. The blind slices and answer sheet stay in
 `docs/proof/tier_e/` so anyone can do it later.
+
+## Addendum 5 (2026-11-12): second blind labeller added after the first failed
+
+The registered model labeller (gpt-oss-20b) could not do the task: 10/40
+agreement with truth (12/40 answers truncated even at 16k tokens; 6/28 on
+finished answers). At the owner's request a second blind labeller was added
+**after** that result: Fable (a much stronger model), reading only the brief
+and the 40 slice CSVs. Result: 40/40 vs truth and 40/40 vs the tool.
+Caveats: Fable wrote the held-out generator earlier in the project, so it is
+independent of the detection rules but not of the incident design; and the
+labeller was chosen after the first one failed. Both runs are published.

@@ -1,0 +1,232 @@
+{
+ "S01": [
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S02": [
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S03": [
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S04": [
+  [
+   "context_bloat_self_calling_agent",
+   "code_review"
+  ]
+ ],
+ "S05": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S06": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S07": [],
+ "S08": [],
+ "S09": [],
+ "S10": [],
+ "S11": [],
+ "S12": [],
+ "S13": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S14": [
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S15": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S16": [
+  [
+   "context_bloat_self_calling_agent",
+   "code_review"
+  ]
+ ],
+ "S17": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S18": [],
+ "S19": [
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S20": [],
+ "S21": [
+  [
+   "context_bloat_self_calling_agent",
+   "doc_summarizer"
+  ]
+ ],
+ "S22": [],
+ "S23": [
+  [
+   "uncapped_retry_loop",
+   "doc_summarizer"
+  ]
+ ],
+ "S24": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "context_bloat_self_calling_agent",
+   "doc_summarizer"
+  ]
+ ],
+ "S25": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ]
+ ],
+ "S26": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S27": [
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S28": [],
+ "S29": [
+  [
+   "uncapped_retry_loop",
+   "doc_summarizer"
+  ]
+ ],
+ "S30": [
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S31": [
+  [
+   "uncapped_retry_loop",
+   "doc_summarizer"
+  ]
+ ],
+ "S32": [
+  [
+   "context_bloat_self_calling_agent",
+   "code_review"
+  ]
+ ],
+ "S33": [
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S34": [],
+ "S35": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S36": [
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S37": [
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S38": [
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S39": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S40": [],
+ "notes": {
+  "S01": "chat_assistant max retry 6 in last hour vs 0-2 before",
+  "S02": "code_review retry 6 in 3 windows with call burst, 0 before",
+  "S03": "doc_summarizer moves from claude-3-5-haiku to new claude-sonnet-4, cost/call about 4x",
+  "S04": "code_review chain depth 7 (normal 0) and avg input about 47k tokens",
+  "S05": "chat_assistant moves to new gpt-4o, cost/call about 12x",
+  "S06": "chat_assistant uses new gpt-5-mini for about 25 min, cost/call about 2x with no token growth; short and low volume",
+  "S07": "chat_assistant only shifts ratio between two models it already uses",
+  "S08": "no change in models, retries or depth",
+  "S09": "no change in models, retries or depth",
+  "S10": "chat_assistant prompts grow but depth stays 0",
+  "S11": "doc_summarizer switches to cheaper gpt-4o-mini",
+  "S12": "no change",
+  "S13": "about half of chat_assistant traffic moves to new, pricier claude-3-5-haiku",
+  "S14": "chat_assistant retry 10 in 7 windows",
+  "S15": "about half of chat_assistant traffic moves to new, pricier claude-3-5-haiku",
+  "S16": "code_review depth 10 and avg input about 71k tokens",
+  "S17": "chat_assistant moves fully to new claude-3-5-haiku",
+  "S18": "traffic surge on all features, same models, retries max 2",
+  "S19": "chat_assistant retry 15 in 6 windows",
+  "S20": "no change",
+  "S21": "doc_summarizer depth 6-7 (normal 0) and avg input about 45k tokens",
+  "S22": "no change",
+  "S23": "doc_summarizer retry 8 in 4 windows with call burst",
+  "S24": "chat_assistant moves to new claude-3-5-haiku; doc_summarizer depth 6-7 with input about 35k tokens",
+  "S25": "chat_assistant depth 6-7 (normal 0) and input grows from 1.4k to 5k tokens",
+  "S26": "chat_assistant moves fully to new gpt-5-mini, cost/call about 2x",
+  "S27": "doc_summarizer moves to new claude-sonnet-4",
+  "S28": "no change",
+  "S29": "doc_summarizer retry 15 in 5 windows",
+  "S30": "doc_summarizer moves to new claude-sonnet-4",
+  "S31": "doc_summarizer retry 8 in 4 windows",
+  "S32": "code_review depth 9-10 and avg input 49k-69k tokens",
+  "S33": "code_review retry 9 in 6 windows",
+  "S34": "no change",
+  "S35": "chat_assistant moves to new claude-3-5-haiku for about 45 min; code_review retry 10 in 4 windows",
+  "S36": "chat_assistant retry 9 in 4 windows; code_review long prompt has depth 0, not an incident",
+  "S37": "chat_assistant retry 10 in 3 windows",
+  "S38": "doc_summarizer moves to new claude-sonnet-4 (low volume)",
+  "S39": "chat_assistant moves to new gpt-5-mini",
+  "S40": "doc_summarizer switches to cheaper gpt-4o-mini"
+ }
+}
