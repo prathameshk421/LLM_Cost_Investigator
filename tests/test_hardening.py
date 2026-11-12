@@ -424,3 +424,11 @@ def test_llm_guard_can_be_disabled_for_ablation(monkeypatch) -> None:
     nss = _evidence_json("retry_loop_agent", "no_strong_signal")
     runs = run_agents_detailed(["retry_loop_agent"], window, llm_client=lambda _p: nss, provider="groq")
     assert runs[0].evidence.hypothesis == "no_strong_signal"
+
+
+def test_duplicate_call_ids_do_not_crash_investigation() -> None:
+    """Red-team c07: 10% duplicated call_ids raised sqlite3.IntegrityError."""
+    lab = generate_lab_calls("retry_loop", seed=5)
+    calls = lab.calls + lab.calls[: len(lab.calls) // 10]
+    result = investigate_calls(calls, provider="fallback", write_reports=False)
+    assert any(i.root_cause.hypothesis == "uncapped_retry_loop" for i in result.incidents)

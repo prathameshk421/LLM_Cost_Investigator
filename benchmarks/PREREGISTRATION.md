@@ -124,3 +124,13 @@ the registered 200. To meet the registration, 100 more injected slices are run
 on the unused seed range 600-699 with the same code, and both runs are
 reported together. The first run's result (98/100 hit, 0 false incidents on
 100 clean slices) is published as is.
+
+## Addendum 3 (2026-11-12, before the reported Tier C run)
+
+Building Tier C on dev seeds 300-319 found a crash: duplicate `call_id`s
+made `investigate_calls` fail with `sqlite3.IntegrityError`. It is fixed
+before the reported Tier C run (`TelemetryStore.insert_calls` now keeps the
+first copy, like the warehouse). This is a crash fix, not a threshold or
+detection-rule change. The code under test for Tier C is the commit that adds
+this addendum. Second Tier B batch (seeds 600-699): 95/100 hit; combined
+193/200.
