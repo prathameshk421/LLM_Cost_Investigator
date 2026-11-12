@@ -101,3 +101,18 @@ whatever the result.
 ## Tier E: independent check
 
 Pass: human labels vs truth ≥ 85% agreement, and tool vs human ≥ 85%.
+
+## Addendum 1 (2026-11-12, before any reported Tier B run)
+
+- **Clean-slice cap.** `investigate_calls(max_anomalies=5)` caps how many
+  incidents one slice can report. That would understate false incidents on
+  clean slices. The reported Tier B clean run uses
+  `TIERB_CLEAN_MAX_ANOMALIES=50`, and the output records how many slices still
+  hit the cap.
+- **Disclosure.** While building Tier B, 4 clean slices from the reserved
+  fresh range (Tier B slice seeds 400-403) were run by mistake. They gave 0
+  false incidents. Any future fix reported on seeds 400-499 will exclude
+  400-403 and say so.
+- **Trace mapping.** BurstGPT names only "ChatGPT" and "GPT-4". They are
+  priced as `gpt-3.5-turbo` and `gpt-4-turbo`. The trace has no parent id,
+  retry or latency fields, so those only exist on injected rows.
