@@ -1,0 +1,6259 @@
+{
+ "summary": {
+  "datasets": 112,
+  "det": {
+   "hit_rate": 0.9861,
+   "false_alarm_rate_on_negatives": 0.0,
+   "exact_match": 0.9821,
+   "mean_sec": 0.24
+  },
+  "llm": {
+   "hit_rate": 0.9861,
+   "false_alarm_rate_on_negatives": 0.0,
+   "exact_match": 0.9911,
+   "mean_sec": 30.96,
+   "live_agent_runs": 429,
+   "disagreements_kept_by_skills": 0,
+   "fallback_reasons": {
+    "skipped_by_falsifier": 170
+   }
+  },
+  "usage": {
+   "calls": 587.0,
+   "errors": 0.0,
+   "blocked": 0.0,
+   "prompt_tokens": 675419.0,
+   "completion_tokens": 248750.0,
+   "spent_usd": 0.200813
+  },
+  "per_case": {
+   "retry_small": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "retry_medium": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "retry_large": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "retry_medium_night": {
+    "n": 4,
+    "det_ok": 3,
+    "llm_ok": 4
+   },
+   "bloat_subtle_d4": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "retry_medium_flat": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "bloat_medium_night": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "misroute_5x": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "misroute_2x": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "bloat_large": {
+    "n": 4,
+    "det_ok": 3,
+    "llm_ok": 3
+   },
+   "bloat_medium": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "misroute_15x": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "misroute_5x_half": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_baseline_night": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_baseline_rag": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "misroute_2x_night": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_marketing_burst": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "misroute_5x_night": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_surge_all": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_prompt_plus40": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_cheaper_model": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_ab_ratio_shift": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_sparse_big_prompts": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "mix_bloat+misroute": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_clock_gap": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "neg_clock_gap_catchup": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "mix_retry+misroute": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   },
+   "mix_misroute+surge_same": {
+    "n": 4,
+    "det_ok": 4,
+    "llm_ok": 4
+   }
+  },
+  "disagree_cases": [
+   {
+    "case": "retry_medium_night",
+    "seed": 203,
+    "det": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ],
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "llm": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ]
+   }
+  ],
+  "provider": "deploy",
+  "wall_sec": 890.2
+ },
+ "rows": [
+  {
+   "case": "retry_small",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 24.65,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 4,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 3989,
+    "completion_tokens": 1877,
+    "spent_usd": 0.001349
+   },
+   "pid": 80797
+  },
+  {
+   "case": "retry_medium",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.28,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 30.44,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 5,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 5500,
+    "completion_tokens": 2446,
+    "spent_usd": 0.001803
+   },
+   "pid": 80799
+  },
+  {
+   "case": "retry_large",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 41.65,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 8,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 10070,
+    "completion_tokens": 2847,
+    "spent_usd": 0.002649
+   },
+   "pid": 80798
+  },
+  {
+   "case": "retry_medium_night",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.27,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 48.13,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 9,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 11545,
+    "completion_tokens": 3116,
+    "spent_usd": 0.002978
+   },
+   "pid": 80800
+  },
+  {
+   "case": "bloat_subtle_d4",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 20.26,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 9,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 9495,
+    "completion_tokens": 4113,
+    "spent_usd": 0.003069
+   },
+   "pid": 80799
+  },
+  {
+   "case": "retry_medium_flat",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.36,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 36.84,
+    "live_runs": 6,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 11,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 11322,
+    "completion_tokens": 4540,
+    "spent_usd": 0.003514
+   },
+   "pid": 80797
+  },
+  {
+   "case": "bloat_medium_night",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 14.88,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 12,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 12908,
+    "completion_tokens": 4957,
+    "spent_usd": 0.003919
+   },
+   "pid": 80799
+  },
+  {
+   "case": "misroute_5x",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 12.06,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 14,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 14867,
+    "completion_tokens": 5984,
+    "spent_usd": 0.004624
+   },
+   "pid": 80799
+  },
+  {
+   "case": "misroute_2x",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 20.39,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 15,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 15525,
+    "completion_tokens": 6151,
+    "spent_usd": 0.004789
+   },
+   "pid": 80797
+  },
+  {
+   "case": "bloat_large",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 36.35,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 14,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 17645,
+    "completion_tokens": 5594,
+    "spent_usd": 0.004884
+   },
+   "pid": 80800
+  },
+  {
+   "case": "bloat_medium",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 56.15,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 18,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 23611,
+    "completion_tokens": 6770,
+    "spent_usd": 0.00625
+   },
+   "pid": 80798
+  },
+  {
+   "case": "misroute_15x",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 23.94,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 19,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 20786,
+    "completion_tokens": 7741,
+    "spent_usd": 0.006214
+   },
+   "pid": 80799
+  },
+  {
+   "case": "misroute_5x_half",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 33.91,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 21,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 22283,
+    "completion_tokens": 9627,
+    "spent_usd": 0.007193
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_baseline_night",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 6.02,
+    "live_runs": 1,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 22,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 23267,
+    "completion_tokens": 10164,
+    "spent_usd": 0.007556
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_baseline_rag",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.31,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 37.3,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 25,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 28040,
+    "completion_tokens": 10048,
+    "spent_usd": 0.008225
+   },
+   "pid": 80799
+  },
+  {
+   "case": "misroute_2x_night",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 56.34,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 24,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 28082,
+    "completion_tokens": 8491,
+    "spent_usd": 0.007609
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_marketing_burst",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 6.44,
+    "live_runs": 1,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 26,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 29055,
+    "completion_tokens": 10513,
+    "spent_usd": 0.008563
+   },
+   "pid": 80799
+  },
+  {
+   "case": "misroute_5x_night",
+   "seed": 200,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 49.83,
+    "live_runs": 6,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 26,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 31660,
+    "completion_tokens": 10168,
+    "spent_usd": 0.008816
+   },
+   "pid": 80798
+  },
+  {
+   "case": "neg_surge_all",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.27,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 37.49,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 29,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 32176,
+    "completion_tokens": 13242,
+    "spent_usd": 0.010123
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_prompt_plus40",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 15.07,
+    "live_runs": 1,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 28,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 34043,
+    "completion_tokens": 11093,
+    "spent_usd": 0.009544
+   },
+   "pid": 80798
+  },
+  {
+   "case": "neg_cheaper_model",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 25.42,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 29,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 33513,
+    "completion_tokens": 10526,
+    "spent_usd": 0.009237
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_ab_ratio_shift",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 21.78,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 30,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 33015,
+    "completion_tokens": 12709,
+    "spent_usd": 0.010036
+   },
+   "pid": 80799
+  },
+  {
+   "case": "neg_sparse_big_prompts",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.27,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 9.4,
+    "live_runs": 1,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 31,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 35003,
+    "completion_tokens": 13875,
+    "spent_usd": 0.0108
+   },
+   "pid": 80797
+  },
+  {
+   "case": "mix_bloat+misroute",
+   "seed": 200,
+   "kind": "mixed",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ],
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ],
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ],
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 14.11,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 34,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 37987,
+    "completion_tokens": 15111,
+    "spent_usd": 0.011742
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_clock_gap",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.3,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 31.05,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 33,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 39048,
+    "completion_tokens": 13684,
+    "spent_usd": 0.011331
+   },
+   "pid": 80798
+  },
+  {
+   "case": "neg_clock_gap_catchup",
+   "seed": 200,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 31.5,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 35,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 40605,
+    "completion_tokens": 12177,
+    "spent_usd": 0.010962
+   },
+   "pid": 80800
+  },
+  {
+   "case": "mix_retry+misroute",
+   "seed": 200,
+   "kind": "mixed",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "code_review"
+    ],
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ],
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ],
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 30.83,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 35,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 38809,
+    "completion_tokens": 14854,
+    "spent_usd": 0.011763
+   },
+   "pid": 80799
+  },
+  {
+   "case": "mix_misroute+surge_same",
+   "seed": 200,
+   "kind": "mixed",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 25.17,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 38,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 41921,
+    "completion_tokens": 17241,
+    "spent_usd": 0.013185
+   },
+   "pid": 80797
+  },
+  {
+   "case": "retry_small",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 19.34,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 36,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 42035,
+    "completion_tokens": 15289,
+    "spent_usd": 0.012421
+   },
+   "pid": 80798
+  },
+  {
+   "case": "retry_medium",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 31.78,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 40,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 45614,
+    "completion_tokens": 14580,
+    "spent_usd": 0.012674
+   },
+   "pid": 80800
+  },
+  {
+   "case": "retry_medium_night",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 31.6,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 43,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 46922,
+    "completion_tokens": 19188,
+    "spent_usd": 0.014714
+   },
+   "pid": 80797
+  },
+  {
+   "case": "retry_medium_flat",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 28.58,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 40,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 46066,
+    "completion_tokens": 17639,
+    "spent_usd": 0.013965
+   },
+   "pid": 80798
+  },
+  {
+   "case": "retry_large",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 50.85,
+    "live_runs": 7,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 43,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 47168,
+    "completion_tokens": 18287,
+    "spent_usd": 0.01439
+   },
+   "pid": 80799
+  },
+  {
+   "case": "bloat_medium",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 0.27,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 16.02,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 46,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 50754,
+    "completion_tokens": 20136,
+    "spent_usd": 0.015668
+   },
+   "pid": 80797
+  },
+  {
+   "case": "bloat_subtle_d4",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 33.62,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 47,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 54909,
+    "completion_tokens": 17436,
+    "spent_usd": 0.015211
+   },
+   "pid": 80800
+  },
+  {
+   "case": "bloat_medium_night",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.22,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 13.99,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 46,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 50646,
+    "completion_tokens": 19281,
+    "spent_usd": 0.015309
+   },
+   "pid": 80799
+  },
+  {
+   "case": "bloat_large",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 35.68,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 48,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 55918,
+    "completion_tokens": 19654,
+    "spent_usd": 0.016249
+   },
+   "pid": 80798
+  },
+  {
+   "case": "misroute_2x",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 34.94,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 52,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 57505,
+    "completion_tokens": 23107,
+    "spent_usd": 0.017869
+   },
+   "pid": 80797
+  },
+  {
+   "case": "misroute_5x",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 37.09,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 53,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 60943,
+    "completion_tokens": 20413,
+    "spent_usd": 0.017307
+   },
+   "pid": 80800
+  },
+  {
+   "case": "misroute_5x_half",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 30.42,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 53,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 61255,
+    "completion_tokens": 21857,
+    "spent_usd": 0.017931
+   },
+   "pid": 80798
+  },
+  {
+   "case": "misroute_15x",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 48.83,
+    "live_runs": 6,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 53,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 57915,
+    "completion_tokens": 23332,
+    "spent_usd": 0.01802
+   },
+   "pid": 80799
+  },
+  {
+   "case": "misroute_5x_night",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 25.67,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 58,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 66100,
+    "completion_tokens": 22483,
+    "spent_usd": 0.018908
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_baseline_night",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.28,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 18.0,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 57,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 63080,
+    "completion_tokens": 24831,
+    "spent_usd": 0.019394
+   },
+   "pid": 80799
+  },
+  {
+   "case": "neg_surge_all",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.28,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 11.26,
+    "live_runs": 1,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 61,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 70020,
+    "completion_tokens": 22995,
+    "spent_usd": 0.019701
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_baseline_rag",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 37.11,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 60,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 71818,
+    "completion_tokens": 24267,
+    "spent_usd": 0.020479
+   },
+   "pid": 80798
+  },
+  {
+   "case": "misroute_2x_night",
+   "seed": 201,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 54.83,
+    "live_runs": 6,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 58,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 63311,
+    "completion_tokens": 26335,
+    "spent_usd": 0.020031
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_prompt_plus40",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.29,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 18.54,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 61,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 66287,
+    "completion_tokens": 27914,
+    "spent_usd": 0.021109
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_cheaper_model",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 32.25,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 66,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 76918,
+    "completion_tokens": 24923,
+    "spent_usd": 0.021507
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_clock_gap",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 0.32,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 66,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 76918,
+    "completion_tokens": 24923,
+    "spent_usd": 0.021507
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_ab_ratio_shift",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 25.98,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 64,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 77175,
+    "completion_tokens": 25934,
+    "spent_usd": 0.02195
+   },
+   "pid": 80798
+  },
+  {
+   "case": "neg_marketing_burst",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 49.14,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 64,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 71528,
+    "completion_tokens": 28211,
+    "spent_usd": 0.022014
+   },
+   "pid": 80799
+  },
+  {
+   "case": "neg_clock_gap_catchup",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 10.28,
+    "live_runs": 1,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 68,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 79254,
+    "completion_tokens": 25432,
+    "spent_usd": 0.022061
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_sparse_big_prompts",
+   "seed": 201,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 31.9,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 69,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 77320,
+    "completion_tokens": 30101,
+    "spent_usd": 0.023638
+   },
+   "pid": 80797
+  },
+  {
+   "case": "mix_retry+misroute",
+   "seed": 201,
+   "kind": "mixed",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "code_review"
+    ],
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ],
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ],
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 27.26,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 69,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 82140,
+    "completion_tokens": 28082,
+    "spent_usd": 0.023554
+   },
+   "pid": 80798
+  },
+  {
+   "case": "mix_bloat+misroute",
+   "seed": 201,
+   "kind": "mixed",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "doc_summarizer"
+    ],
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ],
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ],
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 32.61,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 69,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 76530,
+    "completion_tokens": 30659,
+    "spent_usd": 0.023743
+   },
+   "pid": 80799
+  },
+  {
+   "case": "retry_small",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 24.8,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 73,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 81275,
+    "completion_tokens": 32322,
+    "spent_usd": 0.02512
+   },
+   "pid": 80797
+  },
+  {
+   "case": "mix_misroute+surge_same",
+   "seed": 201,
+   "kind": "mixed",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.27,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 41.85,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 73,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 84224,
+    "completion_tokens": 28868,
+    "spent_usd": 0.024181
+   },
+   "pid": 80800
+  },
+  {
+   "case": "retry_medium_flat",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 16.59,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 76,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 87216,
+    "completion_tokens": 30008,
+    "spent_usd": 0.025086
+   },
+   "pid": 80800
+  },
+  {
+   "case": "retry_medium",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 51.14,
+    "live_runs": 6,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 78,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 93186,
+    "completion_tokens": 31473,
+    "spent_usd": 0.026567
+   },
+   "pid": 80798
+  },
+  {
+   "case": "retry_large",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 47.26,
+    "live_runs": 6,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 78,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 87379,
+    "completion_tokens": 34557,
+    "spent_usd": 0.02693
+   },
+   "pid": 80799
+  },
+  {
+   "case": "retry_medium_night",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 38.52,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 79,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 88345,
+    "completion_tokens": 34364,
+    "spent_usd": 0.026997
+   },
+   "pid": 80797
+  },
+  {
+   "case": "bloat_subtle_d4",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 0.29,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 21.76,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 80,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 92014,
+    "completion_tokens": 31764,
+    "spent_usd": 0.026508
+   },
+   "pid": 80800
+  },
+  {
+   "case": "bloat_medium",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.29,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 27.92,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 83,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 98234,
+    "completion_tokens": 33834,
+    "spent_usd": 0.028269
+   },
+   "pid": 80798
+  },
+  {
+   "case": "misroute_5x",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 16.42,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 86,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 101171,
+    "completion_tokens": 35279,
+    "spent_usd": 0.029287
+   },
+   "pid": 80798
+  },
+  {
+   "case": "bloat_large",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": false
+   },
+   "llm": {
+    "reported": [],
+    "sec": 36.24,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": false
+   },
+   "usage_cum": {
+    "calls": 84,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 93716,
+    "completion_tokens": 36858,
+    "spent_usd": 0.028801
+   },
+   "pid": 80799
+  },
+  {
+   "case": "bloat_medium_night",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 35.65,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 85,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 95494,
+    "completion_tokens": 36325,
+    "spent_usd": 0.028854
+   },
+   "pid": 80797
+  },
+  {
+   "case": "misroute_2x",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 43.84,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 88,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 100913,
+    "completion_tokens": 34527,
+    "spent_usd": 0.028948
+   },
+   "pid": 80800
+  },
+  {
+   "case": "misroute_5x_night",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 17.75,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 91,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 103829,
+    "completion_tokens": 36003,
+    "spent_usd": 0.029976
+   },
+   "pid": 80800
+  },
+  {
+   "case": "misroute_15x",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 30.53,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 91,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 106062,
+    "completion_tokens": 37782,
+    "spent_usd": 0.031022
+   },
+   "pid": 80798
+  },
+  {
+   "case": "misroute_2x_night",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 29.54,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 91,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 102673,
+    "completion_tokens": 38346,
+    "spent_usd": 0.030739
+   },
+   "pid": 80797
+  },
+  {
+   "case": "misroute_5x_half",
+   "seed": 202,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 39.01,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 91,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 102646,
+    "completion_tokens": 40279,
+    "spent_usd": 0.031509
+   },
+   "pid": 80799
+  },
+  {
+   "case": "neg_baseline_rag",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.3,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 14.87,
+    "live_runs": 1,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 92,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 104838,
+    "completion_tokens": 36458,
+    "spent_usd": 0.030309
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_baseline_night",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 23.79,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 96,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 112156,
+    "completion_tokens": 39978,
+    "spent_usd": 0.032815
+   },
+   "pid": 80798
+  },
+  {
+   "case": "neg_cheaper_model",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 15.98,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 94,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 106822,
+    "completion_tokens": 37492,
+    "spent_usd": 0.03102
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_surge_all",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 42.42,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 100,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 115537,
+    "completion_tokens": 41724,
+    "spent_usd": 0.03402
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_ab_ratio_shift",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 26.22,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 101,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 118683,
+    "completion_tokens": 41664,
+    "spent_usd": 0.034468
+   },
+   "pid": 80798
+  },
+  {
+   "case": "neg_sparse_big_prompts",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 11.82,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 102,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 117519,
+    "completion_tokens": 42834,
+    "spent_usd": 0.034761
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_marketing_burst",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 45.77,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 98,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 112374,
+    "completion_tokens": 43082,
+    "spent_usd": 0.034089
+   },
+   "pid": 80799
+  },
+  {
+   "case": "neg_prompt_plus40",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 39.89,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 101,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 115525,
+    "completion_tokens": 40335,
+    "spent_usd": 0.033463
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_clock_gap_catchup",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 17.35,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 106,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 121925,
+    "completion_tokens": 44200,
+    "spent_usd": 0.035969
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_clock_gap",
+   "seed": 202,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.19,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 29.45,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 106,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 124419,
+    "completion_tokens": 43548,
+    "spent_usd": 0.036082
+   },
+   "pid": 80798
+  },
+  {
+   "case": "mix_misroute+surge_same",
+   "seed": 202,
+   "kind": "mixed",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 23.88,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 109,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 124928,
+    "completion_tokens": 45858,
+    "spent_usd": 0.037082
+   },
+   "pid": 80797
+  },
+  {
+   "case": "mix_bloat+misroute",
+   "seed": 202,
+   "kind": "mixed",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ],
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ],
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.28,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ],
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 31.77,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 105,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 119473,
+    "completion_tokens": 42524,
+    "spent_usd": 0.034931
+   },
+   "pid": 80800
+  },
+  {
+   "case": "mix_retry+misroute",
+   "seed": 202,
+   "kind": "mixed",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "code_review"
+    ],
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ],
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ],
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 50.79,
+    "live_runs": 7,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 107,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 121590,
+    "completion_tokens": 47045,
+    "spent_usd": 0.037056
+   },
+   "pid": 80799
+  },
+  {
+   "case": "retry_small",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 51.53,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 114,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 134412,
+    "completion_tokens": 47303,
+    "spent_usd": 0.039083
+   },
+   "pid": 80798
+  },
+  {
+   "case": "retry_medium",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 41.67,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 115,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 131008,
+    "completion_tokens": 48845,
+    "spent_usd": 0.039189
+   },
+   "pid": 80797
+  },
+  {
+   "case": "retry_medium_flat",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 0.28,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "code_review"
+     ]
+    ],
+    "sec": 14.67,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 117,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 137396,
+    "completion_tokens": 48718,
+    "spent_usd": 0.040097
+   },
+   "pid": 80798
+  },
+  {
+   "case": "retry_large",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 45.06,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 112,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 128059,
+    "completion_tokens": 46399,
+    "spent_usd": 0.037768
+   },
+   "pid": 80800
+  },
+  {
+   "case": "bloat_large",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 29.02,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 116,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 132035,
+    "completion_tokens": 48503,
+    "spent_usd": 0.039206
+   },
+   "pid": 80800
+  },
+  {
+   "case": "retry_medium_night",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ],
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": true,
+    "exact": false
+   },
+   "llm": {
+    "reported": [
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 69.37,
+    "live_runs": 9,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 116,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 130546,
+    "completion_tokens": 53134,
+    "spent_usd": 0.040836
+   },
+   "pid": 80799
+  },
+  {
+   "case": "bloat_medium",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ]
+    ],
+    "sec": 34.13,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 121,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 141452,
+    "completion_tokens": 50584,
+    "spent_usd": 0.041451
+   },
+   "pid": 80798
+  },
+  {
+   "case": "bloat_subtle_d4",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 48.24,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 124,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 143531,
+    "completion_tokens": 51997,
+    "spent_usd": 0.042328
+   },
+   "pid": 80797
+  },
+  {
+   "case": "bloat_medium_night",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 30.2,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 121,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 137078,
+    "completion_tokens": 50730,
+    "spent_usd": 0.040854
+   },
+   "pid": 80800
+  },
+  {
+   "case": "misroute_15x",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 18.92,
+    "live_runs": 2,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 126,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 145471,
+    "completion_tokens": 53169,
+    "spent_usd": 0.043088
+   },
+   "pid": 80797
+  },
+  {
+   "case": "misroute_2x",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.24,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 38.64,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 122,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 136935,
+    "completion_tokens": 55449,
+    "spent_usd": 0.04272
+   },
+   "pid": 80799
+  },
+  {
+   "case": "misroute_5x",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.26,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 52.1,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 129,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 151732,
+    "completion_tokens": 53144,
+    "spent_usd": 0.044017
+   },
+   "pid": 80798
+  },
+  {
+   "case": "misroute_5x_half",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 27.6,
+    "live_runs": 5,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 126,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 141965,
+    "completion_tokens": 53295,
+    "spent_usd": 0.042613
+   },
+   "pid": 80800
+  },
+  {
+   "case": "misroute_5x_night",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ]
+    ],
+    "sec": 21.2,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 126,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 141171,
+    "completion_tokens": 57094,
+    "spent_usd": 0.044013
+   },
+   "pid": 80799
+  },
+  {
+   "case": "neg_baseline_night",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.17,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 17.56,
+    "live_runs": 2,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 130,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 147068,
+    "completion_tokens": 54444,
+    "spent_usd": 0.043838
+   },
+   "pid": 80800
+  },
+  {
+   "case": "misroute_2x_night",
+   "seed": 203,
+   "kind": "positive",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.18,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 58.84,
+    "live_runs": 6,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 135,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 154829,
+    "completion_tokens": 56868,
+    "spent_usd": 0.045972
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_marketing_burst",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 15.86,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 133,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 150046,
+    "completion_tokens": 55885,
+    "spent_usd": 0.044861
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_surge_all",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.22,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 32.55,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 131,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 148060,
+    "completion_tokens": 59208,
+    "spent_usd": 0.045892
+   },
+   "pid": 80799
+  },
+  {
+   "case": "neg_baseline_rag",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.29,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 44.89,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 135,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 159018,
+    "completion_tokens": 55828,
+    "spent_usd": 0.046184
+   },
+   "pid": 80798
+  },
+  {
+   "case": "neg_ab_ratio_shift",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 35.24,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 139,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 157671,
+    "completion_tokens": 59001,
+    "spent_usd": 0.047251
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_clock_gap",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.29,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 5.28,
+    "live_runs": 1,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 140,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 158682,
+    "completion_tokens": 59549,
+    "spent_usd": 0.047622
+   },
+   "pid": 80800
+  },
+  {
+   "case": "neg_sparse_big_prompts",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 31.72,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 142,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 167557,
+    "completion_tokens": 57997,
+    "spent_usd": 0.048332
+   },
+   "pid": 80798
+  },
+  {
+   "case": "neg_cheaper_model",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.25,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 48.53,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 145,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 168288,
+    "completion_tokens": 59600,
+    "spent_usd": 0.049083
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_prompt_plus40",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.27,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 52.56,
+    "live_runs": 5,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 138,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 156168,
+    "completion_tokens": 62404,
+    "spent_usd": 0.048387
+   },
+   "pid": 80799
+  },
+  {
+   "case": "mix_bloat+misroute",
+   "seed": 203,
+   "kind": "mixed",
+   "truth": [
+    [
+     "context_bloat_self_calling_agent",
+     "code_review"
+    ],
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ],
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "context_bloat_self_calling_agent",
+      "code_review"
+     ],
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 21.17,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 149,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 172273,
+    "completion_tokens": 61217,
+    "spent_usd": 0.050328
+   },
+   "pid": 80797
+  },
+  {
+   "case": "neg_clock_gap_catchup",
+   "seed": 203,
+   "kind": "negative",
+   "truth": [],
+   "det": {
+    "reported": [],
+    "sec": 0.21,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [],
+    "sec": 28.22,
+    "live_runs": 3,
+    "fallback_reasons": [
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": false,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 146,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 166636,
+    "completion_tokens": 61552,
+    "spent_usd": 0.049616
+   },
+   "pid": 80800
+  },
+  {
+   "case": "mix_misroute+surge_same",
+   "seed": 203,
+   "kind": "mixed",
+   "truth": [
+    [
+     "expensive_model_misroute",
+     "doc_summarizer"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.2,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "skipped_by_falsifier",
+     "other_error",
+     "other_error",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 25.3,
+    "live_runs": 4,
+    "fallback_reasons": [
+     "skipped_by_falsifier",
+     "skipped_by_falsifier",
+     "skipped_by_falsifier"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 143,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 161485,
+    "completion_tokens": 64646,
+    "spent_usd": 0.050081
+   },
+   "pid": 80799
+  },
+  {
+   "case": "mix_retry+misroute",
+   "seed": 203,
+   "kind": "mixed",
+   "truth": [
+    [
+     "uncapped_retry_loop",
+     "doc_summarizer"
+    ],
+    [
+     "expensive_model_misroute",
+     "chat_assistant"
+    ]
+   ],
+   "det": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ],
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 0.23,
+    "live_runs": 0,
+    "fallback_reasons": [
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error",
+     "other_error"
+    ],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "llm": {
+    "reported": [
+     [
+      "expensive_model_misroute",
+      "chat_assistant"
+     ],
+     [
+      "uncapped_retry_loop",
+      "doc_summarizer"
+     ]
+    ],
+    "sec": 48.97,
+    "live_runs": 6,
+    "fallback_reasons": [],
+    "disagreed": 0,
+    "hit": true,
+    "false_alarm": false,
+    "exact": true
+   },
+   "usage_cum": {
+    "calls": 149,
+    "errors": 0,
+    "blocked": 0,
+    "prompt_tokens": 175025,
+    "completion_tokens": 61335,
+    "spent_usd": 0.050788
+   },
+   "pid": 80798
+  }
+ ]
+}
