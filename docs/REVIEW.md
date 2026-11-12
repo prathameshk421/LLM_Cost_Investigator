@@ -52,7 +52,7 @@ the tests fail there.
 | The budget guard is per process and in memory. A restart resets it. | A restart loop can spend more than one budget. | Persist the ledger (SQLite) or use the provider's own spend limit. |
 | Cost estimates use a static price table. | Spend numbers are estimates, not invoices. | Read `usage.cost` where a provider returns it. |
 | Accuracy numbers come from synthetic data. | Real telemetry has shapes the lab does not make. | Replay a real Langfuse export and label a sample by hand. |
-| The detector needs 3 baseline windows (15 minutes) per feature. | A new feature is not checked in its first 15 minutes. | Add a cold-start rule against a global per-call cost prior. |
+| The detector needs 12 baseline windows (60 minutes) per feature (`MIN_BASELINE_WINDOWS`, chosen on held-out dev seeds). | A new feature is not checked in its first hour, and an incident that starts in that hour is learned as normal. | Add a cold-start rule against a global per-call cost prior. |
 | The router calls at most 2 agents. When all three signals fire, one agent only contributes through skill scores. | A mixed incident can lose its third cause. | Allow 3 agents when the budget allows. |
 | `print()` calls in library code for fallback notes. | Noisy stdout when used as a library. | Move to `logging`. |
 | Some tests write reports into tracked `data/reports/`. | Dirty working tree after a test run. | Point tests at a temp `output_dir`. |
