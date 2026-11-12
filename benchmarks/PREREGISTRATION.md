@@ -134,3 +134,12 @@ first copy, like the warehouse). This is a crash fix, not a threshold or
 detection-rule change. The code under test for Tier C is the commit that adds
 this addendum. Second Tier B batch (seeds 600-699): 95/100 hit; combined
 193/200.
+
+## Addendum 4 (2026-11-12): Tier E human labelling dropped
+
+The owner decided not to run the human half of Tier E (blind human labels
+and friend-written incident scripts). Tier E is reported with the blind
+model labeller only (gpt-oss-20b, a different model family from the
+DeepSeek agents). The proof pack therefore makes **no claim of independent
+human verification**. The blind slices and answer sheet stay in
+`docs/proof/tier_e/` so anyone can do it later.
