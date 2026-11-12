@@ -1,5 +1,10 @@
 {
- "S01": [
+ "S01": [],
+ "S02": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
   [
    "expensive_model_misroute",
    "chat_assistant"
@@ -10,29 +15,30 @@
   ],
   [
    "uncapped_retry_loop",
-   "chat_assistant"
+   "code_review"
   ]
  ],
- "S02": [],
  "S03": [
   [
    "expensive_model_misroute",
-   "chat_assistant"
+   "code_review"
   ],
   [
    "expensive_model_misroute",
    "doc_summarizer"
   ]
  ],
- "S04": [],
- "S05": [],
- "S06": [],
- "S07": [],
- "S08": [],
- "S09": [],
- "S10": [],
- "S11": [],
- "S12": [
+ "S04": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S05": [
   [
    "expensive_model_misroute",
    "chat_assistant"
@@ -42,7 +48,37 @@
    "code_review"
   ]
  ],
- "S13": [],
+ "S06": [],
+ "S07": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S08": [
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S09": [],
+ "S10": [],
+ "S11": [],
+ "S12": [],
+ "S13": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
  "S14": [],
  "S15": [
   [
@@ -55,19 +91,8 @@
   ]
  ],
  "S16": [],
- "S17": [
-  [
-   "context_bloat_self_calling_agent",
-   "doc_summarizer"
-  ],
-  [
-   "expensive_model_misroute",
-   "chat_assistant"
-  ]
- ],
- "S18": [],
- "S19": [],
- "S20": [
+ "S17": [],
+ "S18": [
   [
    "expensive_model_misroute",
    "chat_assistant"
@@ -77,27 +102,82 @@
    "code_review"
   ]
  ],
- "S21": [
-  [
-   "context_bloat_self_calling_agent",
-   "doc_summarizer"
-  ]
- ],
- "S22": [],
- "S23": [],
- "S24": [],
- "S25": [],
- "S26": [],
- "S27": [],
- "S28": [],
- "S29": [],
- "S30": [
+ "S19": [
   [
    "context_bloat_self_calling_agent",
    "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
   ]
  ],
- "S31": [],
+ "S20": [],
+ "S21": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S22": [],
+ "S23": [
+  [
+   "context_bloat_self_calling_agent",
+   "rag_search"
+  ],
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S24": [],
+ "S25": [],
+ "S26": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S27": [],
+ "S28": [],
+ "S29": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S30": [
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S31": [
+  [
+   "uncapped_retry_loop",
+   "doc_summarizer"
+  ]
+ ],
  "S32": [
   [
    "context_bloat_self_calling_agent",
@@ -106,20 +186,12 @@
   [
    "uncapped_retry_loop",
    "chat_assistant"
-  ],
-  [
-   "uncapped_retry_loop",
-   "code_review"
   ]
  ],
  "S33": [
   [
-   "context_bloat_self_calling_agent",
+   "expensive_model_misroute",
    "chat_assistant"
-  ],
-  [
-   "context_bloat_self_calling_agent",
-   "rag_search"
   ],
   [
    "expensive_model_misroute",
@@ -130,35 +202,46 @@
    "code_review"
   ]
  ],
- "S34": [],
- "S35": [],
+ "S34": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S35": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
  "S36": [
   [
    "context_bloat_self_calling_agent",
    "chat_assistant"
   ],
   [
-   "expensive_model_misroute",
+   "uncapped_retry_loop",
    "chat_assistant"
+  ]
+ ],
+ "S37": [
+  [
+   "expensive_model_misroute",
+   "code_review"
   ],
   [
    "uncapped_retry_loop",
    "chat_assistant"
   ]
  ],
- "S37": [],
  "S38": [
   [
    "expensive_model_misroute",
-   "chat_assistant"
-  ],
-  [
-   "expensive_model_misroute",
    "code_review"
-  ],
-  [
-   "expensive_model_misroute",
-   "doc_summarizer"
   ]
  ],
  "S39": [],
