@@ -6,7 +6,8 @@ import json
 import logging
 import os
 import re
-from typing import Any, Callable
+from enum import Enum
+from typing import Any, Callable, Literal
 
 from llm_cost_investigator.schemas import AgentEvidence, AgentRunResult, AnomalyWindow
 
@@ -560,40 +561,46 @@ def build_retry_loop_telemetry_v2(anomaly: AnomalyWindow) -> dict[str, Any]:
     }
 
 
+def _retry_loop_tool_required(signals: dict) -> tuple[bool, str]:
+    """Gate: decide whether get_call_chain must be called before answering.
+
+    Tool is required when the retry z-score is below the high-confidence
+    threshold BUT repeated parent calls exist — chain inspection is needed to
+    break the ambiguity.
+    """
+    retry_z = float(signals.get("retry_z_score", 0.0))
+    rpc = int(signals.get("repeated_parent_call_count", 0))
+    tool_required = retry_z < 2.5 and rpc >= 1
+    if tool_required:
+        reason = (
+            f"DECISION: MUST CALL get_call_chain — "
+            f"retry_z_score={retry_z} (below 2.5) AND "
+            f"repeated_parent_call_count={rpc} (>= 1). "
+            f"Call get_call_chain on at least one available_call_id before answering."
+        )
+    else:
+        reason = (
+            f"DECISION: DO NOT call get_call_chain — "
+            f"retry_z_score={retry_z} (>= 2.5) OR "
+            f"repeated_parent_call_count={rpc} (= 0). "
+            f"Answer directly from the aggregate signals. Skip the tool entirely."
+        )
+    return tool_required, reason
+
+
 def build_retry_loop_prompt_v2(telemetry_json: str) -> str:
     """Same diagnostic instructions as build_retry_loop_prompt, plus tool-use
     guidance with a pre-evaluated DECISION directive computed from the actual
     telemetry values so the model never has to evaluate the conditional itself."""
-    # Pre-evaluate the tool-call condition from the actual telemetry values.
-    # This makes the directive unambiguous regardless of model instruction-following.
     try:
         _telem = json.loads(telemetry_json)
         _signals = _telem.get("signals", {})
-        _retry_z = float(_signals.get("retry_z_score", 0.0))
-        _rpc = int(_signals.get("repeated_parent_call_count", 0))
-        _tool_required = _retry_z < 2.5 and _rpc >= 1
+        _, tool_directive = _retry_loop_tool_required(_signals)
     except Exception:
-        # Safe default: allow direct answer if parsing fails (do not reference
-        # unbound _retry_z / _rpc in the directive).
+        # Safe default: allow a direct answer if parsing fails.
         tool_directive = (
             "DECISION: DO NOT call get_call_chain — could not parse signals. "
             "Answer directly from the aggregate signals."
-        )
-        _tool_required = None  # marker: directive already set
-
-    if _tool_required is True:
-        tool_directive = (
-            f"DECISION: MUST CALL get_call_chain — "
-            f"retry_z_score={_retry_z} (below 2.5) AND "
-            f"repeated_parent_call_count={_rpc} (>= 1). "
-            f"Call get_call_chain on at least one available_call_id before answering."
-        )
-    elif _tool_required is False:
-        tool_directive = (
-            f"DECISION: DO NOT call get_call_chain — "
-            f"retry_z_score={_retry_z} (>= 2.5) OR "
-            f"repeated_parent_call_count={_rpc} (= 0). "
-            f"Answer directly from the aggregate signals. Skip the tool entirely."
         )
 
     return f"""You are the Retry Loop Diagnostic Agent.
@@ -933,8 +940,50 @@ Invalid response:
 
 
 # ---------------------------------------------------------------------------
-# Multi-turn tool-calling loop for retry_loop_agent
+# Multi-turn tool-calling loop (shared by all three tool-using agents)
 # ---------------------------------------------------------------------------
+
+class ToolLoopState(str, Enum):
+    """States of call_agent_with_tools. The loop ends with a return (valid
+    evidence) or a raise (the caller then uses the deterministic fallback)."""
+
+    AWAIT_MODEL = "await_model"      # ask the model; tools are available
+    RUN_TOOLS = "run_tools"          # execute the tool calls the model requested
+    REQUIRE_TOOL = "require_tool"    # gate needs a tool call; remind the model once
+    FORCE_ANSWER = "force_answer"    # no more tools; ask for the answer
+    PARSE_ANSWER = "parse_answer"    # validate the model text against the schema
+    REPAIR = "repair"                # one repair attempt after invalid JSON
+
+
+# The gate result for one run. The loop enforces it; the prompt only states it.
+#   "required"  - the model must call a tool before it answers
+#   "forbidden" - the loop executes no tool calls
+#   None        - the model decides (no enforcement)
+ToolPolicy = Literal["required", "forbidden"]
+
+_BUDGET_USED_NOTE = "The tool call budget is used."
+_TOOLS_FORBIDDEN_NOTE = "Tool use is not allowed for this anomaly."
+
+
+def _tool_policy(gate: Callable[[dict], tuple[bool, str]], signals: dict) -> ToolPolicy:
+    """Turn an agent's tool gate into the policy the loop enforces."""
+    tool_required, _ = gate(signals)
+    return "required" if tool_required else "forbidden"
+
+
+def _run_tool_call(tool_executor: Callable[[str, dict], Any], tool_call: Any) -> Any:
+    """Run one tool call. Return errors as data so the model can correct itself."""
+    try:
+        args = json.loads(tool_call.function.arguments or "{}")
+    except json.JSONDecodeError as exc:
+        return {"error": f"Tool arguments were not valid JSON: {exc}"}
+    if not isinstance(args, dict):
+        return {"error": "Tool arguments must be a JSON object."}
+    try:
+        return tool_executor(tool_call.function.name, args)
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
 
 def call_agent_with_tools(
     client: Any,
@@ -944,54 +993,137 @@ def call_agent_with_tools(
     tool_executor: Callable[[str, dict], Any],
     schema: type[AgentEvidence],
     max_tool_calls: int = MAX_RETRY_LOOP_TOOL_CALLS,
+    tool_policy: ToolPolicy | None = None,
 ) -> AgentEvidence:
     """Multi-turn tool-calling loop. tool_executor maps (tool_name, args) -> result.
-    Falls back to a single repair attempt if the final answer isn't valid JSON."""
+
+    Transitions:
+      AWAIT_MODEL  -> RUN_TOOLS     the model requested tool calls
+      AWAIT_MODEL  -> PARSE_ANSWER  the model answered with text
+      AWAIT_MODEL  -> REQUIRE_TOOL  policy "required", text answer, no tool call yet
+      AWAIT_MODEL  -> raise         the same, after the reminder
+      REQUIRE_TOOL -> AWAIT_MODEL
+      RUN_TOOLS    -> AWAIT_MODEL   budget remains
+      RUN_TOOLS    -> FORCE_ANSWER  max_tool_calls executions are used
+      RUN_TOOLS    -> FORCE_ANSWER  policy "forbidden" (no call is executed)
+      FORCE_ANSWER -> PARSE_ANSWER
+      PARSE_ANSWER -> return        valid evidence
+      PARSE_ANSWER -> REPAIR        invalid JSON, first time
+      PARSE_ANSWER -> raise         invalid JSON after the repair
+      REPAIR       -> PARSE_ANSWER
+
+    max_tool_calls counts individual tool executions, not model rounds.
+
+    tool_policy enforces the agent's tool gate. The loop sends no tool_choice,
+    so the enforcement does not depend on provider support. With None, the
+    model decides.
+    """
     messages: list[dict] = [{"role": "user", "content": prompt}]
     tool_calls_made = 0
+    repair_used = False
+    reminder_used = False
+    msg: Any = None
+    force_note = _BUDGET_USED_NOTE
+    state = ToolLoopState.AWAIT_MODEL
 
     while True:
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            tools=tools,
-            temperature=0,
-        )
-        msg = response.choices[0].message
+        if state is ToolLoopState.AWAIT_MODEL:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=tools,
+                temperature=0,
+            )
+            msg = response.choices[0].message
+            tool_owed = tool_policy == "required" and tool_calls_made == 0
+            if msg.tool_calls:
+                state = ToolLoopState.RUN_TOOLS
+            elif not tool_owed:
+                state = ToolLoopState.PARSE_ANSWER
+            elif not reminder_used:
+                state = ToolLoopState.REQUIRE_TOOL
+            else:
+                raise ValueError(
+                    "Tool gate required a tool call, but the model answered without one."
+                )
 
-        if msg.tool_calls and tool_calls_made < max_tool_calls:
+        elif state is ToolLoopState.REQUIRE_TOOL:
+            reminder_used = True
+            messages.append({
+                "role": "user",
+                "content": (
+                    "You answered without a tool call. The DECISION line requires "
+                    "a tool call for this anomaly. Call the tool now, then answer."
+                ),
+            })
+            state = ToolLoopState.AWAIT_MODEL
+
+        elif state is ToolLoopState.RUN_TOOLS:
             messages.append(msg.model_dump(exclude_unset=True))
             for tc in msg.tool_calls:
-                args = json.loads(tc.function.arguments)
-                result = tool_executor(tc.function.name, args)
+                # Every tool_call_id needs a tool message, so a refused call
+                # gets an error result instead of an execution.
+                if tool_policy == "forbidden":
+                    result: Any = {"error": f"{_TOOLS_FORBIDDEN_NOTE} Not executed."}
+                elif tool_calls_made >= max_tool_calls:
+                    result = {"error": f"{_BUDGET_USED_NOTE} Not executed."}
+                else:
+                    tool_calls_made += 1
+                    result = _run_tool_call(tool_executor, tc)
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tc.id,
                     "content": json.dumps(result, default=str),
                 })
-            tool_calls_made += 1
-            continue
+            if tool_policy == "forbidden":
+                force_note = _TOOLS_FORBIDDEN_NOTE
+                state = ToolLoopState.FORCE_ANSWER
+            elif tool_calls_made >= max_tool_calls:
+                force_note = _BUDGET_USED_NOTE
+                state = ToolLoopState.FORCE_ANSWER
+            else:
+                state = ToolLoopState.AWAIT_MODEL
 
-        raw = msg.content or ""
-        try:
-            return parse_agent_evidence(raw, schema)
-        except Exception as e:
-            repair_prompt = (
-                "Your previous response was not valid JSON for the required "
-                f"schema. Return only corrected JSON. No markdown. No prose.\n\n"
-                f"Invalid response:\n{raw}"
-            )
-            messages.append({"role": "user", "content": repair_prompt})
-            response2 = client.chat.completions.create(
+        elif state is ToolLoopState.FORCE_ANSWER:
+            messages.append({
+                "role": "user",
+                "content": (
+                    f"{force_note} Do not call tools. "
+                    "Return only the final JSON answer now. No markdown. No prose."
+                ),
+            })
+            response = client.chat.completions.create(
                 model=model, messages=messages, temperature=0,
             )
-            repaired = response2.choices[0].message.content or ""
+            msg = response.choices[0].message
+            state = ToolLoopState.PARSE_ANSWER
+
+        elif state is ToolLoopState.PARSE_ANSWER:
+            raw = msg.content or ""
             try:
-                return parse_agent_evidence(repaired, schema)
-            except Exception as e2:
-                raise ValueError(
-                    f"Failed to parse LLM output after repair: {e2}"
-                ) from e2
+                return parse_agent_evidence(raw, schema)
+            except Exception as exc:
+                if repair_used:
+                    raise ValueError(
+                        f"Failed to parse LLM output after repair: {exc}"
+                    ) from exc
+                state = ToolLoopState.REPAIR
+
+        elif state is ToolLoopState.REPAIR:
+            repair_used = True
+            messages.append({
+                "role": "user",
+                "content": (
+                    "Your previous response was not valid JSON for the required "
+                    "schema. Return only corrected JSON. No markdown. No prose.\n\n"
+                    f"Invalid response:\n{msg.content or ''}"
+                ),
+            })
+            response = client.chat.completions.create(
+                model=model, messages=messages, temperature=0,
+            )
+            msg = response.choices[0].message
+            state = ToolLoopState.PARSE_ANSWER
 
 
 def run_retry_loop_agent_with_tools(
@@ -1033,6 +1165,7 @@ def run_retry_loop_agent_with_tools(
             tools=RETRY_LOOP_TOOLS,
             tool_executor=tool_executor,
             schema=AgentEvidence,
+            tool_policy=_tool_policy(_retry_loop_tool_required, telemetry["signals"]),
         )
         check_agent_scope(evidence, "retry_loop_agent")
         return AgentRunResult(
@@ -1095,6 +1228,7 @@ def run_token_context_agent_with_tools(
             tools=TOKEN_CONTEXT_TOOLS,
             tool_executor=tool_executor,
             schema=AgentEvidence,
+            tool_policy=_tool_policy(_token_context_tool_required, telemetry["signals"]),
         )
         check_agent_scope(evidence, "token_context_agent")
         return AgentRunResult(
@@ -1160,6 +1294,7 @@ def run_model_routing_agent_with_tools(
             tools=MODEL_ROUTING_TOOLS,
             tool_executor=tool_executor,
             schema=AgentEvidence,
+            tool_policy=_tool_policy(_model_routing_tool_required, telemetry["signals"]),
         )
         check_agent_scope(evidence, "model_routing_agent")
         return AgentRunResult(
