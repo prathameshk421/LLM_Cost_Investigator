@@ -116,3 +116,11 @@ Pass: human labels vs truth ≥ 85% agreement, and tool vs human ≥ 85%.
 - **Trace mapping.** BurstGPT names only "ChatGPT" and "GPT-4". They are
   priced as `gpt-3.5-turbo` and `gpt-4-turbo`. The trace has no parent id,
   retry or latency fields, so those only exist on injected rows.
+
+## Addendum 2 (2026-11-12, after the first Tier B run, before the second)
+
+The first reported Tier B run used 100 injected slices (seeds 200-299), not
+the registered 200. To meet the registration, 100 more injected slices are run
+on the unused seed range 600-699 with the same code, and both runs are
+reported together. The first run's result (98/100 hit, 0 false incidents on
+100 clean slices) is published as is.
