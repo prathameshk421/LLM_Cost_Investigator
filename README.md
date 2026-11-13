@@ -1,374 +1,161 @@
-# Tokenhound
+<div align="center">
 
-**Sniffs out runaway LLM spend.** Tokenhound watches every LLM call your app
-makes, flags a cost spike within minutes, and names the cause: a retry loop
-with no cap, a switch to a pricier model, or an agent that keeps calling
-itself. (Repository and Python package: `LLM_Cost_Investigator`, `llm_cost_investigator`.)
+# 🐕 Tokenhound
 
-[![Live demo: three real bugs caught in a live app](docs/proof/media/tier_d_take5_preview.gif)](docs/proof/media/tier_d_take5_timelapse.mp4)
+### Your LLM bill just doubled. Tokenhound tells you why.
 
-*2 h 15 min of a live app with real LLM calls, in 54 s. A switch to a pricier
-model and a self-calling agent are caught 4 min and 1 min after they start.
-Click for the full video with sound ([details](docs/proof/tier_d.md)).*
+It watches every LLM call your app makes, catches a cost spike in minutes,
+and names the bug behind it.
 
-## Results
+[![CI](https://github.com/prathameshk421/LLM_Cost_Investigator/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/prathameshk421/LLM_Cost_Investigator/actions/workflows/ci.yml)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB)
+![Tests](https://img.shields.io/badge/tests-201%20passing-2ea44f)
+![False alarms](https://img.shields.io/badge/false%20alarms-0.5%25-2ea44f)
+![No API key needed](https://img.shields.io/badge/API%20key-not%20needed-blue)
 
-**Pre-registered proof pack:** [docs/proof/results.md](docs/proof/results.md).
-Thresholds were committed before each run, and every run is published, failures
-included. In short:
+[![Tokenhound catching real bugs in a live app](docs/proof/media/tier_d_take5_preview.gif)](docs/proof/media/tier_d_take5_timelapse.mp4)
 
-- Blind synthetic set (2,800 datasets): 99.1% of incidents caught, 0.5% false
-  alarms, against 16.4% for three hand rules.
-- Real Azure OpenAI traffic (BurstGPT) with injected incidents: 96.5% caught,
-  0 false incidents in 171 feature-weeks.
-- Live app with real API calls and three real bugs: each caught in 1 to 4
-  minutes with the right label, 0 alarms in the baselines
-  ([tier_d.md](docs/proof/tier_d.md), [video](docs/proof/media/tier_d_take5_timelapse.mp4)).
+<sub>2 h 15 min of a live app with real LLM calls, in 54 s. Two real bugs go in. Both are named within 4 minutes.
+<a href="docs/proof/media/tier_d_take5_timelapse.mp4">Watch with sound</a></sub>
 
-The tables below are the earlier development results.
+</div>
 
-**Read the held-out row first.** The scenario lab was used while the rules were
-tuned, so its numbers are in-sample. The held-out set comes from a generator
-written blind to the rules (`benchmarks/heldout/SPEC.md`), and the reported
-seeds were never used for tuning.
+---
 
-| Evaluation | Datasets | Incidents caught | False alarm rate | Notes |
-|---|---|---|---|---|
-| **Held-out, fresh seeds 90-119** | 840 (28 cases) | **99.6%** | **0 / 300 negatives** | precision ≥ 0.99 per root cause, about 12 incident groups per dataset |
-| Held-out, fresh seeds 30-59 (before the volume gate) | 840 | 99.4% | 0 / 300 | about 200 flagged groups per dataset |
-| Held-out, test half (scored once) | 420 | 99.6% | 2.0% | before the cheaper-model falsifier |
-| Held-out, same code before the fixes | 840 | 66% | 85% | the overfit baseline |
-| 60-day history, live-tick scan | 3,585 slices × 5 histories | 15 / 15 incidents | 0 false reports | trailing 6 h every 2 h |
-| Scenario lab (in-sample) | 300 per noise level | 100% | 0% | 8% to 35% noise |
-| Live LLM agents (HF `gpt-oss-20b`) | 20 | 100% | 0% | $0.0041 for 16 calls |
+## The problem
 
-Held-out cases include hard negatives (traffic surge, marketing burst, switch to
-a cheaper model, A/B ratio shift, +40% prompts, normal RAG chains, clock gaps)
-and subtle positives (2x misroute at night, depth-4 chains, small retry storms).
-Run it with `make heldout`. CI runs a 4-seed held-out gate on every push.
+LLM bills do not grow slowly. They jump.
 
-Known limits: the detector needs 1 hour of history for a feature before it
-gives a verdict. Pure traffic growth is shown in spend analytics, not raised as
-an incident. A live LLM can disagree with the hard skills; the finding is then
-kept at reduced confidence and flagged for review (see `docs/ARCHITECTURE.md`).
+- A JSON validator fails, and the client retries **15 times per request**.
+- A config change sends a feature to a model that costs **6x more**.
+- An agent calls itself and resends its **whole history** on every turn.
 
-## Why LLM Cost Anomalies Matter
+Each of these can burn money for hours. A budget alert fires late, if it fires
+at all. A cost dashboard shows *that* spend went up. It does not show *why*.
 
-Uncontrolled cost growth in LLM applications can occur rapidly due to software defects, recursive loops, or misconfigurations. Detecting cost spikes deterministically is easy, but identifying *why* they happened requires deep semantic analysis of the underlying API telemetry (e.g., distinguishing between a model upgrade, an infinite retry storm, or expanding prompts). This investigator automates diagnostics using specialized agent roles.
+## What Tokenhound does
 
-## Architecture
+It catches the spike, then finds the cause, and shows its evidence.
 
-The control plane uses a deterministic detection and routing pipeline to coordinate diagnostic LLM agents:
+| Bug | What Tokenhound sees | Live time to detect |
+|---|---|---|
+| 🔁 **Retry loop with no cap** | `retry_count` climbs, one parent call fans out into many children | **58 s** |
+| 💸 **Switch to a pricier model** | Cost per token jumps on a feature while tokens stay flat | **3 min 58 s** |
+| 🌀 **Self-calling agent** | Parent chains get deeper than the feature ever had, and prompts grow | **59 s** |
+| 📈 **Just more traffic** | Volume grows, cost per call does not. Shown in analytics, **not** raised as an incident | n/a |
+
+The times come from a [live run with real API calls](docs/proof/tier_d.md), not a simulation.
+
+## Proof, not vibes
+
+Every threshold was **committed before the run** ([pre-registration](benchmarks/PREREGISTRATION.md)).
+Every run is published, including the ones that failed.
+
+| Test | Result |
+|---|---|
+| **2,800 blind synthetic datasets** (generator written without seeing the rules) | **99.1%** of incidents caught, **0.5%** false alarms |
+| Same data, three hand-written rules | 100% caught, but **16.4%** false alarms (33x more) |
+| **Real Azure OpenAI traffic** (BurstGPT trace, 1.4M requests) with injected bugs | **96.5%** caught, **0** false incidents in 171 feature-weeks |
+| **Red team**: 12 adversarial cases × 20 seeds | **0** crashes, **0%** confident wrong answers |
+| **Live app**, real API calls, three real bugs | each one named in **1 to 4 min**, **0** alarms in 150 min of clean baseline |
+| Optional LLM agents (DeepSeek V4.1 Flash) vs deterministic | same accuracy (McNemar p = 1.0), **$0.002** per investigation |
+
+Full results with intervals, raw data and failure analysis: [docs/proof/results.md](docs/proof/results.md).
+
+## Try it in 60 seconds
+
+No API key needed. The default agents are deterministic.
+
+```bash
+git clone https://github.com/prathameshk421/LLM_Cost_Investigator.git tokenhound
+cd tokenhound
+docker compose up --build
+```
+
+Open **http://localhost:8000**. Then load 60 days of demo traffic with real-looking incidents:
+
+```bash
+make demo-seed
+```
+
+No Docker? Use `make install && make serve`.
+Or open the **Live** tab and press **Start traffic** to watch an incident open in real time.
+
+## Plug it into your app
+
+Copy one file, [`examples/live_app/llmci_wrapper.py`](examples/live_app/llmci_wrapper.py) (about 90 lines, standard library only).
+It reports token usage from a background thread. If Tokenhound is down, your app does not notice.
+
+```python
+from openai import OpenAI
+from llmci_wrapper import instrument, llmci_context
+
+client = instrument(OpenAI(), "http://localhost:8000")
+
+with llmci_context(feature_tag="summarize"):
+    client.chat.completions.create(model="gpt-4o-mini", messages=[...])
+```
+
+Other ways in:
+- `POST /v1/ingest` with canonical or **OpenTelemetry GenAI** events
+- Pull traces from **Langfuse**
+- Upload **JSONL, CSV** or OpenAI-style logs
+- An optional **Kafka / Redpanda** bridge: `docker compose --profile kafka up`
+
+## How it works
 
 ```mermaid
 flowchart LR
-  A[Simulated telemetry] --> H[SQLite telemetry store]
-  H --> B[Deterministic z-score detector]
-  B --> C[Deterministic rule router]
-  C --> D[Diagnostic LLM agents]
-  D --> E[Pydantic validation + repair retry]
-  E --> F[Deterministic aggregator]
-  F --> G[Incident reports]
-  G --> I[Replay tests]
+  A[Your app] -->|POST /v1/ingest| Q[Bounded queue]
+  Q --> W[(DuckDB warehouse)]
+  W --> D[Detector<br/>every 30 s, 5-min windows]
+  D --> R[Router]
+  R --> A1[Retry agent]
+  R --> A2[Context agent]
+  R --> A3[Model agent]
+  A1 & A2 & A3 --> G[Aggregator<br/>confidence caps]
+  G --> I[Incident + evidence]
+  I --> UI[Live UI / webhook]
 ```
 
-Presentation layer (optional):
+- **Detector:** z-scores per feature against a rolling 6-hour baseline, plus history-aware rules, so normal growth stays quiet.
+- **Agents:** each agent has one job and a set of **hard skills**: Python checks that pass, fail or falsify a hypothesis. Every number is computed in code before any LLM sees it.
+- **LLM optional:** an LLM can write the explanation. It cannot override the evidence. If it disagrees with the hard skills, the finding stays, at lower confidence, and is marked for review.
+- **Budget-guarded:** live LLM calls have a daily cap, a token cap and a hard deadline, so the cost tool cannot become the cost problem.
 
-```text
-data/reports + data/replay  -->  web/api (FastAPI)  -->  web/frontend (React replay UI)
-```
+## What you get
 
-## Product architecture (v2)
+- **Live**: streaming ingest, spend per feature, and incidents as they open
+- **Spend**: month-end forecast with a P10 to P90 band, budgets, cost drivers split into volume, tokens per call and price, a model what-if, and retry and chain waste
+- **Investigate**: run on a file, a Langfuse pull or a simulated scenario, and see the verdict with a timeline
+- **Replay**: step through recorded investigations, agent by agent
+- **Benchmark**: accuracy per cause, false-alarm rate, confusion matrix
+- Slack-compatible webhook alerts, bearer-token auth, Docker, and CI with a held-out accuracy gate
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the decisions and the HTTP contract.
+## Honest limits
 
-- **Ingest:** `POST /v1/ingest` (canonical or OpenTelemetry GenAI-style events) into a bounded queue
-  and a batch writer. An optional Kafka/Redpanda bridge (`docker compose --profile kafka up`) posts into the same endpoint.
-- **Storage:** DuckDB warehouse (`data/warehouse.duckdb`), 65x to 260x faster than SQLite on the spend rollups at 1M calls.
-- **Live detection:** a deterministic tick every 30 s over the trailing 6 h opens incidents.
-  LLM agents run only when a user clicks *Diagnose with LLM* (budget-guarded).
-- **Spend analytics:** KPIs, month-end forecast with a P10-P90 band, budgets and alerts,
-  cost drivers split into volume / tokens-per-call / price effects, model what-if, retry and chain waste.
-- **UI tabs:** Spend · Live · Investigate · Replay · Benchmark. **Run:** `make dev` or `docker compose up`.
+- **Not the fastest alarm.** On synthetic data the median time to confirm is 11 to 22 min. Three simple rules fire sooner but raise 33x more false alarms.
+- **Needs about 1 hour of history** for a feature before it gives a verdict.
+- **Not proven on customer data yet.** All incidents in the proof are injected or induced.
+- **Prices come from a static table**, so costs are estimates, not invoice-exact.
+- **It cannot tell a planned upgrade to a pricier model from a mistake.** Both look the same in telemetry.
 
-## Repository layout
+## Roadmap
 
-```text
-llm_cost_investigator/   # core pipeline package + CLI
-tests/                   # automated tests
-web/
-  api/                   # FastAPI read-only replay API
-  frontend/              # React investigation replay UI
-data/
-  reports/incidents/     # generated incident JSON/MD
-  reports/transcripts/   # live tool-use captures
-  replay/                # normalized UI fixtures
-scripts/
-  live/                  # live provider harnesses
-  export_replay_catalog.py
-  dev_replay.sh
-docs/plans/              # design / build plans
-```
+- [ ] Per-user and per-session spend concentration (catch one client or bot draining a feature)
+- [ ] A case study on a real team's traces
+- [ ] LiteLLM callback, so no wrapper is needed
+- [ ] Live price sync instead of the static table
 
-## Deterministic Detector/Router
+Have a cost incident story, or traces you can share? Open an issue. Real data is the most useful contribution.
 
-- **Detector**: Computes z-scores on telemetry (cost, tokens, retries, latency) relative to baseline metrics.
-- **Router**: Uses deterministic routing rules based on z-score signals to route the anomaly to the correct diagnostic agent (e.g. routing to the model routing agent when a model change is detected).
+## Docs
 
-## Diagnostic Agents and Fallback Mode
-
-Diagnostic agents (`retry_loop_agent`, `token_context_agent`, `model_routing_agent`) are restricted to narrow telemetry slices, keeping prompt tokens small and highly focused. Responses are validated using Pydantic schemas.
-
-If validation fails, a repair retry is executed. When API keys are absent, or live calls fail twice, the system falls back to a deterministic fallback module to safely complete execution.
-
-## Setup
-
-Install core package:
-
-```bash
-pip install -e .
-```
-
-Install core + web (replay API):
-
-```bash
-pip install -e ".[web]"
-```
-
-Optional API keys for live LLM diagnostic agents:
-
-```bash
-export GROQ_API_KEY=your_key_here    # Groq provider
-export CEREBRAS_API_KEY=your_key     # Cerebras provider
-export HF_TOKEN=hf_your_token        # Hugging Face Inference Providers
-export LLM_MODEL=openai/gpt-oss-120b  # optional model override
-```
-
-The `hf` provider uses the Hugging Face router (`router.huggingface.co/v1`,
-OpenAI-compatible, default model `openai/gpt-oss-20b`). If `HF_TOKEN` is not
-set, it reads the token from `hf auth login`. A cached login is only used when
-you pass `--provider hf`, so a run never spends credits by surprise.
-
-### Budget guard
-
-Every live call goes through a budget guard (`llm_cost_investigator/usage.py`).
-When a limit is reached, the agents use the deterministic path. The run still
-finishes, it only stops spending.
-
-| Variable | Default | Meaning |
-|---|---|---|
-| `LLM_BUDGET_USD` | `0.05` | Max estimated spend per process |
-| `LLM_MAX_CALLS` | `60` | Max live calls per process |
-| `LLM_CALL_LOG` | `data/logs/llm_calls.jsonl` | One JSON line per live call |
-
-Or copy `.env.example` to `.env` in the project root (keys are loaded automatically):
-
-```text
-GROQ_API_KEY=gsk_your_key_here
-CEREBRAS_API_KEY=your_key_here
-```
-
-Without API keys the system automatically uses deterministic fallback mode.
-
-## Run Commands
-
-Preferred CLI:
-
-```bash
-python -m llm_cost_investigator.cli --scenario retry_loop
-python -m llm_cost_investigator.cli --scenario context_bloat
-python -m llm_cost_investigator.cli --scenario model_misroute
-# or after install:
-llm-cost-investigator --scenario all --force-fallback
-```
-
-Compatibility shim (same as above):
-
-```bash
-python3 main.py --scenario all
-```
-
-Live LLM diagnosis (when an API key is configured):
-
-```bash
-python -m llm_cost_investigator.cli --scenario model_misroute --provider groq
-```
-
-Run tests (see [Testing](#testing)):
-
-```bash
-python -m pytest -q
-```
-
-## Investigate real / external telemetry
-
-Ingest adapters normalize external logs into `LLMCall`, then run the same detector → agents → report pipeline.
-
-| Adapter | Input |
-| --- | --- |
-| `jsonl` | Canonical one-object-per-line (or JSON array). See `docs/ingest/CANONICAL_JSONL.md` |
-| `openai` | Chat Completions-style dumps (`usage.prompt_tokens`, `id`, `created`, …) |
-| `csv` | Header row + `--map logical=column` pairs |
-| `auto` | Sniff format from extension/content |
-
-Missing `cost_usd` is estimated from a small pricing table. Missing `parent_call_id` / `retry_count` / `latency_ms` default safely.
-
-```bash
-# Generate samples from the simulator
-python3 scripts/export_sample_telemetry.py
-
-python -m llm_cost_investigator.cli investigate \
-  --input data/samples/canonical_sample.jsonl \
-  --adapter jsonl \
-  --force-fallback
-
-python -m llm_cost_investigator.cli investigate \
-  --input data/samples/openai_style_sample.json \
-  --adapter openai \
-  --force-fallback
-
-python -m llm_cost_investigator.cli investigate \
-  --input data/samples/csv_sample.csv \
-  --adapter csv \
-  --map timestamp=ts,call_id=id,feature_tag=feature,model=model,input_tokens=prompt_tokens,output_tokens=completion_tokens,cost_usd=cost,latency_ms=latency,retry_count=retries,parent_call_id=parent_id \
-  --force-fallback
-```
-
-### Frontend (Investigate mode)
-
-Same dev stack as replay. Open the UI on the **Investigate** tab, then pick a source:
-
-- **Simulate**: one-click lab scenario with a seed and noise level (no file needed)
-- **File upload**: sample JSONL/CSV/OpenAI-style file (use **Fallback** for offline)
-- **Remote (Langfuse)**: pull last N hours using env keys (no keys in the browser)
-
-API endpoints:
-
-- `POST /api/investigate/preview`: ingest only  
-- `POST /api/investigate`: ingest + diagnose  
-- `GET /api/investigate/pricing`: known model rates  
-- `GET /api/connectors`: registered remote connectors  
-- `GET /api/connectors/profiles`: named connection profiles  
-- `POST /api/connectors/test|preview|investigate`: Langfuse pull path
-- `POST /api/simulate`: make a lab dataset and diagnose it (`scenario`, `seed`, `noise`, `provider`)
-- `GET /api/usage`: live LLM spend, limits, provider status, recent calls
-- `GET /api/benchmark`: accuracy benchmark (deterministic agents, no spend)  
-
-### Pull from Langfuse
-
-Set `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` in `.env` (optional `LANGFUSE_HOST`). See `docs/connectors/LANGFUSE.md`.
-
-```bash
-python -m llm_cost_investigator.cli investigate \
-  --connector langfuse \
-  --since-hours 24 \
-  --force-fallback
-
-# optional named profile: copy docs/connectors/connections.example.yaml → .llmci/connections.yaml
-python -m llm_cost_investigator.cli investigate --connection prod-langfuse --force-fallback
-```
-
-## Investigation replay UI
-
-Build fixtures from reports/transcripts, then start API + UI:
-
-```bash
-python3 scripts/export_replay_catalog.py
-
-# terminal 1
-PYTHONPATH=web:. uvicorn api.app:app --reload --port 8000
-
-# terminal 2
-cd web/frontend && npm install && npm run dev
-```
-
-Or one script:
-
-```bash
-./scripts/dev_replay.sh
-```
-
-- API: http://127.0.0.1:8000  
-- UI: http://localhost:5173  
-
-The UI has three tabs:
-
-- **Investigate** (default): run a lab scenario in one click (deterministic or
-  live LLM agents), upload your own telemetry, or pull from Langfuse. Results
-  show a correct/wrong verdict, a cost timeline with the flagged windows, and
-  the stage-by-stage replay of the agents.
-- **Replay**: recorded investigations, including live tool-use transcripts.
-- **Benchmark**: accuracy per scenario, false alarm rate and a confusion matrix.
-
-## Testing
-
-| What | Command | Needs |
-|---|---|---|
-| Unit, replay, API tests (73) | `python -m pytest -q` | nothing |
-| Three demo scenarios | `python -m llm_cost_investigator.cli --scenario all --force-fallback` | nothing |
-| Accuracy benchmark | `python -m llm_cost_investigator.benchmark --seeds 30 --noise 0.15` | nothing |
-| CI accuracy gate | add `--min-accuracy 0.97` (exit 1 below it) | nothing |
-| Live LLM benchmark | `python -m llm_cost_investigator.benchmark --seeds 3 --provider hf` | `HF_TOKEN` or `hf auth login` |
-| UI end to end | start API + UI, open **Investigate → Simulate → Run** | nothing |
-
-`.github/workflows/ci.yml` runs pytest, the scenario CLI, the accuracy gate and
-the frontend build on every push.
-
-### Scenario lab
-
-`llm_cost_investigator/scenario_lab.py` makes a new noisy dataset per seed:
-random start time, jittered baseline, random incident size, and distractor
-features. Scenarios: `retry_loop`, `context_bloat`, `model_misroute`, plus the
-controls `traffic_surge` (real demand, no bug) and `clean`.
-
-## Logs and observability
-
-| Where | What |
+| | |
 |---|---|
-| `data/logs/llm_calls.jsonl` | Every live LLM call: model, tokens, latency, est. USD, tool calls, errors |
-| `GET /api/usage` | Live spend, limits, provider status and the last 50 calls |
-| UI header **LLM budget** badge | Same data; click it for the recent call table |
-| `data/reports/incidents/*.md/json` | One report per investigated incident |
-| `data/reports/benchmark.json` | Last CLI benchmark run, with every failed case |
-| API stdout | uvicorn access log + one line per `/api/simulate` run |
+| [docs/GUIDE.md](docs/GUIDE.md) | Setup, CLI, connectors, API endpoints, budget guard, logs |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Design decisions and the HTTP contract |
+| [docs/proof/](docs/proof/results.md) | Pre-registered results, raw data, videos |
+| [AGENTS.md](AGENTS.md) | Agent prompts, hard skills and the aggregator contract |
 
-## Sample `--force-fallback` Output
-
-```text
-Fallback used: model_routing_agent (fallback provider explicitly selected)
-
-Scenario:         model_misroute
-Detected anomaly: summarizer model change (gpt-4o-mini → gpt-4.1)
-Routed agents:    model_routing_agent
-Root cause:       expensive_model_misroute
-Confidence:       0.95
-Report:           data/reports/incidents/model_misroute_incident.md
-Result:           PASS
-```
-
-## Scenario Matrix
-
-| Scenario | Root Cause | Routed Agent | Signal Pattern |
-|---|---|---|---|
-| `retry_loop` | `uncapped_retry_loop` | `retry_loop_agent` | High retry count, repeated parent calls, latency growth |
-| `context_bloat` | `context_bloat_self_calling_agent` | `token_context_agent` | Expanding input tokens, deep call chain |
-| `model_misroute` | `expensive_model_misroute` | `model_routing_agent` | Model switched to pricier model, stable token count |
-
-## Reports
-
-Each run writes structured incidents under:
-
-- `data/reports/incidents/<scenario>_incident.json`
-- `data/reports/incidents/<scenario>_incident.md`
-
-Live tool-use transcripts (from harness scripts) live under:
-
-- `data/reports/transcripts/live_*.txt`
-
-Normalized UI catalog fixtures:
-
-- `data/replay/<scenario>.json`
-
-## Replay Tests
-
-Replay tests validate detector, router, agent routing, aggregator, and markdown/JSON report generation against mock telemetry. They run as part of `python -m pytest -q`.
+<sub>Repository and Python package names: `LLM_Cost_Investigator`, `llm_cost_investigator`.</sub>
