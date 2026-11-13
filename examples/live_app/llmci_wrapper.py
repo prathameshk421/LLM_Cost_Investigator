@@ -59,6 +59,9 @@ def instrument(client, investigator_url="http://127.0.0.1:8000", token=None, tim
 
     def create(*args, **kwargs):
         ctx = _ctx.get()
+        # Stamp the call when it starts (as OpenTelemetry does), so a late answer
+        # keeps the time it was made.
+        ts = (now() if now else datetime.now(timezone.utc)).isoformat()
         start, usage = time.perf_counter(), None
         try:
             response = original(*args, **kwargs)
@@ -70,7 +73,7 @@ def instrument(client, investigator_url="http://127.0.0.1:8000", token=None, tim
                 tout = int(getattr(usage, "completion_tokens", 0) or 0)
                 model = kwargs.get("model", "unknown")
                 event = {
-                    "timestamp": (now() if now else datetime.now(timezone.utc)).isoformat(),
+                    "timestamp": ts,
                     "call_id": ctx.get("call_id") or str(uuid.uuid4()),
                     "parent_call_id": ctx.get("parent_call_id"),
                     "feature_tag": ctx.get("feature_tag", "unknown"),

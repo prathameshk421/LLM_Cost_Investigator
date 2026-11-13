@@ -6,9 +6,11 @@ real fault: retry_loop (classify), misroute (summarize) or bloat (reflect).
 from __future__ import annotations
 
 import argparse
+import contextvars
 import json
 import os
 import sys
+import threading
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -55,7 +57,33 @@ def build_client(provider, fake):
     key = _api_key_for(provider)
     if not key:
         raise SystemExit(f"{KEY_ENV[provider]} is not set")
-    return OpenAI(api_key=key, base_url=BASE_URLS[provider], timeout=60)
+    # No SDK retries: with the default 2 retries, a 60 s timeout held one call
+    # for 190-300 s in take 3. The App adds its own hard deadline per call.
+    return OpenAI(api_key=key, base_url=BASE_URLS[provider], timeout=20, max_retries=0)
+
+
+def with_deadline(fn, seconds):
+    """Run fn in a thread; raise TimeoutError if it has not returned in time.
+
+    The SDK timeout applies per network read, so a slow server can keep a call
+    open far longer. The abandoned thread finishes in the background.
+    """
+    ctx, box = contextvars.copy_context(), {}
+
+    def run():
+        try:
+            box["r"] = ctx.run(fn)
+        except BaseException as exc:  # re-raised in the caller
+            box["e"] = exc
+
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    t.join(seconds)
+    if t.is_alive():
+        raise TimeoutError(f"no answer in {seconds} s")
+    if "e" in box:
+        raise box["e"]
+    return box["r"]
 
 
 class App:
@@ -95,9 +123,10 @@ class App:
         try:
             with llmci_context(feature_tag=feature, call_id=call_id, parent_call_id=parent,
                                retry_count=retry):
-                r = self.client(provider).chat.completions.create(
+                create = self.client(provider).chat.completions.create
+                r = with_deadline(lambda: create(
                     model=model, messages=[{"role": "user", "content": content}],
-                    max_tokens=max_tokens)
+                    max_tokens=max_tokens), self.args.call_timeout)
             text = r.choices[0].message.content or ""
             u = r.usage
             tin, tout = u.prompt_tokens, u.completion_tokens
@@ -151,11 +180,16 @@ class App:
     def run(self):
         a = self.args
         gap = 60.0 / a.rate
+        t0 = time.monotonic()
         for i in range(round(a.total_minutes * a.rate)):  # integer ticks: no float drift
             self.sim_min = i / a.rate
             getattr(self, FEATURES[i % 3])(self.active_bug())
             if a.time_scale > 0:
-                time.sleep(gap / a.time_scale)
+                # Slot clock: wait for the next slot, not a fixed gap, so slow
+                # calls do not add up. If behind, the next tick starts at once.
+                delay = t0 + (i + 1) * gap / a.time_scale - time.monotonic()
+                if delay > 0:
+                    time.sleep(delay)
         for c in self.clients.values():
             c.llmci_flush()
         return self.records
@@ -183,6 +217,7 @@ def parse(argv=None):
     p.add_argument("--summarize-model", default="openai/gpt-oss-20b")
     p.add_argument("--pricy-provider", choices=["deploy", "hf"], default="hf")
     p.add_argument("--pricy-model", default="openai/gpt-oss-120b", help="summarize model under --bug misroute")
+    p.add_argument("--call-timeout", type=float, default=25, help="hard limit per LLM call, seconds")
     p.add_argument("--fake", action="store_true", help="no network LLM; plumbing rehearsal only")
     p.add_argument("--time-scale", type=float, default=1.0, help="simulated seconds per wall second (fake runs)")
     a = p.parse_args(argv)

@@ -175,3 +175,69 @@ def test_wrapper_survives_send_exception():
     client = instrument(live.FakeClient(), send=bad)
     client.chat.completions.create(model="m", messages=[{"role": "user", "content": "hi"}])
     client.llmci_flush()
+
+
+def test_deadline_stops_a_hung_call_and_keeps_context():
+    import time as _t
+
+    assert live.with_deadline(lambda: 7, 1) == 7
+    with pytest.raises(TimeoutError):
+        live.with_deadline(lambda: _t.sleep(5), 0.1)
+    with pytest.raises(ValueError):
+        live.with_deadline(lambda: (_ for _ in ()).throw(ValueError("x")), 1)
+    with llmci_context(feature_tag="kept"):
+        import llmci_wrapper
+        assert live.with_deadline(lambda: llmci_wrapper._ctx.get()["feature_tag"], 1) == "kept"
+
+
+def test_hung_call_is_logged_as_error_and_app_goes_on():
+    import time as _t
+
+    class Slow(live.FakeClient):
+        def __init__(self):
+            super().__init__()
+            self.chat = live._Obj(completions=live._Obj(create=lambda **k: _t.sleep(2)))
+
+    args = live.parse(FAST + ["--call-timeout", "0.1"])
+    app = live.App(args, send=lambda e: None, out=lambda s: None)
+    app.clients["deploy"] = instrument(Slow(), send=lambda e: None)
+    app.classify(None)
+    assert app.records[-1]["status"] == "error:TimeoutError"
+
+
+def test_wrapper_stamps_start_time_not_finish_time():
+    import time as _t
+    clock = {"t": datetime(2026, 1, 1, tzinfo=timezone.utc)}
+
+    class Slow:
+        def __init__(self):
+            def create(**k):
+                clock["t"] = datetime(2026, 1, 2, tzinfo=timezone.utc)  # the clock moves during the call
+                return live.FakeClient._create(**k)
+            self.chat = live._Obj(completions=live._Obj(create=create))
+
+    seen = []
+    client = instrument(Slow(), send=seen.append, now=lambda: clock["t"])
+    client.chat.completions.create(model="m", messages=[{"role": "user", "content": "hi"}])
+    client.llmci_flush()
+    assert seen[0]["timestamp"].startswith("2026-01-01")
+
+
+def test_slot_clock_catches_up_after_a_slow_tick(monkeypatch):
+    sleeps, now = [], {"t": 0.0}
+    monkeypatch.setattr(live.time, "monotonic", lambda: now["t"])
+    monkeypatch.setattr(live.time, "sleep", lambda s: (sleeps.append(round(s, 3)), now.__setitem__("t", now["t"] + s)))
+    args = live.parse(["--fake", "--baseline-minutes", "60", "--rate", "60"])  # 1 s slots
+    app = live.App(args, send=lambda e: None, out=lambda s: None)
+    calls = {"n": 0}
+
+    def tick(bug):
+        calls["n"] += 1
+        now["t"] += 3.5 if calls["n"] == 1 else 0.2  # first tick takes 3.5 slots
+
+    for f in live.FEATURES:
+        monkeypatch.setattr(app, f, tick)
+    args.total_minutes = 6 / 60  # 6 ticks
+    app.run()
+    # Ticks 2-4 start at once (behind); by tick 5 the app is back on its slots.
+    assert sleeps == [0.7, 0.8]
