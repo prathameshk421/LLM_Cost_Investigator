@@ -1,0 +1,738 @@
+"""Deterministic hard skills for diagnostic agents.
+
+Numeric thresholds are resolved here — never left to the LLM.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+from typing import Any, Literal
+
+from llm_cost_investigator.detector import NORMAL_RETRY_CAP
+from llm_cost_investigator.ingest.pricing import lookup_rates
+from llm_cost_investigator.schemas import AnomalyWindow, LLMCall
+
+SkillVerdict = Literal["pass", "soft_pass", "fail"]
+
+__all__ = [
+    "SkillVerdict",
+    "score_retry_loop",
+    "score_token_context",
+    "score_model_routing",
+    "score_all_agents",
+    "forced_no_strong_signal",
+    "skill_band_ceiling",
+]
+
+
+def _skill(
+    verdict: SkillVerdict,
+    *,
+    value: Any = None,
+    detail: str = "",
+    falsifier: bool = False,
+) -> dict[str, Any]:
+    return {
+        "verdict": verdict,
+        "value": value,
+        "detail": detail,
+        "falsifier": falsifier,
+    }
+
+
+def forced_no_strong_signal(skill_pack: dict[str, Any]) -> bool:
+    return bool(skill_pack.get("forced_no_strong_signal"))
+
+
+def skill_band_ceiling(skill_pack: dict[str, Any]) -> float:
+    return float(skill_pack.get("band_ceiling", 1.0))
+
+
+def _any_falsifier_fail(skills: dict[str, dict[str, Any]]) -> bool:
+    for s in skills.values():
+        if s.get("falsifier") and s.get("verdict") == "fail":
+            return True
+    return False
+
+
+def _as_utc(ts: datetime) -> datetime:
+    """Coerce naive timestamps to UTC so window comparisons never TypeError."""
+    if ts.tzinfo is None:
+        return ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(timezone.utc)
+
+
+def _ts_in_window(ts: datetime, start: datetime, end: datetime) -> bool:
+    """True if ts falls in [start, end], coercing naive sides to UTC."""
+    try:
+        return _as_utc(start) <= _as_utc(ts) <= _as_utc(end)
+    except (TypeError, ValueError):
+        return False
+
+
+def _retry_cost_attribution(samples: list[LLMCall]) -> tuple[float | None, str]:
+    if not samples:
+        return None, "no samples"
+    total = sum(c.cost_usd for c in samples)
+    if total <= 0:
+        return None, "zero sample cost"
+    retried = sum(c.cost_usd for c in samples if c.retry_count > 0)
+    return 100.0 * retried / total, f"retried_cost={retried:.6f} total={total:.6f}"
+
+
+def _latency_retry_trend(samples: list[LLMCall]) -> SkillVerdict:
+    retried = [c for c in samples if c.retry_count > 0]
+    if len(retried) < 2:
+        return "soft_pass"
+    ordered = sorted(retried, key=lambda c: c.retry_count)
+    increases = 0
+    pairs = 0
+    for a, b in zip(ordered, ordered[1:]):
+        pairs += 1
+        if b.latency_ms >= a.latency_ms:
+            increases += 1
+    if pairs == 0:
+        return "soft_pass"
+    if increases == pairs:
+        return "pass"
+    if increases >= pairs / 2:
+        return "soft_pass"
+    # flat/decreasing with high retries
+    if max(c.retry_count for c in retried) >= 3:
+        return "fail"
+    return "soft_pass"
+
+
+def score_retry_loop(anomaly: AnomalyWindow) -> dict[str, Any]:
+    sig = anomaly.signals
+    samples = list(anomaly.sample_calls)
+    retry_z = float(sig.retry_z_score)
+    max_retry = int(sig.max_retry_count)
+    avg_retry = float(sig.avg_retry_count)
+    rpc = int(sig.repeated_parent_call_count)
+
+    # 1 retry_zscore_threshold
+    if retry_z >= 5:
+        s1 = _skill("pass", value=retry_z, detail="retry_z >= 5")
+    elif retry_z >= 3:
+        s1 = _skill("soft_pass", value=retry_z, detail="retry_z in [3,5)")
+    else:
+        s1 = _skill("fail", value=retry_z, detail="retry_z < 3")
+
+    # 2 max_retry_floor
+    if max_retry >= 5:
+        s2 = _skill("pass", value=max_retry, detail="max_retry >= 5")
+    elif max_retry >= 2:
+        s2 = _skill("soft_pass", value=max_retry, detail="max_retry in [2,4]")
+    else:
+        s2 = _skill("fail", value=max_retry, detail="max_retry < 2")
+
+    # 3 repeated_parent_call_check
+    if rpc >= 3:
+        s3 = _skill("pass", value=rpc)
+    elif rpc >= 1:
+        s3 = _skill("soft_pass", value=rpc)
+    else:
+        s3 = _skill("fail", value=rpc)
+
+    # 4 latency_growth_confirmation
+    lat_v = _latency_retry_trend(samples)
+    s4 = _skill(lat_v, value=sig.latency_z_score, detail="sample latency vs retry_count")
+
+    # 5 sample_call_consistency (falsifier) — soft when samples empty
+    if not samples:
+        s5 = _skill(
+            "soft_pass",
+            value=None,
+            detail="no samples; skip hard fail",
+            falsifier=True,
+        )
+    else:
+        with_retry = sum(1 for c in samples if c.retry_count > 0)
+        frac = with_retry / len(samples)
+        if max_retry >= 2 and frac < 0.25:
+            s5 = _skill(
+                "fail",
+                value=frac,
+                detail="aggregate max_retry high but samples mostly retry_count=0",
+                falsifier=True,
+            )
+        elif max_retry >= 2 and frac < 0.5:
+            s5 = _skill(
+                "soft_pass",
+                value=frac,
+                detail="partial sample/aggregate mismatch",
+                falsifier=True,
+            )
+        else:
+            s5 = _skill(
+                "pass",
+                value=frac,
+                detail="samples consistent with retries",
+                falsifier=True,
+            )
+
+    # 6 cost_attribution_check (falsifier)
+    attr, attr_detail = _retry_cost_attribution(samples)
+    if attr is None:
+        s6 = _skill(
+            "soft_pass",
+            value=None,
+            detail=f"insufficient data ({attr_detail})",
+            falsifier=True,
+        )
+        attr_pct = None
+    elif attr >= 50:
+        s6 = _skill("pass", value=attr, detail=attr_detail, falsifier=True)
+        attr_pct = attr
+    elif attr >= 20:
+        s6 = _skill("soft_pass", value=attr, detail=attr_detail, falsifier=True)
+        attr_pct = attr
+    else:
+        s6 = _skill("fail", value=attr, detail=attr_detail, falsifier=True)
+        attr_pct = attr
+
+    # 7 non_retry_alternative_scan (only claim strong alternatives when growth is known)
+    tok_g_raw = sig.input_token_growth_pct
+    cost_g_raw = sig.cost_growth_pct
+    token_g_raw = sig.token_growth_pct
+    model_ch = bool(sig.model_changed)
+    if (
+        model_ch
+        and cost_g_raw is not None
+        and cost_g_raw >= 200
+        and token_g_raw is not None
+        and abs(token_g_raw) < 50
+    ):
+        s7 = _skill("fail", value="model_routing_strong", detail="competing model-routing signal")
+    elif (
+        tok_g_raw is not None
+        and tok_g_raw >= 300
+        and sig.max_call_chain_depth >= 5
+    ):
+        s7 = _skill("fail", value="token_context_strong", detail="competing context-bloat signal")
+    elif (tok_g_raw is not None and tok_g_raw >= 100) or model_ch:
+        s7 = _skill("soft_pass", value="moderate_alt", detail="some competing signal")
+    else:
+        s7 = _skill("pass", value="none", detail="no strong alternative")
+
+    skills = {
+        "retry_zscore_threshold": s1,
+        "max_retry_floor": s2,
+        "repeated_parent_call_check": s3,
+        "latency_growth_confirmation": s4,
+        "sample_call_consistency": s5,
+        "cost_attribution_check": s6,
+        "non_retry_alternative_scan": s7,
+    }
+    forced = _any_falsifier_fail(skills)
+
+    # Band ceiling + suggested confidence (aligned with Agents.md + demos)
+    if forced:
+        band = 0.49
+        conf = 0.30
+        hyp = "no_strong_signal"
+    elif s1["verdict"] == "pass" and s2["verdict"] == "pass" and s6["verdict"] == "pass":
+        band = 1.0
+        conf = 0.94
+        hyp = "uncapped_retry_loop"
+    elif (
+        s1["verdict"] in ("pass", "soft_pass")
+        and s2["verdict"] in ("pass", "soft_pass")
+        and s6["verdict"] != "fail"
+        and (s1["verdict"] == "pass" or s2["verdict"] == "pass" or s3["verdict"] in ("pass", "soft_pass"))
+    ):
+        band = 0.89
+        conf = 0.82
+        hyp = "uncapped_retry_loop"
+    elif max_retry >= 2 or avg_retry >= 1 or retry_z >= 2:
+        band = 0.74
+        conf = 0.60
+        hyp = "uncapped_retry_loop"
+    else:
+        band = 0.49
+        conf = 0.30
+        hyp = "no_strong_signal"
+
+    if s7["verdict"] == "fail" and hyp != "no_strong_signal":
+        band = min(band, 0.74)
+        conf = min(conf, 0.60)
+
+    # Normal clients retry up to NORMAL_RETRY_CAP times, and some features
+    # always retry a little. A loop needs retries above both.
+    retry_floor = max(NORMAL_RETRY_CAP, int(sig.history_max_retry_count))
+    if max_retry <= retry_floor:
+        band, conf, hyp = min(band, 0.49), min(conf, 0.30), "no_strong_signal"
+    elif (
+        forced
+        and s6["verdict"] == "fail"
+        and s5["verdict"] != "fail"
+        and not any(
+            v.get("falsifier") and v.get("verdict") == "fail"
+            for k, v in skills.items()
+            if k != "cost_attribution_check"
+        )
+    ):
+        # A small storm on a busy feature has a low share of the window's
+        # cost. That lowers impact, not the evidence: cap, do not veto.
+        forced = False
+        band, conf, hyp = 0.74, 0.60, "uncapped_retry_loop"
+
+    return {
+        "agent_name": "retry_loop_agent",
+        "skills": skills,
+        "forced_no_strong_signal": forced,
+        "band_ceiling": band,
+        "suggested_confidence": conf,
+        "suggested_hypothesis": hyp,
+        "metrics": {
+            "retry_z_score": retry_z,
+            "max_retry_count": max_retry,
+            "avg_retry_count": avg_retry,
+            "repeated_parent_call_count": rpc,
+            "cost_attribution_pct": attr_pct,
+        },
+    }
+
+
+def effective_chain_depth(sig: Any) -> int:
+    """Chain depth that is new for this feature, else 0.
+
+    A RAG pipeline that always runs 3 steps has depth 3 in every window.
+    Only a chain deeper than the feature's own history is evidence.
+    """
+    depth = int(sig.max_call_chain_depth)
+    return depth if depth > int(sig.history_max_chain_depth) else 0
+
+
+def score_token_context(anomaly: AnomalyWindow) -> dict[str, Any]:
+    sig = anomaly.signals
+    samples = list(anomaly.sample_calls)
+    # None means growth is unknown (zero baseline) — never coerce to 0.0.
+    growth_raw = sig.input_token_growth_pct
+    token_g_raw = sig.token_growth_pct if sig.token_growth_pct is not None else growth_raw
+    cost_g_raw = sig.cost_growth_pct
+    depth = effective_chain_depth(sig)
+    z = float(sig.input_tokens_z_score)
+
+    # 1 token_growth_threshold
+    if growth_raw is None:
+        s1 = _skill(
+            "soft_pass",
+            value=None,
+            detail="growth unknown (zero baseline)",
+        )
+    elif growth_raw >= 300:
+        s1 = _skill("pass", value=growth_raw)
+    elif growth_raw >= 100:
+        s1 = _skill("soft_pass", value=growth_raw)
+    else:
+        s1 = _skill("fail", value=growth_raw)
+
+    # 2 chain_depth_floor
+    if depth >= 5:
+        s2 = _skill("pass", value=depth)
+    elif depth >= 3:
+        s2 = _skill("soft_pass", value=depth)
+    else:
+        s2 = _skill("fail", value=depth)
+
+    # 3 chain_depth_recency (falsifier) — soft unless samples clearly outside window
+    if not samples or depth < 2:
+        s3 = _skill(
+            "soft_pass",
+            value=None,
+            detail="insufficient chain timing evidence",
+            falsifier=True,
+        )
+    else:
+        in_window = sum(
+            1
+            for c in samples
+            if _ts_in_window(c.timestamp, anomaly.start_time, anomaly.end_time)
+        )
+        frac = in_window / len(samples)
+        if frac >= 0.5:
+            s3 = _skill("pass", value=frac, detail="deep chain samples in window", falsifier=True)
+        elif frac > 0:
+            s3 = _skill("soft_pass", value=frac, detail="partial recency", falsifier=True)
+        else:
+            s3 = _skill(
+                "fail",
+                value=frac,
+                detail="samples outside anomaly window",
+                falsifier=True,
+            )
+
+    # 4 token_zscore_check
+    if z >= 3:
+        s4 = _skill("pass", value=z)
+    elif z >= 2:
+        s4 = _skill("soft_pass", value=z)
+    else:
+        s4 = _skill("fail", value=z)
+
+    # 5 prompt_content_growth_correlation (falsifier)
+    # Fail when cost growth far exceeds token growth (looks like model routing).
+    # Missing growth is soft — do not invent "cost without tokens".
+    if cost_g_raw is None or token_g_raw is None:
+        s5 = _skill(
+            "soft_pass",
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
+            detail="growth unknown (zero baseline)",
+            falsifier=True,
+        )
+    elif token_g_raw <= 0 and cost_g_raw >= 100:
+        s5 = _skill(
+            "fail",
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
+            detail="cost grew without token growth",
+            falsifier=True,
+        )
+    elif token_g_raw > 0 and cost_g_raw > max(token_g_raw * 2.5, token_g_raw + 150):
+        s5 = _skill(
+            "fail",
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
+            detail="cost growth far exceeds token growth",
+            falsifier=True,
+        )
+    elif token_g_raw > 0 and cost_g_raw > token_g_raw * 1.5 + 50:
+        s5 = _skill(
+            "soft_pass",
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
+            detail="mild cost/token divergence",
+            falsifier=True,
+        )
+    else:
+        s5 = _skill(
+            "pass",
+            value={"cost_growth_pct": cost_g_raw, "token_growth_pct": token_g_raw},
+            detail="cost tracks tokens",
+            falsifier=True,
+        )
+
+    # 6 self_call_pattern_check
+    parents = [c.parent_call_id for c in samples if c.parent_call_id]
+    if depth >= 3 and len(parents) >= 2:
+        s6 = _skill("pass", value=len(parents), detail="parent chain present")
+    elif depth >= 2 or parents:
+        s6 = _skill("soft_pass", value=len(parents), detail="weak chain signature")
+    else:
+        s6 = _skill("fail", value=0, detail="no recursive signature")
+
+    # 7 sample_consistency_check
+    if not samples:
+        s7 = _skill("soft_pass", value=None, detail="no samples")
+    else:
+        max_in = max(c.input_tokens for c in samples)
+        min_in = min(c.input_tokens for c in samples)
+        if (
+            growth_raw is not None
+            and growth_raw >= 100
+            and max_in <= min_in * 1.1
+            and len(samples) >= 3
+        ):
+            s7 = _skill("fail", value=(min_in, max_in), detail="samples lack token growth")
+        else:
+            s7 = _skill("pass", value=(min_in, max_in), detail="samples show token variation")
+
+    # 8 per_call_growth_check (falsifier)
+    # Total tokens grow with call volume. Context bloat needs bigger prompts
+    # per call, or a parent chain. Without either, the growth is traffic.
+    per_call = sig.avg_input_token_growth_pct
+    if per_call is None:
+        s8 = _skill("soft_pass", value=None, detail="per-call growth unknown", falsifier=True)
+    elif depth >= 3 or per_call >= (50 if depth >= 2 else 75):
+        # With no call chain the only evidence is prompt size itself, and a
+        # sparse window (2-4 calls) moves 30-50% from noise alone. Ask for
+        # at least +75% before calling it bloat without a chain.
+        s8 = _skill("pass", value=per_call, detail="prompts per call grew", falsifier=True)
+    elif per_call < 25 and depth < 2:
+        s8 = _skill(
+            "fail",
+            value=per_call,
+            detail="token growth is call volume, prompt size per call is flat",
+            falsifier=True,
+        )
+    else:
+        s8 = _skill("soft_pass", value=per_call, detail="mild per-call growth", falsifier=True)
+
+    # Total growth with flat per-call prompts is volume. Do not let it count
+    # as a full pass (the aggregator uses this verdict to demote other causes).
+    if s8["verdict"] == "fail" and s1["verdict"] == "pass":
+        s1 = _skill("soft_pass", value=growth_raw, detail="total growth is call volume")
+
+    skills = {
+        "token_growth_threshold": s1,
+        "chain_depth_floor": s2,
+        "chain_depth_recency": s3,
+        "token_zscore_check": s4,
+        "prompt_content_growth_correlation": s5,
+        "self_call_pattern_check": s6,
+        "sample_consistency_check": s7,
+        "per_call_growth_check": s8,
+    }
+    forced = _any_falsifier_fail(skills)
+    early_bloat = (
+        depth >= 4
+        and per_call is not None
+        and per_call >= 25
+        and s6["verdict"] == "pass"
+    )
+
+    if forced:
+        band, conf, hyp = 0.49, 0.28, "no_strong_signal"
+    elif s1["verdict"] == "pass" and s2["verdict"] == "pass":
+        band, conf, hyp = 1.0, 0.93, "context_bloat_self_calling_agent"
+    elif s4["verdict"] == "pass" and depth >= 4:
+        # demo context_bloat: growth ~294 soft, z high, depth 5
+        band, conf, hyp = 0.89, 0.84, "context_bloat_self_calling_agent"
+    elif (s1["verdict"] in ("pass", "soft_pass") or s4["verdict"] == "pass") and (
+        depth >= 2 or s8["verdict"] == "pass"
+    ):
+        band, conf, hyp = 0.74, 0.62, "context_bloat_self_calling_agent"
+    elif early_bloat:
+        # Early stage: a self-call chain whose prompts grow per hop, caught
+        # before total spend left the noise band.
+        band, conf, hyp = 0.74, 0.66, "context_bloat_self_calling_agent"
+    else:
+        band, conf, hyp = 0.49, 0.28, "no_strong_signal"
+
+    # The hypothesis is a *self-calling* agent: without a chain that is new
+    # for this feature, bigger prompts alone are a product change, not bloat.
+    if depth < 2 and hyp != "no_strong_signal":
+        band, conf, hyp = min(band, 0.49), min(conf, 0.28), "no_strong_signal"
+
+    # TC-03 style: deep chain but little *known* token growth (not unknown).
+    # Per-call growth counts too: an early chain has low total growth.
+    if (
+        depth >= 5
+        and growth_raw is not None
+        and growth_raw < 100
+        and not early_bloat
+        and not forced
+    ):
+        band = min(band, 0.49)
+        conf = min(conf, 0.40)
+        hyp = "no_strong_signal"
+
+    return {
+        "agent_name": "token_context_agent",
+        "skills": skills,
+        "forced_no_strong_signal": forced,
+        "band_ceiling": band,
+        "suggested_confidence": conf,
+        "suggested_hypothesis": hyp,
+        "metrics": {
+            "input_token_growth_pct": growth_raw,
+            "avg_input_token_growth_pct": per_call,
+            "max_call_chain_depth": depth,
+            "input_tokens_z_score": z,
+            "cost_growth_pct": cost_g_raw,
+            "token_growth_pct": token_g_raw,
+        },
+    }
+
+
+def score_model_routing(anomaly: AnomalyWindow) -> dict[str, Any]:
+    sig = anomaly.signals
+    samples = list(anomaly.sample_calls)
+    model_changed = bool(sig.model_changed)
+    # None = unknown growth (zero baseline) — never coerce to 0.0 as "stable".
+    cost_g_raw = sig.cost_growth_pct
+    # Prefer per-call token growth: window totals also move with call volume,
+    # and a misroute changes price per token, not prompt size.
+    token_g_raw = sig.token_growth_pct
+    if token_g_raw is not None and sig.avg_input_token_growth_pct is not None:
+        token_g_raw = sig.avg_input_token_growth_pct
+    cost_z = float(sig.cost_z_score)
+    before = sig.model_before
+    during = sig.model_during
+
+    # 1 model_changed_flag (falsifier)
+    if model_changed:
+        s1 = _skill("pass", value=True, falsifier=True)
+    else:
+        s1 = _skill("fail", value=False, detail="model did not change", falsifier=True)
+
+    # 2 cost_growth_threshold
+    if cost_g_raw is None:
+        s2 = _skill(
+            "soft_pass",
+            value=None,
+            detail="growth unknown (zero baseline)",
+        )
+    elif cost_g_raw >= 200:
+        s2 = _skill("pass", value=cost_g_raw)
+    elif cost_g_raw >= 50:
+        s2 = _skill("soft_pass", value=cost_g_raw)
+    else:
+        s2 = _skill("fail", value=cost_g_raw)
+
+    # 3 token_stability_check (caps confidence if fail, not hard no_strong)
+    if token_g_raw is None:
+        s3 = _skill(
+            "soft_pass",
+            value=None,
+            detail="growth unknown (zero baseline) — not proven stable",
+        )
+    elif abs(token_g_raw) < 50:
+        s3 = _skill("pass", value=token_g_raw, detail="tokens stable")
+    elif abs(token_g_raw) <= 100:
+        s3 = _skill("soft_pass", value=token_g_raw, detail="moderate token growth")
+    else:
+        s3 = _skill("fail", value=token_g_raw, detail="large token growth confounds routing")
+
+    # 4 cost_zscore_check
+    if cost_z >= 3:
+        s4 = _skill("pass", value=cost_z)
+    elif cost_z >= 2:
+        s4 = _skill("soft_pass", value=cost_z)
+    else:
+        s4 = _skill("fail", value=cost_z)
+
+    # 5 price_tier_consistency (falsifier)
+    if before and during:
+        b_in, b_out, b_key = lookup_rates(before)
+        d_in, d_out, d_key = lookup_rates(during)
+        if b_key == "fallback_default" or d_key == "fallback_default":
+            s5 = _skill(
+                "soft_pass",
+                value={"before": before, "during": during},
+                detail="unknown model pricing",
+                falsifier=True,
+            )
+        else:
+            before_price = b_in + b_out
+            after_price = d_in + d_out
+            if after_price > before_price * 1.05:
+                s5 = _skill(
+                    "pass",
+                    value={"before_price": before_price, "after_price": after_price},
+                    detail="after model is pricier",
+                    falsifier=True,
+                )
+            elif after_price >= before_price * 0.95:
+                s5 = _skill(
+                    "soft_pass",
+                    value={"before_price": before_price, "after_price": after_price},
+                    detail="similar price tier",
+                    falsifier=True,
+                )
+            else:
+                s5 = _skill(
+                    "fail",
+                    value={"before_price": before_price, "after_price": after_price},
+                    detail="after model is cheaper — not a premium misroute",
+                    falsifier=True,
+                )
+    else:
+        s5 = _skill(
+            "soft_pass",
+            value={"before": before, "during": during},
+            detail="model before/during incomplete",
+            falsifier=True,
+        )
+
+    # 6 sample_call_confirmation
+    if not samples:
+        s6 = _skill("soft_pass", value=None, detail="no samples")
+    elif during:
+        n = sum(1 for c in samples if c.model == during)
+        frac = n / len(samples)
+        if frac >= 0.5:
+            s6 = _skill("pass", value=frac, detail="samples show during model")
+        elif n > 0:
+            s6 = _skill("soft_pass", value=frac, detail="partial during-model presence")
+        else:
+            s6 = _skill("fail", value=0, detail="during model absent from samples")
+    else:
+        s6 = _skill("soft_pass", value=None, detail="no model_during")
+
+    # 7 routing_scope_check (informational)
+    models = sorted({c.model for c in samples}) if samples else list(sig.models_seen or [])
+    s7 = _skill(
+        "pass" if len(models) <= 2 else "soft_pass",
+        value=models,
+        detail="models in samples",
+    )
+
+    # 8 unit_price_jump: USD per 1k tokens. Volume and prompt size cancel out,
+    # so this isolates the price of the model itself.
+    unit_g = sig.unit_cost_growth_pct
+    if unit_g is None:
+        s8 = _skill("soft_pass", value=None, detail="unit price unknown (no baseline tokens)")
+    elif unit_g >= 100:
+        s8 = _skill("pass", value=unit_g, detail="price per token at least doubled")
+    elif unit_g >= 30:
+        s8 = _skill("soft_pass", value=unit_g, detail="price per token rose")
+    else:
+        s8 = _skill("fail", value=unit_g, detail="price per token flat")
+
+    skills = {
+        "model_changed_flag": s1,
+        "cost_growth_threshold": s2,
+        "token_stability_check": s3,
+        "cost_zscore_check": s4,
+        "price_tier_consistency": s5,
+        "sample_call_confirmation": s6,
+        "routing_scope_check": s7,
+        "unit_price_jump": s8,
+    }
+    forced = _any_falsifier_fail(skills)
+
+    if forced:
+        band, conf, hyp = 0.49, 0.32, "no_strong_signal"
+    elif (
+        s1["verdict"] == "pass"
+        and s2["verdict"] == "pass"
+        and s3["verdict"] == "pass"
+    ):
+        band, conf, hyp = 1.0, 0.95, "expensive_model_misroute"
+    elif s1["verdict"] == "pass" and s4["verdict"] == "pass":
+        band, conf, hyp = 0.89, 0.84, "expensive_model_misroute"
+    elif s1["verdict"] == "pass" and cost_g_raw is not None and cost_g_raw >= 100:
+        band, conf, hyp = 0.74, 0.64, "expensive_model_misroute"
+    elif s1["verdict"] == "pass" and s5["verdict"] == "pass" and s8["verdict"] in ("pass", "soft_pass"):
+        # Confirmed switch to a pricier tier, but total spend moved little
+        # (e.g. traffic dropped at the same time). Real bug, lower impact.
+        band, conf, hyp = 0.74, 0.70, "expensive_model_misroute"
+    else:
+        band, conf, hyp = 0.49, 0.32, "no_strong_signal"
+
+    # "Expensive" misroute needs the price per token to rise. If the new
+    # traffic is cheaper per token, total cost grew from volume or prompt
+    # size, and a switch to a cheaper model is not this bug.
+    if unit_g is not None and unit_g < 0 and hyp == "expensive_model_misroute":
+        band, conf, hyp = min(band, 0.49), min(conf, 0.32), "no_strong_signal"
+
+    # Cap when tokens confound
+    if s3["verdict"] == "fail" and hyp != "no_strong_signal":
+        band = min(band, 0.74)
+        conf = min(conf, 0.64)
+
+    return {
+        "agent_name": "model_routing_agent",
+        "skills": skills,
+        "forced_no_strong_signal": forced,
+        "band_ceiling": band,
+        "suggested_confidence": conf,
+        "suggested_hypothesis": hyp,
+        "metrics": {
+            "model_changed": model_changed,
+            "model_before": before,
+            "model_during": during,
+            "cost_growth_pct": cost_g_raw,
+            "token_growth_pct": token_g_raw,
+            "cost_z_score": cost_z,
+            "unit_cost_growth_pct": unit_g,
+        },
+    }
+
+
+def score_all_agents(anomaly: AnomalyWindow) -> dict[str, dict[str, Any]]:
+    return {
+        "retry_loop_agent": score_retry_loop(anomaly),
+        "token_context_agent": score_token_context(anomaly),
+        "model_routing_agent": score_model_routing(anomaly),
+    }

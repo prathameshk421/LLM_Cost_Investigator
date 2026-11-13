@@ -1,0 +1,234 @@
+
+██████████████████████████████████████████████████████████████████████
+SCENARIO A: model_routing_thin  (model_changed=True, cost_z=1.5)
+Rule: model_changed == True AND cost_z_score < 3.0
+      => MUST call get_window_calls
+Entry point: run_model_routing_agent_with_tools
+██████████████████████████████████████████████████████████████████████
+
+======================================================================
+SCENARIO: model_routing_thin  |  PROVIDER: groq  |  MODEL: openai/gpt-oss-120b
+======================================================================
+
+[Telemetry sent to agent]
+{
+  "feature_tag": "summarizer",
+  "start_time": "2026-07-09T00:00:00Z",
+  "end_time": "2026-07-09T00:05:00Z",
+  "signals": {
+    "model_changed": true,
+    "model_before": "gpt-4o-mini",
+    "model_during": "gpt-4.1",
+    "models_seen": [
+      "gpt-4o-mini",
+      "gpt-4.1"
+    ],
+    "cost_z_score": 1.5,
+    "cost_growth_pct": 95.0,
+    "token_growth_pct": 12.0,
+    "input_token_growth_pct": 12.0,
+    "output_token_growth_pct": 8.0,
+    "retry_z_score": 0.0,
+    "max_retry_count": 0
+  }
+}
+
+[Relevant prompt rule lines]
+  You have access to a tool: get_window_calls(feature_tag).
+  - You MUST call get_window_calls before answering if BOTH are true:
+      model_changed == True  AND  cost_z_score < 3.0
+  - If model_changed == False  OR  cost_z_score >= 3.0:
+      do NOT call the tool; answer directly from the aggregate signals.
+  DECISION: MUST CALL get_window_calls — model_changed=True but cost_z_score=1.5 (below 3.0). A model change was detected but the cost signal alone is not strong enough to confidently attribute the anomaly to it — inspect actual per-call model/cost data before answering.
+      "model_changed": true,
+      "cost_z_score": 1.5,
+
+[Tool calls log]
+  get_window_calls(feature_tag='summarizer')
+
+[Tool result returned to model]
+[
+  {
+    "call_id": "model_routing_thin_call_05",
+    "model": "gpt-4.1",
+    "cost_usd": 0.022,
+    "timestamp": "2026-07-09T00:05:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_04",
+    "model": "gpt-4.1",
+    "cost_usd": 0.019,
+    "timestamp": "2026-07-09T00:04:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_03",
+    "model": "gpt-4.1",
+    "cost_usd": 0.021,
+    "timestamp": "2026-07-09T00:03:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_02",
+    "model": "gpt-4.1",
+    "cost_usd": 0.018,
+    "timestamp": "2026-07-09T00:02:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_01",
+    "model": "gpt-4o-mini",
+    "cost_usd": 0.0025,
+    "timestamp": "2026-07-09T00:01:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_00",
+    "model": "gpt-4o-mini",
+    "cost_usd": 0.002,
+    "timestamp": "2026-07-09T00:00:00Z"
+  }
+]
+
+[Final agent output]
+  fallback_used: False
+  hypothesis:  expensive_model_misroute
+  confidence:  0.68
+  explanation: During the anomaly window the feature switched from gpt-4o-mini to gpt-4.1. Per‑call costs rose from ~0.002 USD to ~0.02 USD (≈9× increase), while token usage grew only ~12%. No retry spike is observed. This pattern matches a misrouting to a more expensive model, though the overall cost growth (95%) is below the 200% threshold for the highest confidence tier.
+  metrics:     {
+    "model_before": "gpt-4o-mini",
+    "model_during": "gpt-4.1",
+    "cost_growth_pct": 95.0,
+    "token_growth_pct": 12.0,
+    "average_cost_before_usd": 0.00225,
+    "average_cost_during_usd": 0.02,
+    "per_call_costs_usd": [
+        0.002,
+        0.0025,
+        0.018,
+        0.021,
+        0.019,
+        0.022
+    ],
+    "retry_z_score": 0.0,
+    "max_retry_count": 0
+}
+
+======================================================================
+SCENARIO: model_routing_thin  |  PROVIDER: cerebras  |  MODEL: gpt-oss-120b
+======================================================================
+
+[Telemetry sent to agent]
+{
+  "feature_tag": "summarizer",
+  "start_time": "2026-07-09T00:00:00Z",
+  "end_time": "2026-07-09T00:05:00Z",
+  "signals": {
+    "model_changed": true,
+    "model_before": "gpt-4o-mini",
+    "model_during": "gpt-4.1",
+    "models_seen": [
+      "gpt-4o-mini",
+      "gpt-4.1"
+    ],
+    "cost_z_score": 1.5,
+    "cost_growth_pct": 95.0,
+    "token_growth_pct": 12.0,
+    "input_token_growth_pct": 12.0,
+    "output_token_growth_pct": 8.0,
+    "retry_z_score": 0.0,
+    "max_retry_count": 0
+  }
+}
+
+[Relevant prompt rule lines]
+  You have access to a tool: get_window_calls(feature_tag).
+  - You MUST call get_window_calls before answering if BOTH are true:
+      model_changed == True  AND  cost_z_score < 3.0
+  - If model_changed == False  OR  cost_z_score >= 3.0:
+      do NOT call the tool; answer directly from the aggregate signals.
+  DECISION: MUST CALL get_window_calls — model_changed=True but cost_z_score=1.5 (below 3.0). A model change was detected but the cost signal alone is not strong enough to confidently attribute the anomaly to it — inspect actual per-call model/cost data before answering.
+      "model_changed": true,
+      "cost_z_score": 1.5,
+
+[Tool calls log]
+  get_window_calls(feature_tag='summarizer')
+
+[Tool result returned to model]
+[
+  {
+    "call_id": "model_routing_thin_call_05",
+    "model": "gpt-4.1",
+    "cost_usd": 0.022,
+    "timestamp": "2026-07-09T00:05:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_04",
+    "model": "gpt-4.1",
+    "cost_usd": 0.019,
+    "timestamp": "2026-07-09T00:04:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_03",
+    "model": "gpt-4.1",
+    "cost_usd": 0.021,
+    "timestamp": "2026-07-09T00:03:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_02",
+    "model": "gpt-4.1",
+    "cost_usd": 0.018,
+    "timestamp": "2026-07-09T00:02:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_01",
+    "model": "gpt-4o-mini",
+    "cost_usd": 0.0025,
+    "timestamp": "2026-07-09T00:01:00Z"
+  },
+  {
+    "call_id": "model_routing_thin_call_00",
+    "model": "gpt-4o-mini",
+    "cost_usd": 0.002,
+    "timestamp": "2026-07-09T00:00:00Z"
+  }
+]
+
+[Final agent output]
+  fallback_used: False
+  hypothesis:  expensive_model_misroute
+  confidence:  0.82
+  explanation: During the anomaly window the feature switched from gpt-4o-mini to gpt-4.1. Per-call costs rose from ~0.002 USD to ~0.02 USD (≈9x higher), while token usage grew only modestly (~12%). No retry spike is observed. This pattern aligns with a misrouting to a more expensive model.
+  metrics:     {
+    "model_before": "gpt-4o-mini",
+    "model_during": "gpt-4.1",
+    "average_cost_before_usd": 0.00225,
+    "average_cost_during_usd": 0.02,
+    "cost_increase_factor": 8.9,
+    "cost_growth_pct_reported": 95.0,
+    "token_growth_pct": 12.0,
+    "input_token_growth_pct": 12.0,
+    "output_token_growth_pct": 8.0,
+    "retry_z_score": 0.0,
+    "max_retry_count": 0,
+    "call_distribution": {
+        "gpt-4o-mini": 2,
+        "gpt-4.1": 4
+    }
+}
+
+======================================================================
+ASSERTION CHECKS
+======================================================================
+
+[A] model_routing_thin: tool MUST be called
+  [groq:model_routing_thin] PASS - tool called with feature_tag='summarizer'
+  [cerebras:model_routing_thin] PASS - tool called with feature_tag='summarizer'
+
+======================================================================
+RESULT TABLE
+======================================================================
+Scenario                   Provider     Tool called   Hypothesis                           Confidence
+-----------------------------------------------------------------------------------------------------
+model_routing_thin         groq         YES           expensive_model_misroute             0.68
+model_routing_thin         cerebras     YES           expensive_model_misroute             0.82
+
+Durable transcript written to: reports/live_model_routing_tool_use.txt
+
+All assertions passed.

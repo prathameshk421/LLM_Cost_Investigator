@@ -1,0 +1,538 @@
+{
+ "S01": {
+  "case": "retry_small",
+  "seed": 804,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S02": {
+  "case": "retry_small",
+  "seed": 806,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "code_review"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "code_review"
+   ]
+  ]
+ },
+ "S03": {
+  "case": "mix_misroute+surge_same",
+  "seed": 820,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "doc_summarizer"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "doc_summarizer"
+   ]
+  ]
+ },
+ "S04": {
+  "case": "bloat_medium",
+  "seed": 807,
+  "truth": [
+   [
+    "context_bloat_self_calling_agent",
+    "code_review"
+   ]
+  ],
+  "tool": [
+   [
+    "context_bloat_self_calling_agent",
+    "code_review"
+   ]
+  ]
+ },
+ "S05": {
+  "case": "misroute_15x",
+  "seed": 812,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S06": {
+  "case": "misroute_2x_night",
+  "seed": 809,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S07": {
+  "case": "neg_ab_ratio_shift",
+  "seed": 910,
+  "truth": [],
+  "tool": []
+ },
+ "S08": {
+  "case": "neg_clock_gap_catchup",
+  "seed": 905,
+  "truth": [],
+  "tool": []
+ },
+ "S09": {
+  "case": "neg_sparse_big_prompts",
+  "seed": 906,
+  "truth": [],
+  "tool": []
+ },
+ "S10": {
+  "case": "neg_prompt_plus40",
+  "seed": 901,
+  "truth": [],
+  "tool": []
+ },
+ "S11": {
+  "case": "neg_cheaper_model",
+  "seed": 907,
+  "truth": [],
+  "tool": []
+ },
+ "S12": {
+  "case": "neg_clock_gap",
+  "seed": 904,
+  "truth": [],
+  "tool": []
+ },
+ "S13": {
+  "case": "misroute_5x_half",
+  "seed": 822,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S14": {
+  "case": "retry_medium",
+  "seed": 810,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S15": {
+  "case": "misroute_5x_half",
+  "seed": 816,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S16": {
+  "case": "bloat_large",
+  "seed": 802,
+  "truth": [
+   [
+    "context_bloat_self_calling_agent",
+    "code_review"
+   ]
+  ],
+  "tool": [
+   [
+    "context_bloat_self_calling_agent",
+    "code_review"
+   ]
+  ]
+ },
+ "S17": {
+  "case": "misroute_5x",
+  "seed": 821,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S18": {
+  "case": "neg_surge_all",
+  "seed": 900,
+  "truth": [],
+  "tool": []
+ },
+ "S19": {
+  "case": "retry_large",
+  "seed": 826,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S20": {
+  "case": "neg_clock_gap_catchup",
+  "seed": 909,
+  "truth": [],
+  "tool": []
+ },
+ "S21": {
+  "case": "bloat_medium_night",
+  "seed": 817,
+  "truth": [
+   [
+    "context_bloat_self_calling_agent",
+    "doc_summarizer"
+   ]
+  ],
+  "tool": [
+   [
+    "context_bloat_self_calling_agent",
+    "doc_summarizer"
+   ]
+  ]
+ },
+ "S22": {
+  "case": "neg_clock_gap",
+  "seed": 908,
+  "truth": [],
+  "tool": []
+ },
+ "S23": {
+  "case": "retry_medium_night",
+  "seed": 811,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "doc_summarizer"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "doc_summarizer"
+   ]
+  ]
+ },
+ "S24": {
+  "case": "mix_bloat+misroute",
+  "seed": 801,
+  "truth": [
+   [
+    "context_bloat_self_calling_agent",
+    "doc_summarizer"
+   ],
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "context_bloat_self_calling_agent",
+    "doc_summarizer"
+   ],
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S25": {
+  "case": "bloat_medium",
+  "seed": 819,
+  "truth": [
+   [
+    "context_bloat_self_calling_agent",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "context_bloat_self_calling_agent",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S26": {
+  "case": "misroute_2x_night",
+  "seed": 818,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S27": {
+  "case": "misroute_5x",
+  "seed": 805,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "doc_summarizer"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "doc_summarizer"
+   ]
+  ]
+ },
+ "S28": {
+  "case": "neg_baseline_rag",
+  "seed": 911,
+  "truth": [],
+  "tool": []
+ },
+ "S29": {
+  "case": "retry_large",
+  "seed": 825,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "doc_summarizer"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "doc_summarizer"
+   ]
+  ]
+ },
+ "S30": {
+  "case": "mix_misroute+surge_same",
+  "seed": 814,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "doc_summarizer"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "doc_summarizer"
+   ]
+  ]
+ },
+ "S31": {
+  "case": "retry_medium",
+  "seed": 827,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "doc_summarizer"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "doc_summarizer"
+   ]
+  ]
+ },
+ "S32": {
+  "case": "bloat_large",
+  "seed": 813,
+  "truth": [
+   [
+    "context_bloat_self_calling_agent",
+    "code_review"
+   ]
+  ],
+  "tool": [
+   [
+    "context_bloat_self_calling_agent",
+    "code_review"
+   ]
+  ]
+ },
+ "S33": {
+  "case": "retry_medium_flat",
+  "seed": 824,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "code_review"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "code_review"
+   ]
+  ]
+ },
+ "S34": {
+  "case": "neg_baseline_night",
+  "seed": 903,
+  "truth": [],
+  "tool": []
+ },
+ "S35": {
+  "case": "mix_retry+misroute",
+  "seed": 815,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "code_review"
+   ],
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ],
+   [
+    "uncapped_retry_loop",
+    "code_review"
+   ]
+  ]
+ },
+ "S36": {
+  "case": "retry_medium_night",
+  "seed": 803,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S37": {
+  "case": "retry_medium_flat",
+  "seed": 808,
+  "truth": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "uncapped_retry_loop",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S38": {
+  "case": "misroute_5x_night",
+  "seed": 823,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "doc_summarizer"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "doc_summarizer"
+   ]
+  ]
+ },
+ "S39": {
+  "case": "misroute_2x",
+  "seed": 800,
+  "truth": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ],
+  "tool": [
+   [
+    "expensive_model_misroute",
+    "chat_assistant"
+   ]
+  ]
+ },
+ "S40": {
+  "case": "neg_cheaper_model",
+  "seed": 902,
+  "truth": [],
+  "tool": []
+ }
+}

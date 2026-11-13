@@ -1,0 +1,56 @@
+{
+ "note": "Take 5 (2026-11-13), run copy at commit 854eec9. Real calls: DeepSeek V4.1 Flash via Deploy (classify, reflect), gpt-oss-20b via HF (summarize), gpt-oss-120b via HF (summarize under the misroute bug). Event time 12:33:58-14:48:43 UTC (18:03-20:18 IST). Baseline 75 min, then misroute and bloat, 20 min each, 10 min gap. 23 of 722 calls failed (network). Incidents were diagnosed by the deterministic agents (provider fallback). Detection: misroute 3 min 58 s after the bug started (incident created 13:52:56 UTC), bloat 59 s (14:19:57 UTC).",
+ "t0": "2026-11-13T12:33:58+00:00",
+ "bugs": [
+  {
+   "bug": "misroute",
+   "t_bug": "2026-11-13T13:48:58+00:00",
+   "expected": [
+    "expensive_model_misroute",
+    "summarize"
+   ],
+   "first_correct_window_start": "2026-11-13T13:45:00+00:00",
+   "windows_after_start": -0.79,
+   "confidence": 0.7,
+   "pass": true
+  },
+  {
+   "bug": "bloat",
+   "t_bug": "2026-11-13T14:18:58+00:00",
+   "expected": [
+    "context_bloat_self_calling_agent",
+    "reflect"
+   ],
+   "first_correct_window_start": "2026-11-13T14:15:00+00:00",
+   "windows_after_start": -0.79,
+   "confidence": 0.84,
+   "pass": true
+  }
+ ],
+ "baseline_alarms": [],
+ "wrong_label_incidents": [],
+ "pass": true,
+ "calls_by_model": [
+  {
+   "model": "deepseek-ai/deepseek-v4.1-flash-1017",
+   "calls": 542,
+   "input_tokens": 49096,
+   "output_tokens": 49760,
+   "cost_usd": 0.19838
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "calls": 153,
+   "input_tokens": 17063,
+   "output_tokens": 21853,
+   "cost_usd": 0.00522
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "calls": 27,
+   "input_tokens": 2943,
+   "output_tokens": 2625,
+   "cost_usd": 0.00202
+  }
+ ]
+}

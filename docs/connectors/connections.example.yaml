@@ -1,0 +1,26 @@
+# Example connection profiles (non-secret metadata only).
+# Copy to .llmci/connections.yaml and customize.
+# Secrets always come from env: LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY.
+
+version: 1
+connections:
+  prod-langfuse:
+    connector: langfuse
+    # Optional host override (else LANGFUSE_HOST or cloud.langfuse.com)
+    host: https://cloud.langfuse.com
+    # v1 works on cloud + self-hosted; v2 is Langfuse Cloud only
+    api_version: v1
+    defaults:
+      since_hours: 24
+      max_rows: 10000
+      feature_default: null
+    filters:
+      environment: production
+
+  # self-hosted-example:
+  #   connector: langfuse
+  #   host: https://langfuse.example.com
+  #   api_version: v1
+  #   defaults:
+  #     since_hours: 6
+  #     max_rows: 5000

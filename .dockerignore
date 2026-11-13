@@ -1,0 +1,8 @@
+.venv
+.git
+**/node_modules
+web/frontend/dist
+data/warehouse.duckdb*
+data/logs
+**/__pycache__
+.claude

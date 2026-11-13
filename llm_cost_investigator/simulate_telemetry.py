@@ -8,7 +8,7 @@ from typing import Any
 from llm_cost_investigator.schemas import LLMCall
 
 BASE_START = datetime(2026, 7, 8, 9, 0, tzinfo=timezone.utc)
-BASELINE_MINUTES = 30
+BASELINE_MINUTES = 70  # detector needs 12 windows (1 h) of history before a verdict
 
 VALID_SCENARIOS = {"retry_loop", "context_bloat", "model_misroute"}
 
@@ -113,7 +113,7 @@ def _retry_loop_anomaly(scenario: str) -> list[LLMCall]:
     """Inject repeated failed support_reply calls from one parent."""
     calls: list[LLMCall] = []
     parent_call_id = f"{scenario}_support_reply_parent_retry"
-    start = BASE_START + timedelta(minutes=30)
+    start = BASE_START + timedelta(minutes=BASELINE_MINUTES)
 
     for attempt in range(8):
         calls.append(
@@ -141,7 +141,7 @@ def _context_bloat_anomaly(scenario: str) -> list[LLMCall]:
     """Inject an expanding agent_reflection parent-child chain."""
     calls: list[LLMCall] = []
     previous_call_id: str | None = None
-    start = BASE_START + timedelta(minutes=30)
+    start = BASE_START + timedelta(minutes=BASELINE_MINUTES)
 
     for depth in range(6):
         call_id = f"{scenario}_agent_reflection_chain_{depth:02d}"
@@ -172,7 +172,7 @@ def _context_bloat_anomaly(scenario: str) -> list[LLMCall]:
 def _model_misroute_anomaly(scenario: str) -> list[LLMCall]:
     """Inject stable summarizer tokens routed to a more expensive model."""
     calls: list[LLMCall] = []
-    start = BASE_START + timedelta(minutes=30)
+    start = BASE_START + timedelta(minutes=BASELINE_MINUTES)
 
     for seq in range(6):
         calls.append(

@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "id": "gen-003",
+      "traceId": "trace-b",
+      "type": "GENERATION",
+      "name": "support_reply",
+      "startTime": "2026-07-01T13:00:00.000Z",
+      "endTime": "2026-07-01T13:00:00.200Z",
+      "parentObservationId": null,
+      "model": "gpt-4o-mini",
+      "usage": {
+        "input": 50,
+        "output": 10,
+        "promptTokens": 50,
+        "completionTokens": 10
+      },
+      "calculatedTotalCost": 0.0005,
+      "metadata": {"retries": 2}
+    }
+  ],
+  "meta": {
+    "page": 2,
+    "limit": 100,
+    "totalPages": 2,
+    "totalItems": 3
+  }
+}

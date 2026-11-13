@@ -1,0 +1,249 @@
+{
+ "S01": [],
+ "S02": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S03": [
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S04": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S05": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S06": [],
+ "S07": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S08": [
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S09": [],
+ "S10": [],
+ "S11": [],
+ "S12": [],
+ "S13": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S14": [],
+ "S15": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S16": [],
+ "S17": [],
+ "S18": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S19": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S20": [],
+ "S21": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S22": [],
+ "S23": [
+  [
+   "context_bloat_self_calling_agent",
+   "rag_search"
+  ],
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S24": [],
+ "S25": [],
+ "S26": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S27": [],
+ "S28": [],
+ "S29": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S30": [
+  [
+   "expensive_model_misroute",
+   "doc_summarizer"
+  ]
+ ],
+ "S31": [
+  [
+   "uncapped_retry_loop",
+   "doc_summarizer"
+  ]
+ ],
+ "S32": [
+  [
+   "context_bloat_self_calling_agent",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S33": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "code_review"
+  ]
+ ],
+ "S34": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ]
+ ],
+ "S35": [
+  [
+   "expensive_model_misroute",
+   "chat_assistant"
+  ],
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S36": [
+  [
+   "context_bloat_self_calling_agent",
+   "chat_assistant"
+  ],
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S37": [
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ],
+  [
+   "uncapped_retry_loop",
+   "chat_assistant"
+  ]
+ ],
+ "S38": [
+  [
+   "expensive_model_misroute",
+   "code_review"
+  ]
+ ],
+ "S39": [],
+ "S40": []
+}

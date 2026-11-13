@@ -144,10 +144,13 @@ class TelemetryStore:
             )
             for call in calls
         ]
+        # Duplicate call_ids happen in real pipelines (retried webhooks,
+        # re-sent batches). Keep the first copy, like the DuckDB warehouse,
+        # instead of failing the whole investigation on a UNIQUE error.
         with self._conn:
             self._conn.executemany(
                 """
-                INSERT INTO llm_calls (
+                INSERT OR IGNORE INTO llm_calls (
                     call_id,
                     parent_call_id,
                     timestamp,

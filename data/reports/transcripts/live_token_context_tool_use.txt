@@ -1,0 +1,221 @@
+
+██████████████████████████████████████████████████████████████████████
+SCENARIO A: token_context_thin  (input_z=1.5, chain_depth=3)
+Rule: input_tokens_z_score < 3.0 AND max_call_chain_depth >= 2
+      => MUST call get_call_chain
+Entry point: run_token_context_agent_with_tools
+██████████████████████████████████████████████████████████████████████
+
+======================================================================
+SCENARIO: token_context_thin  |  PROVIDER: groq  |  MODEL: openai/gpt-oss-120b
+======================================================================
+
+[Telemetry sent to agent]
+{
+  "feature_tag": "agent_reflection",
+  "start_time": "2026-07-09T00:00:00Z",
+  "end_time": "2026-07-09T00:00:00Z",
+  "signals": {
+    "input_tokens_z_score": 1.5,
+    "input_token_growth_pct": 45.0,
+    "token_growth_pct": 45.0,
+    "cost_growth_pct": 55.0,
+    "max_call_chain_depth": 3,
+    "retry_z_score": 0.0,
+    "model_changed": false
+  },
+  "available_call_ids": [
+    "token_context_thin_call_00",
+    "token_context_thin_call_01",
+    "token_context_thin_call_02",
+    "token_context_thin_call_03"
+  ]
+}
+
+[Relevant prompt rule lines]
+  You have access to a tool: get_call_chain(call_id).
+  - You MUST call get_call_chain before answering if BOTH are true:
+      input_tokens_z_score < 3.0  AND  max_call_chain_depth >= 2
+  - If input_tokens_z_score >= 3.0  OR  max_call_chain_depth < 2:
+      do NOT call the tool; answer directly from the aggregate signals.
+  DECISION: MUST CALL get_call_chain — input_tokens_z_score=1.5 (below 3.0) AND max_call_chain_depth=3 (>= 2). Aggregate token growth alone is inconclusive but chain depth suggests possible recursion — inspect the actual chain before answering.
+      "input_tokens_z_score": 1.5,
+      "max_call_chain_depth": 3,
+
+[Tool calls log]
+  get_call_chain(call_id='token_context_thin_call_00')
+
+[Tool result returned to model]
+[
+  {
+    "call_id": "ctx_chain_00",
+    "parent_call_id": null,
+    "timestamp": "2026-07-09T00:00:00Z",
+    "input_tokens": 800,
+    "output_tokens": 100,
+    "cost_usd": 0.001
+  },
+  {
+    "call_id": "ctx_chain_01",
+    "parent_call_id": "ctx_chain_00",
+    "timestamp": "2026-07-09T00:00:00Z",
+    "input_tokens": 1600,
+    "output_tokens": 120,
+    "cost_usd": 0.002
+  },
+  {
+    "call_id": "ctx_chain_02",
+    "parent_call_id": "ctx_chain_01",
+    "timestamp": "2026-07-09T00:00:00Z",
+    "input_tokens": 3200,
+    "output_tokens": 140,
+    "cost_usd": 0.004
+  },
+  {
+    "call_id": "ctx_chain_03",
+    "parent_call_id": "ctx_chain_02",
+    "timestamp": "2026-07-09T00:00:00Z",
+    "input_tokens": 6400,
+    "output_tokens": 160,
+    "cost_usd": 0.008
+  }
+]
+
+[Final agent output]
+  fallback_used: False
+  hypothesis:  context_bloat_self_calling_agent
+  confidence:  0.62
+  explanation: The call chain shows a deepening self-referential pattern where each successive call doubles the input token count, indicating recursive self-calling that inflates context size. Although overall token growth metrics are modest, the exponential increase within the chain points to context bloat driven by self-calling behavior.
+  metrics:     {
+    "input_tokens_z_score": 1.5,
+    "input_token_growth_pct": 45.0,
+    "cost_growth_pct": 55.0,
+    "max_call_chain_depth_reported": 3,
+    "actual_chain_depth": 4,
+    "chain_details": [
+        {
+            "call_id": "ctx_chain_00",
+            "input_tokens": 800
+        },
+        {
+            "call_id": "ctx_chain_01",
+            "input_tokens": 1600
+        },
+        {
+            "call_id": "ctx_chain_02",
+            "input_tokens": 3200
+        },
+        {
+            "call_id": "ctx_chain_03",
+            "input_tokens": 6400
+        }
+    ]
+}
+
+======================================================================
+SCENARIO: token_context_thin  |  PROVIDER: cerebras  |  MODEL: gpt-oss-120b
+======================================================================
+
+[Telemetry sent to agent]
+{
+  "feature_tag": "agent_reflection",
+  "start_time": "2026-07-09T00:00:00Z",
+  "end_time": "2026-07-09T00:00:00Z",
+  "signals": {
+    "input_tokens_z_score": 1.5,
+    "input_token_growth_pct": 45.0,
+    "token_growth_pct": 45.0,
+    "cost_growth_pct": 55.0,
+    "max_call_chain_depth": 3,
+    "retry_z_score": 0.0,
+    "model_changed": false
+  },
+  "available_call_ids": [
+    "token_context_thin_call_00",
+    "token_context_thin_call_01",
+    "token_context_thin_call_02",
+    "token_context_thin_call_03"
+  ]
+}
+
+[Relevant prompt rule lines]
+  You have access to a tool: get_call_chain(call_id).
+  - You MUST call get_call_chain before answering if BOTH are true:
+      input_tokens_z_score < 3.0  AND  max_call_chain_depth >= 2
+  - If input_tokens_z_score >= 3.0  OR  max_call_chain_depth < 2:
+      do NOT call the tool; answer directly from the aggregate signals.
+  DECISION: MUST CALL get_call_chain — input_tokens_z_score=1.5 (below 3.0) AND max_call_chain_depth=3 (>= 2). Aggregate token growth alone is inconclusive but chain depth suggests possible recursion — inspect the actual chain before answering.
+      "input_tokens_z_score": 1.5,
+      "max_call_chain_depth": 3,
+
+[Tool calls log]
+  get_call_chain(call_id='token_context_thin_call_00')
+
+[Tool result returned to model]
+[
+  {
+    "call_id": "ctx_chain_00",
+    "parent_call_id": null,
+    "timestamp": "2026-07-09T00:00:00Z",
+    "input_tokens": 800,
+    "output_tokens": 100,
+    "cost_usd": 0.001
+  },
+  {
+    "call_id": "ctx_chain_01",
+    "parent_call_id": "ctx_chain_00",
+    "timestamp": "2026-07-09T00:00:00Z",
+    "input_tokens": 1600,
+    "output_tokens": 120,
+    "cost_usd": 0.002
+  },
+  {
+    "call_id": "ctx_chain_02",
+    "parent_call_id": "ctx_chain_01",
+    "timestamp": "2026-07-09T00:00:00Z",
+    "input_tokens": 3200,
+    "output_tokens": 140,
+    "cost_usd": 0.004
+  },
+  {
+    "call_id": "ctx_chain_03",
+    "parent_call_id": "ctx_chain_02",
+    "timestamp": "2026-07-09T00:00:00Z",
+    "input_tokens": 6400,
+    "output_tokens": 160,
+    "cost_usd": 0.008
+  }
+]
+
+[Final agent output]
+  fallback_used: False
+  hypothesis:  context_bloat_self_calling_agent
+  confidence:  0.68
+  explanation: The call chain shows a deepening recursion where each successive call doubles the input tokens (800 → 1600 → 3200 → 6400), indicating self‑calling behavior that inflates the context. Although the overall input token z‑score is modest, the exponential growth across the chain points to context bloat caused by recursive calls.
+  metrics:     {
+    "input_tokens_z_score": 1.5,
+    "input_token_growth_pct": 45.0,
+    "max_call_chain_depth": 3,
+    "observed_chain_depth": 4,
+    "observed_input_token_multiplier": 8.0
+}
+
+======================================================================
+ASSERTION CHECKS
+======================================================================
+
+[A] token_context_thin: tool MUST be called
+  [groq:token_context_thin] PASS - tool called with call_id='token_context_thin_call_00'
+  [cerebras:token_context_thin] PASS - tool called with call_id='token_context_thin_call_00'
+
+======================================================================
+RESULT TABLE
+======================================================================
+Scenario                   Provider     Tool called   Hypothesis                           Confidence
+-----------------------------------------------------------------------------------------------------
+token_context_thin         groq         YES           context_bloat_self_calling_agent     0.62
+token_context_thin         cerebras     YES           context_bloat_self_calling_agent     0.68
+
+Durable transcript written to: reports/live_token_context_tool_use.txt
+
+All assertions passed.

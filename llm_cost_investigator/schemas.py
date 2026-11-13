@@ -86,6 +86,16 @@ class AnomalySignals(BaseModel):
     output_token_growth_pct: float | None = 0.0
     cost_growth_pct: float | None = 0.0
     token_growth_pct: float | None = 0.0
+    # Growth of the mean input tokens *per call*. Window totals also grow with
+    # plain traffic volume; this one only grows when prompts get bigger.
+    avg_input_token_growth_pct: float | None = 0.0
+    # Growth of USD per 1k tokens. A pricier model raises this even when
+    # traffic and prompt size stay flat. None when the baseline has no tokens.
+    unit_cost_growth_pct: float | None = 0.0
+    # Cost per call vs baseline. Volume swings move totals but not this.
+    cost_per_call_z_score: float = 0.0
+    cost_per_call_growth_pct: float | None = 0.0
+    avg_input_tokens_z_score: float = 0.0
 
     # Absolute maximums within the anomaly window
     max_retry_count: int = 0
@@ -95,6 +105,14 @@ class AnomalySignals(BaseModel):
 
     # Model routing signals
     model_changed: bool = False
+    # Feature history at the time of this window (accepted, non-flagged
+    # windows only). Evidence counts only when it is new for the feature:
+    # a RAG pipeline that always chains 3 deep is not "context bloat".
+    history_max_chain_depth: int = 0
+    history_max_retry_count: int = 0
+    # True when the window holds causal evidence (new model, retries above
+    # the normal client cap, or a chain deeper than history). Used to rank.
+    causal_evidence: bool = False
     models_seen: list[str] = Field(default_factory=list)
     model_before: str | None = None
     model_during: str | None = None
@@ -159,7 +177,7 @@ class AgentRunResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     evidence: AgentEvidence
-    provider: Literal["groq", "cerebras", "fallback"]
+    provider: Literal["groq", "cerebras", "hf", "deploy", "custom", "fallback"]
     model: str | None = None
     fallback_used: bool = False
     fallback_reason: str | None = None
@@ -180,6 +198,9 @@ class RootCauseResult(BaseModel):
     # None only when hypothesis == "no_strong_signal"
     winning_agent: _AgentName | None = None
     evidence: list[AgentEvidence] = Field(default_factory=list)
+    # When hypothesis is no_strong_signal: why (X-02 volume vs X-03 data quality)
+    attribution_pattern: str | None = None
+    attribution_note: str | None = None
 
 
 class IncidentReport(BaseModel):

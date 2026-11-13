@@ -1,0 +1,33 @@
+{
+ "n": 40,
+ "truth_vs_tool": {
+  "agree": 40,
+  "rate": 1.0,
+  "kappa": 1.0
+ },
+ "truth_vs_model": {
+  "agree": 10,
+  "rate": 0.25,
+  "kappa": 0.132
+ },
+ "truth_vs_fable": {
+  "agree": 40,
+  "rate": 1.0,
+  "kappa": 1.0
+ },
+ "tool_vs_model": {
+  "agree": 10,
+  "rate": 0.25,
+  "kappa": 0.132
+ },
+ "tool_vs_fable": {
+  "agree": 40,
+  "rate": 1.0,
+  "kappa": 1.0
+ },
+ "model_vs_fable": {
+  "agree": 10,
+  "rate": 0.25,
+  "kappa": 0.132
+ }
+}

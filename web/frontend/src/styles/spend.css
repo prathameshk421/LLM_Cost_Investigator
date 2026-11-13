@@ -1,0 +1,628 @@
+/* Spend + Live views. Uses tokens from tokens.css and chart classes from glass.css. */
+.sp-root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.sp-busy {
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.sp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sp-title {
+  margin: 0 0 2px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.sp-dim {
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.sp-strong {
+  font-weight: 600;
+}
+
+.sp-up {
+  color: var(--accent-warm);
+}
+
+.sp-down {
+  color: var(--status-pass);
+}
+
+.sp-range {
+  display: flex;
+  gap: 6px;
+}
+
+.sp-btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.btn:focus-visible,
+.legend-item:focus-visible,
+.sp-root select:focus-visible,
+.sp-root input:focus-visible,
+.sp-root svg:focus-visible {
+  outline: 2px solid var(--accent-cool);
+  outline-offset: 2px;
+}
+
+/* ---------- tiles ---------- */
+.sp-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.sp-tile {
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  min-width: 0;
+}
+
+.sp-tile-wide {
+  grid-column: span 2;
+}
+
+.sp-tile-value {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 4px 0 2px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.sp-change {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sp-change-up {
+  color: var(--accent-warm);
+}
+
+.sp-change-down {
+  color: var(--status-pass);
+}
+
+.sp-change-flat {
+  color: var(--text-1);
+}
+
+/* ---------- cards ---------- */
+.sp-card {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sp-card-title {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sp-help {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+.sp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 24px;
+}
+
+.sp-empty p {
+  margin: 0;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+
+.sp-empty-inline {
+  padding: 14px 4px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.sp-grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* ---------- chart ---------- */
+.sp-chart {
+  width: 100%;
+  min-width: 0;
+}
+
+.sp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sp-tip-total {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--glass-border);
+  font-weight: 600;
+}
+
+/* ---------- pills ---------- */
+.sp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.sp-pill-ok {
+  color: var(--status-pass);
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.sp-pill-warn {
+  color: var(--status-must);
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.sp-pill-bad {
+  color: var(--status-fail);
+  border-color: rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+/* ---------- budgets ---------- */
+.sp-budget-list,
+.sp-plain-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sp-budget {
+  padding: 8px 0 10px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.sp-budget-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.sp-budget-name {
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sp-bar {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: visible;
+}
+
+.sp-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 6px;
+  background: #3987e5;
+}
+
+.sp-fill-warning,
+.sp-fill-forecast_over {
+  background: var(--status-must);
+}
+
+.sp-fill-over {
+  background: var(--status-fail);
+}
+
+.sp-bar-forecast {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--text-0);
+  border-radius: 1px;
+}
+
+.sp-bar-alert {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px dashed var(--text-1);
+}
+
+.sp-budget-meta {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+
+/* ---------- forms ---------- */
+.sp-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  margin-top: 12px;
+}
+
+.sp-form-tight {
+  margin-top: 0;
+}
+
+.sp-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-1);
+  min-width: 0;
+}
+
+.sp-form select,
+.sp-form input {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--glass-border);
+  color: var(--text-0);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  max-width: 100%;
+}
+
+.sp-form input[type="number"] {
+  width: 110px;
+}
+
+.sp-form input[type="range"] {
+  padding: 0;
+  width: 200px;
+  accent-color: var(--accent-cool);
+}
+
+/* ---------- tables ---------- */
+.sp-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.sp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.sp-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--glass-border);
+  white-space: nowrap;
+}
+
+.sp-table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: top;
+}
+
+.sp-table-compact td {
+  padding: 5px 8px;
+}
+
+.sp-num {
+  text-align: right !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-delta {
+  font-weight: 600;
+}
+
+.sp-delta.up {
+  color: var(--accent-warm);
+}
+
+.sp-delta.down {
+  color: var(--status-pass);
+}
+
+.sp-driver-total {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.sp-share {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.sp-share-track {
+  flex: 1 1 auto;
+  height: 8px;
+  min-width: 40px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+
+.sp-share-fill {
+  display: block;
+  height: 100%;
+  background: #3987e5;
+}
+
+.sp-effects {
+  min-width: 260px;
+}
+
+.sp-effect {
+  display: grid;
+  grid-template-columns: 72px minmax(70px, 1fr) 84px;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  padding: 1px 0;
+}
+
+.sp-effect-label {
+  color: var(--text-1);
+}
+
+.sp-effect-track {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.sp-effect-mid {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--text-2);
+}
+
+.sp-effect-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+.sp-effect-fill.up {
+  background: var(--accent-warm);
+}
+
+.sp-effect-fill.down {
+  background: var(--status-pass);
+}
+
+.sp-effect-val {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---------- what-if / waste ---------- */
+.sp-whatif-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.sp-whatif-val {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.sp-waste-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 120px) 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 12px;
+}
+
+/* ---------- live ---------- */
+.lv-conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lv-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--status-skip);
+}
+
+.lv-conn-live .lv-dot {
+  background: var(--status-pass);
+  box-shadow: 0 0 8px var(--status-pass);
+}
+
+.lv-conn-connecting .lv-dot {
+  background: var(--status-must);
+  animation: lv-pulse 1.2s ease-in-out infinite;
+}
+
+.lv-conn-error .lv-dot {
+  background: var(--status-fail);
+}
+
+@keyframes lv-pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.lv-toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: calc(100vw - 32px);
+}
+
+.lv-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid;
+  background-color: rgba(12, 16, 22, 0.97);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lv-toast-x {
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.lv-incident {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.lv-inc-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 12px;
+}
+
+.lv-inc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lv-inc-result {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--glass-border);
+  font-size: 12px;
+}
+
+.lv-recs {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--text-1);
+  line-height: 1.5;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 860px) {
+  .sp-grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .sp-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sp-tile-wide {
+    grid-column: span 2;
+  }
+  .sp-tile-value {
+    font-size: 20px;
+  }
+  .sp-form input[type="range"] {
+    width: 100%;
+  }
+  .sp-form label {
+    flex: 1 1 130px;
+  }
+  .lv-toasts {
+    right: 8px;
+    left: 8px;
+    max-width: none;
+  }
+}
+
+.lv-disagree {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.08);
+  color: var(--text-0);
+  font-size: 12px;
+}

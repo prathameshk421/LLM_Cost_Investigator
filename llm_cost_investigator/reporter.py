@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from pathlib import Path
 
 from llm_cost_investigator.schemas import IncidentReport
@@ -9,10 +11,12 @@ from llm_cost_investigator.schemas import IncidentReport
 
 def write_report(
     report: IncidentReport,
-    output_dir: str | Path = "reports",
+    output_dir: str | Path | None = None,
     print_summary: bool = True,
 ) -> tuple[Path, Path]:
     """Write report artifacts to disk and print terminal summary."""
+    if output_dir is None:
+        output_dir = os.environ.get("LLMCI_REPORTS_DIR", "data/reports/incidents")
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
     
@@ -37,6 +41,12 @@ def print_terminal_summary(report: IncidentReport) -> None:
     print(f"Root cause:     {report.root_cause.hypothesis}")
     print(f"Confidence:     {report.root_cause.confidence:.2f}")
     print(f"Winning agent:  {report.root_cause.winning_agent or 'none'}")
+    if report.root_cause.attribution_pattern:
+        note = report.root_cause.attribution_note or ""
+        print(
+            f"Attribution:    {report.root_cause.attribution_pattern}"
+            + (f" — {note}" if note else "")
+        )
     print(f"Fallback used:  {str(fallback_used)}")
     print("─────────────────────────────────────────")
 
@@ -52,6 +62,8 @@ def _render_markdown(report: IncidentReport) -> str:
     )
     if winning and root.hypothesis != "no_strong_signal":
         summary_text = winning.explanation
+    elif root.attribution_note:
+        summary_text = root.attribution_note
     else:
         summary_text = "No strong diagnostic signal was detected."
 
@@ -62,12 +74,19 @@ def _render_markdown(report: IncidentReport) -> str:
         f"Affected feature: {anomaly.feature_tag}",
         f"Confidence: {root.confidence:.2f}",
         f"Winning agent: {root.winning_agent or 'none'}",
+    ]
+    if root.attribution_pattern:
+        lines.append(
+            f"Attribution: {root.attribution_pattern}"
+            + (f" — {root.attribution_note}" if root.attribution_note else "")
+        )
+    lines.extend([
         "",
         "Summary:",
         summary_text,
         "",
         "Supporting evidence:",
-    ]
+    ])
 
     if not report.agent_runs:
         lines.append("No agent runs recorded.")

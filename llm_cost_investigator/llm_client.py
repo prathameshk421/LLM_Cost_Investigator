@@ -26,27 +26,38 @@ def _load_dotenv(path: str | Path = ".env") -> None:
 
 _load_dotenv()
 
-ProviderName = Literal["groq", "cerebras", "fallback"]
+ProviderName = Literal["groq", "cerebras", "hf", "deploy", "fallback"]
 
 
 PROVIDER_BASE_URLS: dict[str, str] = {
     "groq": "https://api.groq.com/openai/v1",
     "cerebras": "https://api.cerebras.ai/v1",
+    # Hugging Face Inference Providers router (OpenAI-compatible).
+    "hf": "https://router.huggingface.co/v1",
+    # Deploy: OpenAI-compatible gateway serving DeepSeek (used by Heimdall).
+    "deploy": "https://api.deploy.com/api/v1",
 }
 
 PROVIDER_API_KEY_ENV: dict[str, str] = {
     "groq": "GROQ_API_KEY",
     "cerebras": "CEREBRAS_API_KEY",
+    "hf": "HF_TOKEN",
+    "deploy": "DEPLOY_API_KEY",
 }
 
 PROVIDER_MODEL_ENV: dict[str, str] = {
     "groq": "GROQ_MODEL",
     "cerebras": "CEREBRAS_MODEL",
+    "hf": "HF_MODEL",
+    "deploy": "DEPLOY_MODEL",
 }
 
 DEFAULT_MODELS: dict[str, str] = {
     "groq": "openai/gpt-oss-120b",
     "cerebras": "gpt-oss-120b",
+    # Small, cheap, supports tool calls. About $0.0001 per agent call.
+    "hf": "openai/gpt-oss-20b",
+    "deploy": "deepseek-ai/deepseek-v4.1-flash-1017",
 }
 
 
@@ -90,10 +101,10 @@ def resolve_llm_client(config: LLMClientConfig | None = None) -> ResolvedLLMClie
         return ResolvedLLMClient(
             client=default_mock_llm_client,
             provider="fallback",
-            fallback_reason="no GROQ_API_KEY or CEREBRAS_API_KEY configured",
+            fallback_reason="no GROQ_API_KEY, CEREBRAS_API_KEY or HF_TOKEN configured",
         )
 
-    api_key = os.environ.get(PROVIDER_API_KEY_ENV[selected_provider], "").strip()
+    api_key = _api_key_for(selected_provider)
     if not api_key:
         return ResolvedLLMClient(
             client=default_mock_llm_client,
@@ -108,6 +119,7 @@ def resolve_llm_client(config: LLMClientConfig | None = None) -> ResolvedLLMClie
         api_key=api_key,
         base_url=PROVIDER_BASE_URLS[selected_provider],
         model=model,
+        provider=selected_provider,
     )
     return ResolvedLLMClient(
         client=client_callable,
@@ -125,9 +137,15 @@ def _normalise_provider(provider: str | None) -> ProviderName | None:
     if normalised == "cerebus":
         normalised = "cerebras"
 
-    if normalised not in {"groq", "cerebras", "fallback"}:
+    if normalised in {"huggingface", "hugging_face"}:
+        normalised = "hf"
+
+    if normalised == "deepseek":
+        normalised = "deploy"
+
+    if normalised not in {"groq", "cerebras", "hf", "deploy", "fallback"}:
         raise ValueError(
-            "Unsupported LLM provider. Use groq, cerebras, or fallback."
+            "Unsupported LLM provider. Use groq, cerebras, hf, deploy, or fallback."
         )
     return normalised  # type: ignore[return-value]
 
@@ -137,7 +155,30 @@ def _first_configured_provider() -> ProviderName | None:
         env_name = PROVIDER_API_KEY_ENV[provider]
         if os.environ.get(env_name, "").strip():
             return provider  # type: ignore[return-value]
+    # HF is never auto-selected from the cached CLI login: it must be chosen
+    # explicitly or have HF_TOKEN set, so a run never spends credits by surprise.
+    if os.environ.get("HF_TOKEN", "").strip():
+        return "hf"
+    # Deploy is never auto-selected: it is a billed key shared with another
+    # project, so it must be chosen with --provider deploy.
     return None
+
+
+def _api_key_for(provider: str) -> str:
+    key = os.environ.get(PROVIDER_API_KEY_ENV[provider], "").strip()
+    if key or provider != "hf":
+        return key
+    # Fall back to the token saved by `hf auth login`.
+    try:
+        from huggingface_hub import get_token  # type: ignore
+
+        return (get_token() or "").strip()
+    except Exception:
+        token_file = Path.home() / ".cache" / "huggingface" / "token"
+        try:
+            return token_file.read_text().strip()
+        except OSError:
+            return ""
 
 
 def _resolve_model(provider: str, explicit_model: str | None) -> str:
@@ -161,6 +202,7 @@ def _build_openai_compatible_client(
     api_key: str,
     base_url: str,
     model: str,
+    provider: str = "unknown",
 ) -> tuple[Callable[[str], str], Any]:
     try:
         from openai import OpenAI
@@ -170,7 +212,13 @@ def _build_openai_compatible_client(
             "Install project dependencies or use provider=fallback."
         ) from exc
 
-    client = OpenAI(api_key=api_key, base_url=base_url)
+    from llm_cost_investigator.usage import BudgetedOpenAI
+
+    # timeout + max_retries bound the worst case wall time and spend per call.
+    client = BudgetedOpenAI(
+        OpenAI(api_key=api_key, base_url=base_url, timeout=60.0, max_retries=1),
+        provider=provider,
+    )
 
     def call(prompt: str) -> str:
         response = client.chat.completions.create(
