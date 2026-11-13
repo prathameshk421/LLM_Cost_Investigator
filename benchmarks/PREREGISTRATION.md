@@ -154,3 +154,17 @@ and the 40 slice CSVs. Result: 40/40 vs truth and 40/40 vs the tool.
 Caveats: Fable wrote the held-out generator earlier in the project, so it is
 independent of the detection rules but not of the incident design; and the
 labeller was chosen after the first one failed. Both runs are published.
+
+## Addendum 6 (2026-11-13): Tier D over two takes
+
+Written after takes 4 and 5. The registration does not say that all three
+bugs must be in one take. Take 4 ran all three, but the local network failed
+during it (705 of 1,220 calls failed), so its misroute and bloat bugs had no
+successful calls. Take 5 re-ran those two bugs with a new 75-minute baseline.
+The Tier D verdict uses the retry loop from take 4 and the other two bugs from
+take 5. Both baselines are required to have 0 alarms, and they do. Every take
+(1 to 5) is published in `docs/proof/tier_d.md`.
+
+Code changes before these takes touched only the demo app (`b64d916`: a hard
+limit per call, no SDK retries, a slot clock, call time stamped at start), not
+the detector or the agents. The detector and agents are at `e619576`.

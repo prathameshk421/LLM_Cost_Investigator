@@ -1,7 +1,7 @@
 # Proof results
 
 All thresholds were committed before any run: [benchmarks/PREREGISTRATION.md](../../benchmarks/PREREGISTRATION.md)
-(first commit `b2b3a79`, addenda 1 to 3 dated and committed before the runs they cover).
+(first commit `b2b3a79`, addenda 1 to 6 dated and committed; each says whether it came before or after the runs it covers).
 Plan: [PLAN.md](PLAN.md). Raw outputs: [data/](data/). Intervals are Wilson 95%.
 
 ## One-page summary
@@ -15,7 +15,7 @@ Plan: [PLAN.md](PLAN.md). Raw outputs: [data/](data/). Intervals are Wilson 95%.
 | B | Real traffic background: BurstGPT (real Azure OpenAI requests), injected incidents | 200 injected + 100 clean 72 h slices | 96.5% caught (193/200); 0 false incidents over 171 feature-weeks | **pass** (≥ 90%, ≤ 1 per feature-week) |
 | B | Raw real trace, no injection | 240 feature-days, 1.4M requests | 0 incidents reported. The detector flagged 178 windows (heavy-tailed real prompt sizes); diagnosis labelled all 178 as volume (X-02). | not falsified (> 1 per feature-day) |
 | C | Red team: 12 adversarial cases × 20 seeds | 240 datasets | 0 crashes; 0% confident wrong labels [0-2] | **pass** (after one crash fix found on dev seeds, see addendum 3) |
-| D | Live app with real LLM calls and three real induced bugs | take 1 (1,343 real calls) | 0 alarms in the 75-min baseline; real retry loop caught in its first window. Misroute window invalid (network outage: the pricier calls failed, no extra spend). | partial; take 2 (misroute, bloat) running |
+| D | Live app with real LLM calls and three real induced bugs ([tier_d.md](tier_d.md)) | 2 takes (1,942 real call attempts, 1,214 succeeded) | 0 alarms in both 75-min baselines. Retry loop caught in 58 s, misroute in 3 min 58 s, bloat in 59 s, all with the right label on the right feature. 0 wrong labels. | **pass**, over two takes: a network outage voided the misroute and bloat parts of take 4 (addendum 6) |
 | E | Blind labels of 40 slices on fresh seeds (CSV only, no tool output) | 40 | Fable: 40/40 vs truth, 40/40 vs tool (κ = 1.0). gpt-oss-20b: 10/40 (could not do the task). Tool vs truth: 40/40. | **pass** with caveats: Fable wrote the generator; it was added after gpt-oss failed; no human labels (addenda 4-5) |
 
 ## Tier A detail
@@ -37,6 +37,14 @@ Plain reading:
 - Weakest cases: subtle depth-4 bloat (10/100 missed), and sparse night traffic
   (2-4 wrong extra labels per 100). Full per-case table: [data/tier_a_200_299.json](data/tier_a_200_299.json).
 
+## Code after the pinned proof runs
+
+Tiers A, B, C and E ran on the commits named in the pre-registration. Two agent
+changes came later: the tool-call loop became an explicit state machine
+(`c338e10`), and an injected LLM client is now called even without a provider
+name (`e619576`). A live check of the new loop on seeds 900-901 matched the
+deterministic result on 16 of 16 datasets. Tier D ran on the later code.
+
 ## Live LLM evidence (DeepSeek V4.1 Flash via the Deploy gateway)
 
 | Run | Datasets | Calls | Errors | Spend | Accuracy vs deterministic |
@@ -56,6 +64,7 @@ We claim:
 - On a real-traffic background (BurstGPT), 96.5% of injected incidents are caught with
   0 false incidents in 171 feature-weeks of clean real traffic.
 - It is far more precise than a cost alert or three hand rules.
+- On a live app with real API calls, it caught three real bugs (retry loop, pricier model, self-calling agent) within 1 to 4 minutes, with 0 baseline alarms.
 - A live LLM (DeepSeek) does not lower accuracy and costs about $0.002 per dataset.
 
 We do not claim:

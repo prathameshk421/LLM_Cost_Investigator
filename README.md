@@ -4,6 +4,20 @@ Agentic LLM cost anomaly investigator for diagnosing sudden spend spikes in LLM-
 
 ## Results
 
+**Pre-registered proof pack:** [docs/proof/results.md](docs/proof/results.md).
+Thresholds were committed before each run, and every run is published, failures
+included. In short:
+
+- Blind synthetic set (2,800 datasets): 99.1% of incidents caught, 0.5% false
+  alarms, against 16.4% for three hand rules.
+- Real Azure OpenAI traffic (BurstGPT) with injected incidents: 96.5% caught,
+  0 false incidents in 171 feature-weeks.
+- Live app with real API calls and three real bugs: each caught in 1 to 4
+  minutes with the right label, 0 alarms in the baselines
+  ([tier_d.md](docs/proof/tier_d.md), [video](docs/proof/media/tier_d_take5_timelapse.mp4)).
+
+The tables below are the earlier development results.
+
 **Read the held-out row first.** The scenario lab was used while the rules were
 tuned, so its numbers are in-sample. The held-out set comes from a generator
 written blind to the rules (`benchmarks/heldout/SPEC.md`), and the reported
