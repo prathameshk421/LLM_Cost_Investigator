@@ -106,16 +106,12 @@ Other ways in:
 
 ```mermaid
 flowchart LR
-  A[Your app] -->|POST /v1/ingest| Q[Bounded queue]
-  Q --> W[(DuckDB warehouse)]
-  W --> D[Detector<br/>every 30 s, 5-min windows]
-  D --> R[Router]
-  R --> A1[Retry agent]
-  R --> A2[Context agent]
-  R --> A3[Model agent]
-  A1 & A2 & A3 --> G[Aggregator<br/>confidence caps]
-  G --> I[Incident + evidence]
-  I --> UI[Live UI / webhook]
+  A[Your app] -->|POST /v1/ingest| W[(DuckDB)]
+  W --> D[Detector<br/>every 30 s]
+  D --> A1[Retry agent]
+  D --> A2[Context agent]
+  D --> A3[Model agent]
+  A1 & A2 & A3 --> G[Aggregator] --> I[Incident<br/>UI + webhook]
 ```
 
 - **Detector:** z-scores per feature against a rolling 6-hour baseline, plus history-aware rules, so normal growth stays quiet.
