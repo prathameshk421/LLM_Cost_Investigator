@@ -54,7 +54,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(
-    title="LLM Cost Investigator API",
+    title="Tokenhound API (LLM Cost Investigator)",
     version="0.1.0",
     lifespan=lifespan,
 )

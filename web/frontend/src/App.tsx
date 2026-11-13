@@ -49,7 +49,7 @@ export default function App() {
     <div className={"app-shell" + (mode !== "replay" ? " mode-investigate" : "")}>
       <header className="app-header">
         <div>
-          <h1>LLM Cost Investigator</h1>
+          <h1>Tokenhound</h1>
           <div className="subtitle">{SUBTITLE[mode]}</div>
           <div className="mode-toggle" role="tablist">
             {(

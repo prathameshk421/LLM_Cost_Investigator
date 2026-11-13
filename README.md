@@ -1,6 +1,9 @@
-# LLM Cost Investigator
+# Tokenhound
 
-Agentic LLM cost anomaly investigator for diagnosing sudden spend spikes in LLM-backed features.
+**Sniffs out runaway LLM spend.** Tokenhound watches every LLM call your app
+makes, flags a cost spike within minutes, and names the cause: a retry loop
+with no cap, a switch to a pricier model, or an agent that keeps calling
+itself. (Repository and Python package: `LLM_Cost_Investigator`, `llm_cost_investigator`.)
 
 [![Live demo: three real bugs caught in a live app](docs/proof/media/tier_d_take5_preview.gif)](docs/proof/media/tier_d_take5_timelapse.mp4)
 
