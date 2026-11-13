@@ -71,10 +71,10 @@ def warehouse_summary(path: str) -> list[dict]:
     import duckdb
 
     con = duckdb.connect(path, read_only=True)
-    cols = [c[0] for c in con.execute("DESCRIBE calls").fetchall()]
+    cols = [c[0] for c in con.execute("DESCRIBE llm_calls").fetchall()]
     cost = "cost_usd" if "cost_usd" in cols else "0"
     rows = con.execute(f"""SELECT model, count(*), sum(input_tokens), sum(output_tokens), round(sum({cost}), 5)
-                           FROM calls GROUP BY 1 ORDER BY 2 DESC""").fetchall()
+                           FROM llm_calls GROUP BY 1 ORDER BY 2 DESC""").fetchall()
     return [dict(zip(["model", "calls", "input_tokens", "output_tokens", "cost_usd"], r)) for r in rows]
 
 

@@ -1,0 +1,68 @@
+{
+ "note": "Take 4 (2026-11-13), code b64d916 (pacing fix). Real calls: DeepSeek V4.1 Flash via Deploy (classify, reflect), gpt-oss-20b via HF (summarize). Event time 06:42:31-09:27 UTC (12:12-14:57 IST). Baseline 75 min, then retry_loop, misroute, bloat, 20 min each with 10 min gaps. The local network failed from about 08:07 UTC event time to the end: 705 of 1,220 calls failed (APIConnectionError, both providers). The last successful call was at 08:06:46 UTC, so misroute and bloat ran with no successful calls and are NOT tested by this take. The retry loop and the baseline are valid. No incident was raised during the outage.",
+ "t0": "2026-11-13T06:42:31+00:00",
+ "bugs": [
+  {
+   "bug": "retry_loop",
+   "t_bug": "2026-11-13T07:57:31+00:00",
+   "expected": [
+    "uncapped_retry_loop",
+    "classify"
+   ],
+   "first_correct_window_start": "2026-11-13T07:55:00+00:00",
+   "windows_after_start": -0.5,
+   "confidence": 0.82,
+   "pass": true
+  },
+  {
+   "bug": "misroute",
+   "t_bug": "2026-11-13T08:27:31+00:00",
+   "expected": [
+    "expensive_model_misroute",
+    "summarize"
+   ],
+   "first_correct_window_start": null,
+   "windows_after_start": null,
+   "confidence": null,
+   "pass": false
+  },
+  {
+   "bug": "bloat",
+   "t_bug": "2026-11-13T08:57:31+00:00",
+   "expected": [
+    "context_bloat_self_calling_agent",
+    "reflect"
+   ],
+   "first_correct_window_start": null,
+   "windows_after_start": null,
+   "confidence": null,
+   "pass": false
+  }
+ ],
+ "baseline_alarms": [],
+ "wrong_label_incidents": [],
+ "pass": false,
+ "calls_by_model": [
+  {
+   "model": "deepseek-ai/deepseek-v4.1-flash-1017",
+   "calls": 1000,
+   "input_tokens": 32230,
+   "output_tokens": 19120,
+   "cost_usd": 0.08959
+  },
+  {
+   "model": "openai/gpt-oss-20b",
+   "calls": 193,
+   "input_tokens": 12769,
+   "output_tokens": 16423,
+   "cost_usd": 0.00392
+  },
+  {
+   "model": "openai/gpt-oss-120b",
+   "calls": 27,
+   "input_tokens": 0,
+   "output_tokens": 0,
+   "cost_usd": 0.0
+  }
+ ]
+}
