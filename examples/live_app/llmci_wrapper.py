@@ -1,4 +1,4 @@
-"""Copy this file into your app. It reports every LLM call to LLM Cost Investigator.
+"""Copy this file into your app. It reports every LLM call to Tokenhound (LLM Cost Investigator).
 
     client = instrument(OpenAI(...), "http://127.0.0.1:8000")
     with llmci_context(feature_tag="summarize"):
