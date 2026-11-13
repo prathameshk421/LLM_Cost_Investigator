@@ -2,6 +2,12 @@
 
 Agentic LLM cost anomaly investigator for diagnosing sudden spend spikes in LLM-backed features.
 
+[![Live demo: three real bugs caught in a live app](docs/proof/media/tier_d_take5_preview.gif)](docs/proof/media/tier_d_take5_timelapse.mp4)
+
+*2 h 15 min of a live app with real LLM calls, in 54 s. A switch to a pricier
+model and a self-calling agent are caught 4 min and 1 min after they start.
+Click for the full video with sound ([details](docs/proof/tier_d.md)).*
+
 ## Results
 
 **Pre-registered proof pack:** [docs/proof/results.md](docs/proof/results.md).

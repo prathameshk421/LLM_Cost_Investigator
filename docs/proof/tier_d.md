@@ -23,6 +23,9 @@ during the baseline (at least 60 min). Scorer: `benchmarks/tier_d/score.py`.
 - Spend: take 4 $0.094, take 5 $0.206.
 
 Video: [tier_d_take5_timelapse.mp4](media/tier_d_take5_timelapse.mp4) (54 s time-lapse of the 2 h 15 min take, one frame every 5 s).
+The music is original, made by [make_music.py](media/make_music.py) (Python standard library only, no samples).
+
+[![Take 5 preview](media/tier_d_take5_preview.gif)](media/tier_d_take5_timelapse.mp4)
 Screenshot: [tier_d_take5_live_tab.png](media/tier_d_take5_live_tab.png).
 Scores: [tier_d_take4.json](data/tier_d_take4.json), [tier_d_take5.json](data/tier_d_take5.json). Raw logs: `data/tier_d_take{3,4,5}_raw/`.
 
