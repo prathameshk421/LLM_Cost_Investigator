@@ -7,6 +7,7 @@ name = "llm-cost-investigator"
 version = "0.1.0"
 description = "Agentic LLM cost anomaly investigator."
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.11"
 dependencies = [
     "openai>=1.0,<2.0",

@@ -9,6 +9,7 @@ and names the bug behind it.
 
 [![CI](https://github.com/prathameshk421/LLM_Cost_Investigator/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/prathameshk421/LLM_Cost_Investigator/actions/workflows/ci.yml)
 ![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 ![Tests](https://img.shields.io/badge/tests-201%20passing-2ea44f)
 ![False alarms](https://img.shields.io/badge/false%20alarms-0.5%25-2ea44f)
 ![No API key needed](https://img.shields.io/badge/API%20key-not%20needed-blue)
@@ -153,5 +154,9 @@ Have a cost incident story, or traces you can share? Open an issue. Real data is
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Design decisions and the HTTP contract |
 | [docs/proof/](docs/proof/results.md) | Pre-registered results, raw data, videos |
 | [AGENTS.md](AGENTS.md) | Agent prompts, hard skills and the aggregator contract |
+
+## License
+
+[MIT](LICENSE). Use it, fork it, ship it.
 
 <sub>Repository and Python package names: `LLM_Cost_Investigator`, `llm_cost_investigator`.</sub>
